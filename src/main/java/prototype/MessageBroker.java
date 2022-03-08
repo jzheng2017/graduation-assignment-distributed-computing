@@ -7,6 +7,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+/**
+ * A message broker that has the responsibility to keep track of all topics and its subscribers.
+ * It has also the additional ability to handle message adding, removing and notifying success or failure of message processing.
+ *
+ */
 public class MessageBroker {
     private static final int TIME_BETWEEN_POLL_IN_MS = 500;
     private Map<String, Topic> topics = new HashMap<>();

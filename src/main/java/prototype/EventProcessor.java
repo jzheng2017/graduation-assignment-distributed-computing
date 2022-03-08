@@ -1,8 +1,8 @@
 package prototype;
 
-import java.util.HashMap;
-import java.util.Map;
-
+/**
+ * Just a simple processor that does some "simple" processing and publishes on another topic
+ */
 public class EventProcessor implements Processor, Subscriber, Publisher {
     private MessageBroker messageBroker;
 

@@ -1,5 +1,8 @@
 package prototype;
 
+/**
+ * A processor that processes the message by just printing to system out.
+ */
 public class SoutProcessor implements Processor, Subscriber{
 
     private MessageBroker messageBroker;
