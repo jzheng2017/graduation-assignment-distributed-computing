@@ -8,7 +8,7 @@ public class EventProcessor implements Processor, Subscriber, Publisher {
 
     public EventProcessor(MessageBroker messageBroker) {
         this.messageBroker = messageBroker;
-        new Thread(this::poll).start();
+        new Thread(this::consume).start();
     }
 
     @Override
@@ -26,7 +26,7 @@ public class EventProcessor implements Processor, Subscriber, Publisher {
     }
 
     @Override
-    public void poll() {
+    public void consume() {
         while (true) {
             TopicMessage topicMessage = messageBroker.getNextMessageForSubscriber(this);
 

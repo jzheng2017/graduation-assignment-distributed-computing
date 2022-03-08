@@ -9,7 +9,7 @@ public class SoutProcessor implements Processor, Subscriber{
 
     public SoutProcessor(MessageBroker messageBroker) {
         this.messageBroker = messageBroker;
-        new Thread(this::poll).start();
+        new Thread(this::consume).start();
     }
 
     @Override
@@ -23,7 +23,7 @@ public class SoutProcessor implements Processor, Subscriber{
     }
 
     @Override
-    public void poll() {
+    public void consume() {
         while (true) {
             TopicMessage topicMessage = messageBroker.getNextMessageForSubscriber(this);
 
