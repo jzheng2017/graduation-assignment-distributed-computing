@@ -13,15 +13,15 @@ public class Topic {
         this.name = name;
     }
 
-    public void addMessage(String message) {
+    public synchronized void addMessage(String message) {
         messages.put(index++, message);
     }
 
-    public void removeMessage(long messageId) {
+    public synchronized void removeMessage(long messageId) {
         messages.remove(messageId);
     }
 
-    public TopicMessage getNextMessage() {
+    public synchronized TopicMessage getNextMessage() {
         if (cursor < index) {
             String message = messages.get(cursor);
             return new TopicMessage(name, cursor++, message);
@@ -30,11 +30,11 @@ public class Topic {
         }
     }
 
-    public void notifySuccessMessageProcessing(long messageId) {
+    public synchronized void notifySuccessMessageProcessing(long messageId) {
         removeMessage(messageId);
     }
 
-    public void notifyFailureMessageProcessing(long messageId) {
+    public synchronized void notifyFailureMessageProcessing(long messageId) {
         String message = messages.get(messageId);
         removeMessage(messageId);
         addMessage(message);
