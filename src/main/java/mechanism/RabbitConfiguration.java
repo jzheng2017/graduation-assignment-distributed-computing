@@ -1,5 +1,10 @@
 package mechanism;
 
+import mechanism.messagebroker.RabbitMessageBrokerProxy;
+import mechanism.messageprocessor.MessageForwarderProcessor;
+import mechanism.messageprocessor.MessagePrinterProcessor;
+import mechanism.messageprocessor.MessageReverserProcessor;
+import org.springframework.amqp.core.AmqpTemplate;
 import org.springframework.amqp.core.Queue;
 import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitAdmin;
@@ -26,7 +31,30 @@ public class RabbitConfiguration {
     }
 
     @Bean
-    public Queue myQueue() {
-        return new Queue("myqueue");
+    public MessageForwarderProcessor messageForwarderProcessor(AmqpTemplate amqpTemplate) {
+        return new MessageForwarderProcessor(new RabbitMessageBrokerProxy(amqpTemplate), "fp");
+    }
+
+    @Bean
+    public MessageReverserProcessor messageReverserProcessor(AmqpTemplate amqpTemplate) {
+        return new MessageReverserProcessor(new RabbitMessageBrokerProxy(amqpTemplate), "rp");
+    }
+
+    @Bean
+    public MessagePrinterProcessor messagePrinterProcessor(AmqpTemplate amqpTemplate) {
+        return new MessagePrinterProcessor(new RabbitMessageBrokerProxy(amqpTemplate), "pp");
+    }
+
+    @Bean
+    public Queue inputQueue() {
+        return new Queue("input");
+    }
+    @Bean
+    public Queue reversedQueue() {
+        return new Queue("reversed");
+    }
+    @Bean
+    public Queue outputQueue() {
+        return new Queue("output");
     }
 }

@@ -2,6 +2,7 @@ package mechanism.messageprocessor;
 
 import mechanism.messagebroker.MessageBrokerProxy;
 import mechanism.messagebroker.Publisher;
+import org.springframework.amqp.rabbit.annotation.RabbitListener;
 
 public class MessageReverserProcessor extends BaseMessageProcessor implements Publisher {
 
@@ -14,6 +15,7 @@ public class MessageReverserProcessor extends BaseMessageProcessor implements Pu
         messageBrokerProxy.sendMessage(topicName, message);
     }
 
+    @RabbitListener(queues = {"output"})
     @Override
     public void process(String message) {
         publish("reversed", new StringBuilder(message).reverse().toString());

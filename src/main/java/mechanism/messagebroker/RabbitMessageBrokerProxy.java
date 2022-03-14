@@ -1,17 +1,12 @@
 package mechanism.messagebroker;
 
-import mechanism.RabbitConfiguration;
-import mechanism.messagebroker.MessageBrokerProxy;
 import org.springframework.amqp.core.AmqpTemplate;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 
 public class RabbitMessageBrokerProxy extends MessageBrokerProxy {
     private AmqpTemplate template;
 
-    public RabbitMessageBrokerProxy() {
-        ApplicationContext context = new AnnotationConfigApplicationContext(RabbitConfiguration.class);
-        this.template = context.getBean(AmqpTemplate.class);
+    public RabbitMessageBrokerProxy(AmqpTemplate amqpTemplate) {
+        this.template = amqpTemplate;
     }
 
     @Override
