@@ -47,8 +47,7 @@ spec:
         container('maven') {
           withSonarQubeEnv('Luminis SonarQube') {
             sh '''
-              mvn --batch-mode sonar:sonar
-            '''
+      sh "${mvn}/bin/mvn clean verify sonar:sonar -Dsonar.projectKey=graduation-assignment-jiankai"            '''
           }
         }
       }
