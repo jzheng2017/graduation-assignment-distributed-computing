@@ -46,8 +46,7 @@ spec:
       steps {
         container('maven') {
           withSonarQubeEnv('Luminis SonarQube') {
-            sh '''
-       mvn clean verify sonar:sonar -Dsonar.projectKey=graduation-assignment-jiankai"            '''
+            sh '''mvn clean verify sonar:sonar -Dsonar.projectKey=graduation-assignment-jiankai'''
           }
         }
       }
