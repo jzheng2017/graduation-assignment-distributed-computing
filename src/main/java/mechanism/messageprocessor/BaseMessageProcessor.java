@@ -3,7 +3,7 @@ package mechanism.messageprocessor;
 import mechanism.messagebroker.MessageBrokerProxy;
 
 public abstract class BaseMessageProcessor implements MessageProcessor {
-    private final String name;
+    protected final String name;
     protected MessageBrokerProxy messageBrokerProxy;
 
     protected BaseMessageProcessor(MessageBrokerProxy messageBrokerProxy, String name) {
@@ -19,11 +19,5 @@ public abstract class BaseMessageProcessor implements MessageProcessor {
     @Override
     public void unsubscribe(String topicName) {
         messageBrokerProxy.unsubscribeToTopic(topicName, name);
-    }
-
-    @Override
-    public void poll(String topicName) {
-        String message = messageBrokerProxy.receiveMessage(topicName, name);
-        process(message);
     }
 }
