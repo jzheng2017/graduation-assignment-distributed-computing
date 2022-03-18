@@ -1,7 +1,6 @@
 package mechanism.messageprocessor;
 
 import mechanism.messagebroker.MessageBrokerProxy;
-import org.springframework.amqp.rabbit.annotation.RabbitListener;
 
 public class MessagePrinterProcessor extends BaseMessageProcessor {
     public MessagePrinterProcessor(MessageBrokerProxy messageBrokerProxy, String name) {
@@ -13,7 +12,6 @@ public class MessagePrinterProcessor extends BaseMessageProcessor {
         System.out.println(message);
     }
 
-    @RabbitListener(queues = "reversed", ackMode = "AUTO")
     @Override
     public void consume(String message) {
         super.consume(message);
