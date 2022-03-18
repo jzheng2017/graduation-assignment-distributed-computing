@@ -4,7 +4,6 @@ import mechanism.messagebroker.MessageBrokerProxy;
 import mechanism.messagebroker.Publisher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.amqp.rabbit.annotation.RabbitListener;
 
 public class MessageReverserProcessor extends BaseMessageProcessor implements Publisher {
     private Logger logger = LoggerFactory.getLogger(MessageReverserProcessor.class);
@@ -23,7 +22,6 @@ public class MessageReverserProcessor extends BaseMessageProcessor implements Pu
         publish("reversed", new StringBuilder(message).reverse().toString());
     }
 
-    @RabbitListener(queues = "output", ackMode = "AUTO")
     @Override
     public void consume(String message) {
         super.consume(message);
