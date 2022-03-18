@@ -51,5 +51,20 @@ spec:
         }
       }
     }
+    stage("sonar quality gate") {
+        steps {
+            timeout(time: 2, unit: 'MINUTES') {
+                script {
+                    def qg = waitForQualityGate() // Reuse taskId previously collected by withSonarQubeEnv
+                    if (qg.status != 'OK') {
+                        if (env.BRANCH_NAME == 'master' || env.BRANCH_NAME.startsWith('PR-')) {
+                            office365ConnectorSend color: "4B9FD5", status: qg.status, message: "DID NOT PASS SONAR QUALITY GATE : ${env.JOB_NAME} ${env.BUILD_NUMBER} (<${env.BUILD_URL}|Open>)", webhookUrl: "myWebhookUrl"
+                            error "Pipeline aborted due to Sonar quality gate failure: ${qg.status}"
+                        }
+                    }
+                }
+            }
+        }
+    }
   }
 }
