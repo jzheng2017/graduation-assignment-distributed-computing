@@ -1,5 +1,7 @@
 package mechanism.messagebroker;
 
+import java.util.List;
+
 public abstract class MessageBrokerProxy {
     private SubscriptionManager subscriptionManager = new SubscriptionManager();
 
@@ -19,6 +21,10 @@ public abstract class MessageBrokerProxy {
 
     public void unsubscribeToTopic(String topicName, String subscriberName) {
         subscriptionManager.subscribeToTopic(topicName, subscriberName);
+    }
+
+    public List<Subscription> getSubscriptionOfSubscriber(String subscriberName) {
+        return subscriptionManager.getSubscriptions(subscriberName);
     }
 
     protected abstract String getMessageFromTopic(String topicName, String subscriberName);

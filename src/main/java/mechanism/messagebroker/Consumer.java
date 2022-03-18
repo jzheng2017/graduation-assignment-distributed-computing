@@ -1,6 +1,6 @@
 package mechanism.messagebroker;
 
 public interface Consumer {
-    void consume(String message);
+    void consume();
     void acknowledgeMessage();
 }

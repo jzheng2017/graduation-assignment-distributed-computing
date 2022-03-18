@@ -14,7 +14,10 @@ public abstract class BaseMessageProcessor implements MessageProcessor {
     @Override
     public void subscribe(String topicName) {
         messageBrokerProxy.subscribeToTopic(topicName, name);
+        registerSubscription(topicName);
     }
+
+    public abstract void registerSubscription(String topicName);
 
     @Override
     public void unsubscribe(String topicName) {

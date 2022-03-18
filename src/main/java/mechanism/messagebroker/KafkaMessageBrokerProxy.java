@@ -21,8 +21,6 @@ public class KafkaMessageBrokerProxy extends MessageBrokerProxy {
         properties.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
         properties.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
         this.producer = new KafkaProducer<>(properties);
-//        producer.send(new ProducerRecord<>("test1", "pp"));
-//        producer.flush();
     }
 
     @Override
