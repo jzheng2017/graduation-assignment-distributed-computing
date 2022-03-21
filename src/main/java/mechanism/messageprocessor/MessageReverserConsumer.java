@@ -6,10 +6,10 @@ import mechanism.messagebroker.Publisher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class MessageReverserProcessor extends KafkaMessageProcessor implements Publisher {
-    private Logger logger = LoggerFactory.getLogger(MessageReverserProcessor.class);
+public class MessageReverserConsumer extends BaseKafkaConsumer implements Publisher {
+    private Logger logger = LoggerFactory.getLogger(MessageReverserConsumer.class);
 
-    public MessageReverserProcessor(MessageBrokerProxy messageBrokerProxy, KafkaProperties kafkaProperties, ConsumerProperties consumerProperties) {
+    public MessageReverserConsumer(MessageBrokerProxy messageBrokerProxy, KafkaProperties kafkaProperties, ConsumerProperties consumerProperties) {
         super(messageBrokerProxy, kafkaProperties, consumerProperties);
     }
 

@@ -1,6 +1,8 @@
 package mechanism.messagebroker;
 
-public interface Consumer {
+import mechanism.messageprocessor.MessageProcessor;
+
+public interface Consumer extends MessageProcessor, Subscriber {
     void consume();
     void acknowledgeMessage();
 }

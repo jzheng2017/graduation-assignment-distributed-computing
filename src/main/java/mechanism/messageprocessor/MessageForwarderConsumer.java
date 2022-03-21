@@ -1,16 +1,15 @@
 package mechanism.messageprocessor;
 
-import mechanism.configuration.KafkaConfiguration;
 import mechanism.configuration.KafkaProperties;
 import mechanism.messagebroker.MessageBrokerProxy;
 import mechanism.messagebroker.Publisher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class MessageForwarderProcessor extends KafkaMessageProcessor implements Publisher {
-    private Logger logger = LoggerFactory.getLogger(MessageForwarderProcessor.class);
+public class MessageForwarderConsumer extends BaseKafkaConsumer implements Publisher {
+    private Logger logger = LoggerFactory.getLogger(MessageForwarderConsumer.class);
 
-    public MessageForwarderProcessor(MessageBrokerProxy messageBrokerProxy, KafkaProperties kafkaProperties, ConsumerProperties consumerProperties) {
+    public MessageForwarderConsumer(MessageBrokerProxy messageBrokerProxy, KafkaProperties kafkaProperties, ConsumerProperties consumerProperties) {
         super(messageBrokerProxy, kafkaProperties, consumerProperties);
     }
 

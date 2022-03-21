@@ -1,12 +1,13 @@
 package mechanism.messageprocessor;
 
+import mechanism.messagebroker.Consumer;
 import mechanism.messagebroker.MessageBrokerProxy;
 
-public abstract class BaseMessageProcessor implements MessageProcessor {
+public abstract class BaseConsumer implements Consumer {
     protected final String name;
     protected MessageBrokerProxy messageBrokerProxy;
 
-    protected BaseMessageProcessor(MessageBrokerProxy messageBrokerProxy, String name) {
+    protected BaseConsumer(MessageBrokerProxy messageBrokerProxy, String name) {
         this.messageBrokerProxy = messageBrokerProxy;
         this.name = name;
     }

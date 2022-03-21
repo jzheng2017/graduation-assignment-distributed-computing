@@ -1,6 +1,5 @@
 package mechanism.messageprocessor;
 
-import mechanism.configuration.KafkaConfiguration;
 import mechanism.configuration.KafkaProperties;
 import mechanism.messagebroker.MessageBrokerProxy;
 import mechanism.messagebroker.Subscription;
@@ -11,10 +10,13 @@ import org.apache.kafka.clients.consumer.KafkaConsumer;
 import java.time.Duration;
 import java.util.Properties;
 
-public abstract class KafkaMessageProcessor extends BaseMessageProcessor {
+/**
+ * A Kafka implementation of the {@link MessageProcessor} interface
+ */
+public abstract class BaseKafkaConsumer extends BaseConsumer {
     private KafkaConsumer<String, String> consumer;
 
-    protected KafkaMessageProcessor(MessageBrokerProxy messageBrokerProxy, KafkaProperties kafkaProperties, ConsumerProperties consumerProperties) {
+    protected BaseKafkaConsumer(MessageBrokerProxy messageBrokerProxy, KafkaProperties kafkaProperties, ConsumerProperties consumerProperties) {
         super(messageBrokerProxy, consumerProperties.getName());
         Properties properties = new Properties();
         properties.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaProperties.getHostUrl());
@@ -22,7 +24,7 @@ public abstract class KafkaMessageProcessor extends BaseMessageProcessor {
         properties.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, kafkaProperties.getKeyDeserializer());
         properties.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, kafkaProperties.getValueDeserializer());
         properties.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, true);
-        this.consumer = new KafkaConsumer<>(properties);
+        this.consumer = new org.apache.kafka.clients.consumer.KafkaConsumer<>(properties);
         consumerProperties.getSubscriptions().forEach(this::subscribe);
         new Thread(this::consume).start();
     }
