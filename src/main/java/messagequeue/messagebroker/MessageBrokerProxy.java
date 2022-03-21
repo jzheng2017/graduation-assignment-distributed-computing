@@ -3,7 +3,10 @@ package messagequeue.messagebroker;
 import java.util.List;
 
 public abstract class MessageBrokerProxy {
-    private SubscriptionManager subscriptionManager = new SubscriptionManager();
+    protected SubscriptionManager subscriptionManager = new SubscriptionManager();
+
+    public MessageBrokerProxy(){
+    }
 
     public abstract void sendMessage(String topicName, String message);
 
@@ -20,7 +23,7 @@ public abstract class MessageBrokerProxy {
     }
 
     public void unsubscribeToTopic(String topicName, String subscriberName) {
-        subscriptionManager.subscribeToTopic(topicName, subscriberName);
+        subscriptionManager.unsubscribeToTopic(topicName, subscriberName);
     }
 
     public List<Subscription> getSubscriptionOfSubscriber(String subscriberName) {
