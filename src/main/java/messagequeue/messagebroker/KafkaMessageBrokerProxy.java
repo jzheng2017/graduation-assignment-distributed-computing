@@ -2,9 +2,7 @@ package messagequeue.messagebroker;
 
 
 import messagequeue.configuration.KafkaProperties;
-import org.apache.kafka.clients.consumer.Consumer;
-import org.apache.kafka.clients.consumer.ConsumerConfig;
-import org.apache.kafka.clients.consumer.KafkaConsumer;
+import messagequeue.messagebroker.subscription.SubscriptionManager;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerConfig;

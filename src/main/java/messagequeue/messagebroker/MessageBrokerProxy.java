@@ -1,5 +1,9 @@
 package messagequeue.messagebroker;
 
+import messagequeue.messagebroker.subscription.NotSubscribedException;
+import messagequeue.messagebroker.subscription.Subscription;
+import messagequeue.messagebroker.subscription.SubscriptionManager;
+
 import java.util.List;
 
 public abstract class MessageBrokerProxy {

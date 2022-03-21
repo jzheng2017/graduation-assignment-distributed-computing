@@ -1,5 +1,6 @@
 package messagequeue.messagebroker;
 
+import messagequeue.messagebroker.subscription.SubscriptionManager;
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.junit.jupiter.api.Assertions;

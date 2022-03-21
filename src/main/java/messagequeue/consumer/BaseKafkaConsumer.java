@@ -2,7 +2,7 @@ package messagequeue.consumer;
 
 import messagequeue.configuration.KafkaProperties;
 import messagequeue.messagebroker.MessageBrokerProxy;
-import messagequeue.messagebroker.Subscription;
+import messagequeue.messagebroker.subscription.Subscription;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;

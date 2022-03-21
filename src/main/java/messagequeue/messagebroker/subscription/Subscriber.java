@@ -1,4 +1,4 @@
-package messagequeue.messagebroker;
+package messagequeue.messagebroker.subscription;
 
 /**
  * This interface allows a class to be a subscriber to a topic

@@ -1,5 +1,7 @@
 package messagequeue.messagebroker;
 
+import messagequeue.messagebroker.subscription.Subscription;
+import messagequeue.messagebroker.subscription.SubscriptionManager;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

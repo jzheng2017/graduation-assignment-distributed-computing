@@ -1,4 +1,4 @@
-package messagequeue.messagebroker;
+package messagequeue.messagebroker.subscription;
 
 import java.util.ArrayList;
 import java.util.Collections;

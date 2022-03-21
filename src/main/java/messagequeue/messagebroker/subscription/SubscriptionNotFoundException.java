@@ -1,4 +1,4 @@
-package messagequeue.messagebroker;
+package messagequeue.messagebroker.subscription;
 
 public class SubscriptionNotFoundException extends RuntimeException {
     public SubscriptionNotFoundException(String message) {
