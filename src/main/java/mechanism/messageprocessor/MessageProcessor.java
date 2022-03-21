@@ -5,19 +5,15 @@ import mechanism.messagebroker.Subscriber;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public interface MessageProcessor extends Subscriber, Consumer {
+/**
+ * Implementing this interfaces allows for processing a message from a topic.
+ */
+public interface MessageProcessor  {
     Logger logger = LoggerFactory.getLogger(MessageProcessor.class);
 
+    /**
+     * Process the message coming from a topic
+     * @param message the topic message
+     */
     void process(String message);
-
-    @Override
-    default void consume(String message) {
-        try {
-            process(message);
-            acknowledgeMessage();
-        } catch (MessageProcessingException ex) {
-            logger.error("Processing message failed.", ex);
-            throw ex;
-        }
-    }
 }

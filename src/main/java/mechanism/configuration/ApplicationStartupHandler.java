@@ -1,5 +1,6 @@
 package mechanism.configuration;
 
+import mechanism.messagebroker.topic.KafkaTopicConfiguration;
 import mechanism.messagebroker.topic.KafkaTopicManager;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.ApplicationArguments;
@@ -12,8 +13,9 @@ public class ApplicationStartupHandler implements ApplicationRunner {
     private KafkaTopicManager kafkaTopicManager;
     @Override
     public void run(ApplicationArguments args) throws Exception {
-//        kafkaTopicManager.createTopic(new KafkaTopicConfiguration("test2", 1, 1));
-        kafkaTopicManager.getTopics().forEach(t -> System.out.println(t.getName()));
+//        kafkaTopicManager.createTopic(new KafkaTopicConfiguration("input", 1, 1));
+//        kafkaTopicManager.createTopic(new KafkaTopicConfiguration("output", 1, 1));
+//        kafkaTopicManager.createTopic(new KafkaTopicConfiguration("reversed", 1, 1));
     }
 
 

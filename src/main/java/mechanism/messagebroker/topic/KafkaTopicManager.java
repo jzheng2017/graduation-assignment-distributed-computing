@@ -24,16 +24,21 @@ public class KafkaTopicManager implements TopicManager {
 
     @Override
     public void createTopic(TopicConfiguration topicConfiguration) {
-        KafkaTopicConfiguration kafkaTopicConfiguration = (KafkaTopicConfiguration) topicConfiguration;
-        CreateTopicsResult createTopicsResult = admin.createTopics(
-                Collections.singleton(
-                        new NewTopic(kafkaTopicConfiguration.getName(),
-                                kafkaTopicConfiguration.getPartitions(),
-                                (short) kafkaTopicConfiguration.getReplicationFactor())
-                ));
         try {
-            createTopicsResult.values().get(kafkaTopicConfiguration.getName()).get();
-            logger.info("Kafka topic created \"{}\" with {} partitions and {} replication factor", kafkaTopicConfiguration.getName(), kafkaTopicConfiguration.getPartitions(), kafkaTopicConfiguration.getReplicationFactor());
+            if (!topicExists(topicConfiguration.getName())) {
+                KafkaTopicConfiguration kafkaTopicConfiguration = (KafkaTopicConfiguration) topicConfiguration;
+                CreateTopicsResult createTopicsResult = admin.createTopics(
+                        Collections.singleton(
+                                new NewTopic(kafkaTopicConfiguration.getName(),
+                                        kafkaTopicConfiguration.getPartitions(),
+                                        (short) kafkaTopicConfiguration.getReplicationFactor())
+                        ));
+
+                createTopicsResult.values().get(kafkaTopicConfiguration.getName()).get();
+                logger.info("Kafka topic created \"{}\" with {} partitions and {} replication factor", kafkaTopicConfiguration.getName(), kafkaTopicConfiguration.getPartitions(), kafkaTopicConfiguration.getReplicationFactor());
+            } else {
+                throw new FailedTopicActionException(String.format("The Kafka topic with the name %s already exists.", topicConfiguration.getName()));
+            }
         } catch (InterruptedException | ExecutionException e) {
             throw new FailedTopicActionException(String.format("Creating Kafka topic with the name %s failed.", topicConfiguration.getName()), e);
         }
@@ -41,8 +46,8 @@ public class KafkaTopicManager implements TopicManager {
 
     @Override
     public void removeTopic(String topicName) {
-        DeleteTopicsResult deleteTopicsResult = admin.deleteTopics(Collections.singletonList(topicName));
         try {
+            DeleteTopicsResult deleteTopicsResult = admin.deleteTopics(Collections.singletonList(topicName));
             deleteTopicsResult.topicNameValues().get(topicName).get();
             logger.info("Kafka topic with the name {} deleted", topicName);
         } catch (InterruptedException | ExecutionException e) {
@@ -56,7 +61,13 @@ public class KafkaTopicManager implements TopicManager {
             ListTopicsResult listTopicsResult = admin.listTopics();
             return listTopicsResult.listings().get().stream().map(topic -> new Topic(topic.name())).toList();
         } catch (InterruptedException | ExecutionException e) {
-         throw new FailedTopicActionException("Getting all topics failed", e);
+            throw new FailedTopicActionException("Getting all topics failed", e);
         }
+    }
+
+    @Override
+    public boolean topicExists(String topicName) {
+        List<Topic> topics = getTopics();
+        return topics.contains(new Topic(topicName));
     }
 }
