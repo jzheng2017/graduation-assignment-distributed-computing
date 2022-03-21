@@ -56,10 +56,10 @@ public class KafkaTopicManager implements TopicManager {
     }
 
     @Override
-    public List<Topic> getTopics() {
+    public List<String> getTopics() {
         try {
             ListTopicsResult listTopicsResult = admin.listTopics();
-            return listTopicsResult.listings().get().stream().map(topic -> new Topic(topic.name())).toList();
+            return listTopicsResult.listings().get().stream().map(topic -> topic.name()).toList();
         } catch (InterruptedException | ExecutionException e) {
             throw new FailedTopicActionException("Getting all topics failed", e);
         }
@@ -67,7 +67,7 @@ public class KafkaTopicManager implements TopicManager {
 
     @Override
     public boolean topicExists(String topicName) {
-        List<Topic> topics = getTopics();
-        return topics.contains(new Topic(topicName));
+        List<String> topics = getTopics();
+        return topics.contains(topicName);
     }
 }
