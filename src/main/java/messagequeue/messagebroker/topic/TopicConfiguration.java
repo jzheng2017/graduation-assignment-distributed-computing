@@ -1,7 +1,7 @@
 package messagequeue.messagebroker.topic;
 
 public class TopicConfiguration {
-    private String name;
+    private final String name;
 
     public TopicConfiguration(String name) {
         this.name = name;

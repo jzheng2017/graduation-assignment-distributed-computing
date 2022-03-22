@@ -3,9 +3,9 @@ package messagequeue.messagebroker.topic;
 import java.util.Objects;
 
 public class Topic {
-    private String name;
+    private final String name;
 
-    public Topic (String name) {
+    public Topic(String name) {
         this.name = name;
     }
 

@@ -15,8 +15,8 @@ import java.util.concurrent.ExecutionException;
 
 @Service
 public class KafkaTopicManager implements TopicManager {
-    private Logger logger = LoggerFactory.getLogger(KafkaTopicManager.class);
-    private Admin admin;
+    private final Logger logger = LoggerFactory.getLogger(KafkaTopicManager.class);
+    private final Admin admin;
 
     public KafkaTopicManager(Admin admin) {
         this.admin = admin;

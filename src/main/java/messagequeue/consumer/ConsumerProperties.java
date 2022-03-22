@@ -1,14 +1,16 @@
 package messagequeue.consumer;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 public class ConsumerProperties {
-    private String name;
-    private String groupId;
-    private List<String> subscriptions = new ArrayList<>();
+    private final String name;
+    private final String groupId;
+    private Set<String> subscriptions = new HashSet<>();
 
-    public ConsumerProperties(String name, String groupId, List<String> subscriptions) {
+    public ConsumerProperties(String name, String groupId, Set<String> subscriptions) {
         this.name = name;
         this.groupId = groupId;
         this.subscriptions = subscriptions;
@@ -22,7 +24,7 @@ public class ConsumerProperties {
         return groupId;
     }
 
-    public List<String> getSubscriptions() {
+    public Set<String> getSubscriptions() {
         return subscriptions;
     }
 }

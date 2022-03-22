@@ -1,10 +1,10 @@
 package messagequeue.consumer;
 
 import messagequeue.configuration.KafkaProperties;
-import messagequeue.messagebroker.MessageBrokerProxy;
+import messagequeue.messagebroker.KafkaMessageBrokerProxy;
 
 public class MessagePrinterConsumer extends BaseKafkaConsumer {
-    public MessagePrinterConsumer(MessageBrokerProxy messageBrokerProxy, KafkaProperties kafkaProperties, ConsumerProperties consumerProperties) {
+    public MessagePrinterConsumer(KafkaMessageBrokerProxy messageBrokerProxy, KafkaProperties kafkaProperties, ConsumerProperties consumerProperties) {
         super(messageBrokerProxy, kafkaProperties, consumerProperties);
     }
 

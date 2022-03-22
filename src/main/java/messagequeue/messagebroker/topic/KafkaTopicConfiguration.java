@@ -1,8 +1,9 @@
 package messagequeue.messagebroker.topic;
 
-public class KafkaTopicConfiguration extends TopicConfiguration{
-    private int partitions;
-    private int replicationFactor;
+public class KafkaTopicConfiguration extends TopicConfiguration {
+    private final int partitions;
+    private final int replicationFactor;
+
     public KafkaTopicConfiguration(String name, int partitions, int replicationFactor) {
         super(name);
         this.partitions = partitions;

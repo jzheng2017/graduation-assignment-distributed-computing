@@ -16,7 +16,7 @@ public class PublishOnTopicController {
     private MessageBrokerProxy messageBrokerProxy;
 
     @PostMapping("/publish")
-    public ResponseEntity publishOnTopic(@RequestBody Message message){
+    public ResponseEntity publishOnTopic(@RequestBody Message message) {
         messageBrokerProxy.sendMessage(message.topicName, message.message);
 
         return ResponseEntity.ok().build();

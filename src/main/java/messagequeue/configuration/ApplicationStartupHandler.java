@@ -10,6 +10,7 @@ import org.springframework.stereotype.Component;
 public class ApplicationStartupHandler implements ApplicationRunner {
     @Autowired
     private KafkaTopicManager kafkaTopicManager;
+
     @Override
     public void run(ApplicationArguments args) throws Exception {
 //        kafkaTopicManager.createTopic(new KafkaTopicConfiguration("input", 1, 1));
