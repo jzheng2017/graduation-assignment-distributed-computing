@@ -33,7 +33,7 @@ public abstract class BaseKafkaConsumer extends BaseConsumer {
         properties.put(ConsumerConfig.GROUP_ID_CONFIG, consumerProperties.getGroupId());
         properties.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, kafkaProperties.getKeyDeserializer());
         properties.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, kafkaProperties.getValueDeserializer());
-        properties.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, true);
+        properties.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, false);
         this.consumer = new KafkaConsumer<>(properties);
 
         subscribe(consumerProperties.getSubscriptions());
@@ -47,7 +47,7 @@ public abstract class BaseKafkaConsumer extends BaseConsumer {
             try {
                 ConsumerRecords<String, String> records = consumer.poll(Duration.ofMillis(100));
                 records.forEach(record -> process(record.value()));
-                acknowledgeMessage();
+                acknowledge();
             } catch (MessageProcessingException ex) {
                 logger.error("Processing message failed.", ex);
                 throw ex;
@@ -106,7 +106,7 @@ public abstract class BaseKafkaConsumer extends BaseConsumer {
     }
 
     @Override
-    public void acknowledgeMessage() {
-
+    public void acknowledge() {
+        consumer.commitSync();
     }
 }
