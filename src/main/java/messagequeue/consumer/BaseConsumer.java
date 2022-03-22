@@ -13,15 +13,7 @@ public abstract class BaseConsumer implements Consumer {
     }
 
     @Override
-    public void subscribe(String topicName) {
-        messageBrokerProxy.subscribeToTopic(topicName, name);
-        registerSubscription(topicName);
-    }
-
-    public abstract void registerSubscription(String topicName);
-
-    @Override
-    public void unsubscribe(String topicName) {
-        messageBrokerProxy.unsubscribeToTopic(topicName, name);
+    public void publish(String topicName, String message) {
+        messageBrokerProxy.sendMessage(topicName, message);
     }
 }

@@ -3,20 +3,14 @@ package messagequeue.messagebroker.subscription;
 import java.util.Objects;
 
 public class Subscription {
-    private String topicName;
-    private String subscriberName;
+    private final String topicName;
 
-    public Subscription(String topicName, String subscriberName) {
+    public Subscription(String topicName) {
         this.topicName = topicName;
-        this.subscriberName = subscriberName;
     }
 
     public String getTopicName() {
         return topicName;
-    }
-
-    public String getSubscriberName() {
-        return subscriberName;
     }
 
     @Override
@@ -24,11 +18,11 @@ public class Subscription {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         Subscription that = (Subscription) o;
-        return Objects.equals(topicName, that.topicName) && Objects.equals(subscriberName, that.subscriberName);
+        return Objects.equals(topicName, that.topicName);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(topicName, subscriberName);
+        return Objects.hash(topicName);
     }
 }
