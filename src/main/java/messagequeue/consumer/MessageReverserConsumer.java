@@ -5,6 +5,9 @@ import messagequeue.messagebroker.KafkaMessageBrokerProxy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * An example consumer which reversed the message and then publishes on a topic
+ */
 public class MessageReverserConsumer extends BaseKafkaConsumer {
     private final Logger logger = LoggerFactory.getLogger(MessageReverserConsumer.class);
 

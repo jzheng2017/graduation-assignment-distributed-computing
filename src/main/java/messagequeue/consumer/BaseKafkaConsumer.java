@@ -8,26 +8,34 @@ import messagequeue.messagebroker.subscription.Subscription;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Properties;
 import java.util.Set;
+import java.util.concurrent.Callable;
+import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 /**
  * A Kafka implementation of the {@link MessageProcessor} interface
  */
 public abstract class BaseKafkaConsumer extends BaseConsumer {
+    private Logger logger = LoggerFactory.getLogger(BaseKafkaConsumer.class);
     protected KafkaConsumer<String, String> consumer;
 
     //constructor only for unit test purposes
-    protected BaseKafkaConsumer(KafkaMessageBrokerProxy kafkaMessageBrokerProxy, KafkaConsumer<String, String> consumer) {
-        super(kafkaMessageBrokerProxy, "unit test purposes");
+    protected BaseKafkaConsumer(KafkaMessageBrokerProxy kafkaMessageBrokerProxy, KafkaConsumer<String, String> consumer, ConsumerProperties consumerProperties) {
+        super(kafkaMessageBrokerProxy, consumerProperties);
         this.consumer = consumer;
     }
 
     protected BaseKafkaConsumer(KafkaMessageBrokerProxy kafkaMessageBrokerProxy, KafkaProperties kafkaProperties, ConsumerProperties consumerProperties) {
-        super(kafkaMessageBrokerProxy, consumerProperties.getName());
+        super(kafkaMessageBrokerProxy, consumerProperties);
         Properties properties = new Properties();
         properties.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaProperties.getHostUrl());
         properties.put(ConsumerConfig.GROUP_ID_CONFIG, consumerProperties.getGroupId());
@@ -43,16 +51,26 @@ public abstract class BaseKafkaConsumer extends BaseConsumer {
 
     @Override
     public void consume() {
-        while (true) {
+        while (!scheduledForRemoval.get()) {
             try {
                 ConsumerRecords<String, String> records = consumer.poll(Duration.ofMillis(100));
-                records.forEach(record -> process(record.value()));
-                acknowledge();
+                final int batchSize = records.count();
+
+                if (batchSize > 0) {
+                    List<Callable<Void>> tasksToBeExecuted = new ArrayList<>();
+                    records.forEach(record -> tasksToBeExecuted.add(createTask(record.value())));
+                    executor.invokeAll(tasksToBeExecuted);
+                    acknowledge();
+                }
             } catch (MessageProcessingException ex) {
                 logger.error("Processing message failed.", ex);
                 throw ex;
+            } catch (InterruptedException ex) {
+                logger.warn("Thread was interrupted.", ex);
             }
         }
+        consumer.close();
+        isRunning.set(false);
     }
 
     @Override
@@ -107,6 +125,6 @@ public abstract class BaseKafkaConsumer extends BaseConsumer {
 
     @Override
     public void acknowledge() {
-        consumer.commitSync();
+        consumer.commitAsync();
     }
 }

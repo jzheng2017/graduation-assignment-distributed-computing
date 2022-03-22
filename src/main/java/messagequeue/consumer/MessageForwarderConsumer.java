@@ -5,6 +5,9 @@ import messagequeue.messagebroker.KafkaMessageBrokerProxy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * An example consumer which basically just forwards the message by publishing to another topic
+ */
 public class MessageForwarderConsumer extends BaseKafkaConsumer {
     private final Logger logger = LoggerFactory.getLogger(MessageForwarderConsumer.class);
 

@@ -27,6 +27,9 @@ class BaseKafkaConsumerTest {
     private KafkaProducer<String, String> mockedKafkaProducer;
     @Mock
     private KafkaMessageBrokerProxy mockedKafkaMessageBrokerProxy;
+    @Mock
+    private ConsumerProperties consumerProperties;
+
     private final String topicName = "test";
     private final String unsubscribeName = "test1";
     private Set<String> fakeSubscriptionList;
@@ -38,7 +41,7 @@ class BaseKafkaConsumerTest {
         fakeSubscriptionList.add(unsubscribeName);
         fakeSubscriptionList.add("test2");
         when(mockedKafkaConsumer.subscription()).thenReturn(fakeSubscriptionList);
-        exampleBaseKafkaConsumer = new ExampleBaseKafkaConsumer(mockedKafkaMessageBrokerProxy, mockedKafkaConsumer);
+        exampleBaseKafkaConsumer = new ExampleBaseKafkaConsumer(mockedKafkaMessageBrokerProxy, mockedKafkaConsumer, consumerProperties);
     }
 
     @Test

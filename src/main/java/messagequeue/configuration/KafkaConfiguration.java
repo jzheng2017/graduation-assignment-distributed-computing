@@ -25,19 +25,19 @@ public class KafkaConfiguration {
 
     @Bean
     public MessagePrinterConsumer messagePrinterProcessor(KafkaMessageBrokerProxy messageBrokerProxy, KafkaProperties kafkaProperties) {
-        ConsumerProperties c = new ConsumerProperties("printer", "printer1", Set.of("reversed"));
+        ConsumerProperties c = new ConsumerProperties("printer", "printer1", Set.of("reversed"), 5);
         return new MessagePrinterConsumer(messageBrokerProxy, kafkaProperties, c);
     }
 
     @Bean
     public MessageForwarderConsumer messageForwarderProcessor(KafkaMessageBrokerProxy messageBrokerProxy, KafkaProperties kafkaProperties) {
-        ConsumerProperties c = new ConsumerProperties("forwarder", "forwarder1", Set.of("input"));
+        ConsumerProperties c = new ConsumerProperties("forwarder", "forwarder1", Set.of("input"), 5);
         return new MessageForwarderConsumer(messageBrokerProxy, kafkaProperties, c);
     }
 
     @Bean
     public MessageReverserConsumer messageReverserProcessor(KafkaMessageBrokerProxy messageBrokerProxy, KafkaProperties kafkaProperties) {
-        ConsumerProperties c = new ConsumerProperties("reverser", "reverser1", Set.of("output"));
+        ConsumerProperties c = new ConsumerProperties("reverser", "reverser1", Set.of("output"), 5);
         return new MessageReverserConsumer(messageBrokerProxy, kafkaProperties, c);
     }
 }
