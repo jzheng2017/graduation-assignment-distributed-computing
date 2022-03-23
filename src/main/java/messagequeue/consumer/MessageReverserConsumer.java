@@ -1,6 +1,7 @@
 package messagequeue.consumer;
 
 import messagequeue.configuration.KafkaProperties;
+import messagequeue.consumer.taskmanager.TaskManager;
 import messagequeue.messagebroker.KafkaMessageBrokerProxy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -11,8 +12,8 @@ import org.slf4j.LoggerFactory;
 public class MessageReverserConsumer extends BaseKafkaConsumer {
     private final Logger logger = LoggerFactory.getLogger(MessageReverserConsumer.class);
 
-    public MessageReverserConsumer(KafkaMessageBrokerProxy messageBrokerProxy, KafkaProperties kafkaProperties, ConsumerProperties consumerProperties) {
-        super(messageBrokerProxy, kafkaProperties, consumerProperties);
+    public MessageReverserConsumer(KafkaMessageBrokerProxy messageBrokerProxy, KafkaProperties kafkaProperties, ConsumerProperties consumerProperties, TaskManager taskManager) {
+        super(messageBrokerProxy, kafkaProperties, consumerProperties, taskManager);
     }
 
     @Override
