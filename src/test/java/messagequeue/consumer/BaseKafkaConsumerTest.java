@@ -1,5 +1,6 @@
 package messagequeue.consumer;
 
+import messagequeue.consumer.taskmanager.TaskManager;
 import messagequeue.messagebroker.KafkaMessageBrokerProxy;
 import messagequeue.messagebroker.subscription.Subscription;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
@@ -27,6 +28,10 @@ class BaseKafkaConsumerTest {
     private KafkaProducer<String, String> mockedKafkaProducer;
     @Mock
     private KafkaMessageBrokerProxy mockedKafkaMessageBrokerProxy;
+    @Mock
+    private ConsumerProperties consumerProperties;
+    @Mock
+    private TaskManager taskManager;
     private final String topicName = "test";
     private final String unsubscribeName = "test1";
     private Set<String> fakeSubscriptionList;
@@ -38,7 +43,7 @@ class BaseKafkaConsumerTest {
         fakeSubscriptionList.add(unsubscribeName);
         fakeSubscriptionList.add("test2");
         when(mockedKafkaConsumer.subscription()).thenReturn(fakeSubscriptionList);
-        exampleBaseKafkaConsumer = new ExampleBaseKafkaConsumer(mockedKafkaMessageBrokerProxy, mockedKafkaConsumer);
+        exampleBaseKafkaConsumer = new ExampleBaseKafkaConsumer(mockedKafkaMessageBrokerProxy, mockedKafkaConsumer, consumerProperties, taskManager);
     }
 
     @Test
