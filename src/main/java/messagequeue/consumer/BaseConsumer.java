@@ -3,6 +3,8 @@ package messagequeue.consumer;
 import messagequeue.consumer.taskmanager.TaskManager;
 import messagequeue.messagebroker.Consumer;
 import messagequeue.messagebroker.MessageBrokerProxy;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -11,6 +13,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * A base consumer class that all consumer should inherit from. This class takes care of all consumer related tasks except for {@link Consumer#consume()} which is implementation specific.
  */
 public abstract class BaseConsumer implements Consumer {
+    private Logger logger = LoggerFactory.getLogger(BaseConsumer.class);
     protected final String name;
     protected MessageBrokerProxy messageBrokerProxy;
     protected final AtomicBoolean scheduledForRemoval = new AtomicBoolean();
@@ -22,6 +25,7 @@ public abstract class BaseConsumer implements Consumer {
         this.messageBrokerProxy = messageBrokerProxy;
         this.name = consumerProperties.name();
         this.taskManager = taskManager;
+        logger.info("Creating consumer {}..", name);
     }
 
     @Override
@@ -33,6 +37,7 @@ public abstract class BaseConsumer implements Consumer {
     public void start() {
         scheduledForRemoval.set(false);
         isRunning.set(true);
+        logger.info("Consumer {} started. It will now start consuming new messages.", name);
         new Thread(this::consume).start();
     }
 
