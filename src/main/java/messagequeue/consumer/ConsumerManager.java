@@ -1,6 +1,7 @@
 package messagequeue.consumer;
 
 import messagequeue.consumer.builder.ConsumerBuilder;
+import messagequeue.consumer.taskmanager.TaskManager;
 import messagequeue.messagebroker.Consumer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,9 +23,11 @@ public class ConsumerManager {
     private Map<String, Consumer> consumers = new ConcurrentHashMap<>();
     private Set<String> consumersScheduledForRemoval = Collections.newSetFromMap(new ConcurrentHashMap<>());
     private ConsumerBuilder consumerBuilder;
+    private TaskManager taskManager;
 
-    public ConsumerManager(ConsumerBuilder consumerBuilder) {
+    public ConsumerManager(ConsumerBuilder consumerBuilder, TaskManager taskManager) {
         this.consumerBuilder = consumerBuilder;
+        this.taskManager = taskManager;
     }
 
     public void registerConsumer(String consumerConfiguration) {
@@ -118,10 +121,7 @@ public class ConsumerManager {
     }
 
     public int getTotalRunningTasks() {
-        return consumers.values()
-                .stream()
-                .mapToInt(Consumer::getNumberOfRunningTasks)
-                .sum();
+        return taskManager.getTotalNumberOfTasksCurrentlyExecuting();
     }
 
     public int getTotalRunningTaskForConsumer(String consumerId) {

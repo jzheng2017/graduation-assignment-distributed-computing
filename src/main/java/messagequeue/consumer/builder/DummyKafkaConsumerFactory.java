@@ -28,7 +28,7 @@ public class DummyKafkaConsumerFactory implements ConsumerFactory {
 
     @Override
     public Consumer createConsumer(ConsumerProperties consumerProperties) {
-        return switch (consumerProperties.getName()) {
+        return switch (consumerProperties.name()) {
             case "forwarder" -> new MessageForwarderConsumer(kafkaMessageBrokerProxy, kafkaProperties, consumerProperties, taskManager);
             case "reverser" -> new MessageReverserConsumer(kafkaMessageBrokerProxy, kafkaProperties, consumerProperties, taskManager);
             case "printer" -> new MessagePrinterConsumer(kafkaMessageBrokerProxy, kafkaProperties, consumerProperties, taskManager);

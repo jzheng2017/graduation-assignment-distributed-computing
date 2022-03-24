@@ -59,6 +59,4 @@ public class ApplicationStartupHandler implements ApplicationRunner {
         Thread.sleep(10000);
         consumerManager.registerConsumer(messagePrinterConsumerConfigurationJson);
     }
-
-
 }

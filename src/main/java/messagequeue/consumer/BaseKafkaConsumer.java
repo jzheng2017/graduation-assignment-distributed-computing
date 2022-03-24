@@ -36,13 +36,13 @@ public abstract class BaseKafkaConsumer extends BaseConsumer {
         super(kafkaMessageBrokerProxy, consumerProperties, taskManager);
         Properties properties = new Properties();
         properties.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaProperties.getHostUrl());
-        properties.put(ConsumerConfig.GROUP_ID_CONFIG, consumerProperties.getGroupId());
+        properties.put(ConsumerConfig.GROUP_ID_CONFIG, consumerProperties.groupId());
         properties.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, kafkaProperties.getKeyDeserializer());
         properties.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, kafkaProperties.getValueDeserializer());
         properties.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, false);
         this.consumer = new KafkaConsumer<>(properties);
 
-        subscribe(consumerProperties.getSubscriptions());
+        subscribe(consumerProperties.subscriptions());
     }
 
     @Override

@@ -20,7 +20,7 @@ public abstract class BaseConsumer implements Consumer {
 
     protected BaseConsumer(MessageBrokerProxy messageBrokerProxy, ConsumerProperties consumerProperties, TaskManager taskManager) {
         this.messageBrokerProxy = messageBrokerProxy;
-        this.name = consumerProperties.getName();
+        this.name = consumerProperties.name();
         this.taskManager = taskManager;
     }
 
