@@ -1,9 +1,8 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-    <modelVersion>4.0.0</modelVersion>
 
+    <modelVersion>4.0.0</modelVersion>
     <groupId>graduation.jiankai</groupId>
     <artifactId>distribution-mechanism</artifactId>
     <version>1.0-SNAPSHOT</version>
@@ -31,4 +30,25 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
+
+    <packaging>pom</packaging>
+
+    <modules>
+        <module>message-queue-core</module>
+        <module>message-queue-kafka</module>
+        <module>message-queue-kafka-project</module>
+        <module>consumer-coordinator</module>
+    </modules>
+
+    <dependencyManagement>
+    <dependencies>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-dependencies</artifactId>
+            <type>pom</type>
+            <version>2.4.0</version>
+            <scope>import</scope>
+        </dependency>
+    </dependencies>
+    </dependencyManagement>
 </project>
