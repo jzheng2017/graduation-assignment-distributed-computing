@@ -12,7 +12,7 @@ import org.springframework.stereotype.Component;
 @Import(value = {ConsumerManager.class, KafkaConsumerBuilder.class, JsonConsumerConfigurationParser.class})
 @Component
 public class ApplicationStartupHandler implements ApplicationRunner {
-//    @Autowired
+    //    @Autowired
 //    private KafkaTopicManager kafkaTopicManager;
     @Autowired
     private ConsumerManager consumerManager;

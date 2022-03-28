@@ -38,5 +38,6 @@
         <module>message-queue-kafka</module>
         <module>message-queue-kafka-project</module>
         <module>consumer-coordinator</module>
+        <module>application-configurations</module>
     </modules>
 </project>
