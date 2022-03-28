@@ -16,6 +16,6 @@ public class CoordinatorApplicationStartupHandler implements ApplicationRunner {
 
     @Override
     public void run(ApplicationArguments args) throws Exception {
-        kafkaMessageBrokerProxy.sendMessage("input", "vrijdag2");
+        kafkaMessageBrokerProxy.sendMessage("input", "vandaag is maandag");
     }
 }

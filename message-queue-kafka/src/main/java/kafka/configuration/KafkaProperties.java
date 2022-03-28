@@ -3,11 +3,10 @@ package kafka.configuration;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.PropertySource;
 @Configuration
-@PropertySource("classpath:kafka.properties")
+@PropertySource("classpath:kafka-${spring.profiles.active}.properties")
 public class KafkaProperties {
     @Value("${kafka.host.url}")
     private String hostUrl;

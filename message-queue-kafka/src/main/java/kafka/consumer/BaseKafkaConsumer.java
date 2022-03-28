@@ -62,12 +62,12 @@ public abstract class BaseKafkaConsumer extends BaseConsumer {
                 final int batchSize = records.count();
 
                 if (batchSize > 0) {
-                    logger.info("Consumer {} found {} new message(s)", name, batchSize);
+                    logger.info("Consumer '{}' found {} new message(s)", name, batchSize);
                     List<Runnable> tasksToBeExecuted = new ArrayList<>();
                     records.forEach(record -> tasksToBeExecuted.add(createTask(record.value())));
-                    logger.info("Consumer {} created {} new task(s) and will be dispatched for execution", name, tasksToBeExecuted.size());
+                    logger.info("Consumer '{}' created {} new task(s) and will be dispatched for execution", name, tasksToBeExecuted.size());
                     taskManager.executeTasks(tasksToBeExecuted);
-                    logger.info("{} tasks successfully processed by consumer {}", tasksToBeExecuted.size(), name);
+                    logger.info("{} tasks successfully processed by consumer '{}'", tasksToBeExecuted.size(), name);
                     acknowledge();
                 }
             } catch (MessageProcessingException ex) {
@@ -79,7 +79,7 @@ public abstract class BaseKafkaConsumer extends BaseConsumer {
         }
         consumer.close();
         isRunning.set(false);
-        logger.info("Closed consumer {} and stopped running", name);
+        logger.info("Closed consumer '{}' and stopped running", name);
     }
 
     @Override
@@ -142,6 +142,6 @@ public abstract class BaseKafkaConsumer extends BaseConsumer {
     @Override
     public void acknowledge() {
         consumer.commitAsync();
-        logger.info("Message offset committed");
+        logger.info("Message offset committed by consumer '{}'", name);
     }
 }

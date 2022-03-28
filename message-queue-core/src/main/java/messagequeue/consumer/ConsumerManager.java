@@ -39,36 +39,36 @@ public class ConsumerManager {
 
     public void registerConsumer(Consumer consumer) { //TODO: allowed for now because ConsumerBuilder is not build yet. Eventually it should only be the case that you pass in a configuration and a consumer gets constructed from that
         final String consumerId = consumer.getIdentifier();
-        logger.info("Trying to register consumer {}", consumerId);
+        logger.info("Trying to register consumer '{}'", consumerId);
         if (!consumers.containsKey(consumerId)) {
             consumers.put(consumerId, consumer);
-            logger.info("Successfully registered consumer {}", consumerId);
+            logger.info("Successfully registered consumer '{}'", consumerId);
             startConsumer(consumerId);
         } else {
-            logger.warn("Consumer {} has already been registered.", consumerId);
+            logger.warn("Consumer '{}' has already been registered.", consumerId);
         }
     }
 
     public void startConsumer(String consumerId) {
-        logger.info("Trying to start consumer {}", consumerId);
+        logger.info("Trying to start consumer '{}'", consumerId);
         Consumer consumer = consumers.get(consumerId);
 
         if (consumer == null) {
-            logger.warn("Consumer {} can not be started because is has not been registered yet.", consumerId);
+            logger.warn("Consumer '{}' can not be started because is has not been registered yet.", consumerId);
             return;
         }
 
         if (consumer.isRunning()) {
-            logger.warn("Consumer {} is already running.", consumerId);
+            logger.warn("Consumer '{}' is already running.", consumerId);
             return;
         }
 
         consumer.start();
-        logger.info("Consumer {} has been started", consumerId);
+        logger.info("Consumer '{}' has been started", consumerId);
     }
 
     public void unregisterConsumer(String consumerId) {
-        logger.info("Trying to unregister consumer {}", consumerId);
+        logger.info("Trying to unregister consumer '{}'", consumerId);
         if (consumers.containsKey(consumerId)) {
             if (!consumersScheduledForRemoval.contains(consumerId)) {
                 Consumer toBeRemovedConsumer = consumers.get(consumerId);
@@ -77,34 +77,34 @@ public class ConsumerManager {
 
                 while (!toBeRemovedConsumer.isRunning()) {
                     try {
-                        logger.info("Consumer {} can not be removed yet as it is still running. Waiting for {} ms...", consumerId, WAIT_FOR_REMOVAL_INTERVAL_IN_MS);
+                        logger.info("Consumer '{}' can not be removed yet as it is still running. Waiting for {} ms...", consumerId, WAIT_FOR_REMOVAL_INTERVAL_IN_MS);
                         Thread.sleep(WAIT_FOR_REMOVAL_INTERVAL_IN_MS);
                     } catch (InterruptedException e) {
                         logger.warn("Sleeping thread interrupted", e);
                     }
                 }
 
-                logger.info("Consumer {} has been successfully stopped", consumerId);
+                logger.info("Consumer '{}' has been successfully stopped", consumerId);
                 consumers.remove(consumerId);
                 consumersScheduledForRemoval.remove(consumerId);
-                logger.info("Consumer {} successfully unregistered", consumerId);
+                logger.info("Consumer '{}' successfully unregistered", consumerId);
             } else {
-                logger.warn("Consumer {} is already scheduled for removal", consumerId);
+                logger.warn("Consumer '{}' is already scheduled for removal", consumerId);
             }
         }
     }
 
     public void stopConsumer(String consumerId) {
-        logger.info("Trying to stop consumer {}", consumerId);
+        logger.info("Trying to stop consumer '{}'", consumerId);
         Consumer consumer = consumers.get(consumerId);
 
         if (consumer == null) {
-            logger.warn("Consumer {} can not be stopped because is has not been registered yet.", consumerId);
+            logger.warn("Consumer '{}' can not be stopped because is has not been registered yet.", consumerId);
             return;
         }
 
         if (!consumer.isRunning()) {
-            logger.warn("Consumer {} can not be stopped because it is not running currently.", consumerId);
+            logger.warn("Consumer '{}' can not be stopped because it is not running currently.", consumerId);
             return;
         }
 
