@@ -3,6 +3,7 @@ package messagequeue.consumer;
 import messagequeue.consumer.builder.ConsumerBuilder;
 import messagequeue.consumer.taskmanager.TaskManager;
 import messagequeue.messagebroker.Consumer;
+import messagequeue.messagebroker.subscription.SubscriptionManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;

@@ -55,7 +55,6 @@ public class TaskManager {
                             }
 
                             concurrentTasksOfConsumer.incrementAndGet();
-                            logger.info("Processing task from consumer '{}' and there are {} concurrent tasks", task.consumerId(), concurrentTasksOfConsumer.get());
                             task.task().run();
                             concurrentTasksOfConsumer.decrementAndGet();
 

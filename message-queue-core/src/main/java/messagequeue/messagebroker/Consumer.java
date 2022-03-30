@@ -1,12 +1,13 @@
 package messagequeue.messagebroker;
 
-import messagequeue.consumer.MessageProcessor;
-import messagequeue.messagebroker.subscription.Subscriber;
+import messagequeue.consumer.taskmanager.Task;
+
+import java.util.List;
 
 /**
  * An interface that allows for consuming messages from a topic
  */
-public interface Consumer extends MessageProcessor, Subscriber, Publisher {
+public interface Consumer {
     /**
      * Gets the identifier of the consumer
      * @return consumer identifier
@@ -31,6 +32,10 @@ public interface Consumer extends MessageProcessor, Subscriber, Publisher {
      * Stops the consumer by setting the relevant flags
      */
     void stop();
+
+    List<String> poll();
+
+    void cleanup();
 
     /**
      * Returns whether the consumer is still running
