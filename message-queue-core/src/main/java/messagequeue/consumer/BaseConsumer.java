@@ -1,5 +1,6 @@
 package messagequeue.consumer;
 
+import messagequeue.consumer.taskmanager.Task;
 import messagequeue.consumer.taskmanager.TaskManager;
 import messagequeue.messagebroker.Consumer;
 import messagequeue.messagebroker.MessageBrokerProxy;
@@ -7,7 +8,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * A base consumer class that all consumer should inherit from. This class takes care of all consumer related tasks except for {@link Consumer#consume()} which is implementation specific.
@@ -18,7 +18,6 @@ public abstract class BaseConsumer implements Consumer {
     protected MessageBrokerProxy messageBrokerProxy;
     protected final AtomicBoolean scheduledForRemoval = new AtomicBoolean();
     protected final AtomicBoolean isRunning = new AtomicBoolean();
-    protected final AtomicInteger numberOfConcurrentRunningTasks = new AtomicInteger();
     protected final TaskManager taskManager;
 
     protected BaseConsumer(MessageBrokerProxy messageBrokerProxy, ConsumerProperties consumerProperties, TaskManager taskManager) {
@@ -56,16 +55,7 @@ public abstract class BaseConsumer implements Consumer {
         return isRunning.get();
     }
 
-    @Override
-    public int getNumberOfRunningTasks() {
-        return numberOfConcurrentRunningTasks.get();
-    }
-
-    protected Runnable createTask(String message) {
-        return () -> {
-            numberOfConcurrentRunningTasks.incrementAndGet();
-            process(message);
-            numberOfConcurrentRunningTasks.decrementAndGet();
-        };
+    protected Task createTask(String message) {
+        return new Task(name, () -> process(message));
     }
 }

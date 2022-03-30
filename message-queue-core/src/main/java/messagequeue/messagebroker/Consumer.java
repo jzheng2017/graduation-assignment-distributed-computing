@@ -37,10 +37,4 @@ public interface Consumer extends MessageProcessor, Subscriber, Publisher {
      * @return a flag whether the consumer is still running
      */
     boolean isRunning();
-
-    /**
-     * Get the number of tasks the consumer has running
-     * @return number of tasks currently running
-     */
-    int getNumberOfRunningTasks();
 }

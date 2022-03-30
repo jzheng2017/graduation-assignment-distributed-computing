@@ -1,7 +1,7 @@
 package impl.configuration;
 
-import kafka.consumer.builder.KafkaConsumerBuilder;
-import messagequeue.consumer.ConsumerManager;
+import messagequeue.consumer.builder.ConsumerBuilder;
+import messagequeue.consumer.ConsumerManagerImpl;
 import messagequeue.consumer.builder.JsonConsumerConfigurationParser;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.ApplicationArguments;
@@ -9,13 +9,13 @@ import org.springframework.boot.ApplicationRunner;
 import org.springframework.context.annotation.Import;
 import org.springframework.stereotype.Component;
 
-@Import(value = {ConsumerManager.class, KafkaConsumerBuilder.class, JsonConsumerConfigurationParser.class})
+@Import(value = {ConsumerManagerImpl.class, ConsumerBuilder.class, JsonConsumerConfigurationParser.class})
 @Component
 public class ApplicationStartupHandler implements ApplicationRunner {
     //    @Autowired
 //    private KafkaTopicManager kafkaTopicManager;
     @Autowired
-    private ConsumerManager consumerManager;
+    private ConsumerManagerImpl consumerManager;
 
     private final String messageForwarderConsumerConfigurationJson = "{\n" +
             "\t\"name\": \"forwarder\",\n" +

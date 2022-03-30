@@ -5,6 +5,7 @@ import kafka.messagebroker.KafkaMessageBrokerProxy;
 import messagequeue.consumer.BaseConsumer;
 import messagequeue.consumer.ConsumerProperties;
 import messagequeue.consumer.MessageProcessingException;
+import messagequeue.consumer.taskmanager.Task;
 import messagequeue.consumer.taskmanager.TaskManager;
 import messagequeue.messagebroker.subscription.DuplicateSubscriptionException;
 import messagequeue.messagebroker.subscription.NotSubscribedException;
@@ -63,7 +64,7 @@ public abstract class BaseKafkaConsumer extends BaseConsumer {
 
                 if (batchSize > 0) {
                     logger.info("Consumer '{}' found {} new message(s)", name, batchSize);
-                    List<Runnable> tasksToBeExecuted = new ArrayList<>();
+                    List<Task> tasksToBeExecuted = new ArrayList<>();
                     records.forEach(record -> tasksToBeExecuted.add(createTask(record.value())));
                     logger.info("Consumer '{}' created {} new task(s) and will be dispatched for execution", name, tasksToBeExecuted.size());
                     taskManager.executeTasks(tasksToBeExecuted);
