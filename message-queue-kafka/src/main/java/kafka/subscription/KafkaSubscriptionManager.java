@@ -1,4 +1,4 @@
-package kafka.messagebroker.subscription;
+package kafka.subscription;
 
 import kafka.consumer.KafkaConsumer;
 import messagequeue.messagebroker.subscription.Subscription;

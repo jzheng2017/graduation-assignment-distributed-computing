@@ -16,15 +16,26 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public abstract class BaseConsumer implements Consumer {
     private Logger logger = LoggerFactory.getLogger(BaseConsumer.class);
     protected final String name;
-    protected final AtomicBoolean scheduledForRemoval = new AtomicBoolean();
-    protected final AtomicBoolean isRunning = new AtomicBoolean();
+    protected final AtomicBoolean scheduledForRemoval;
+    protected final AtomicBoolean isRunning;
     private final MessageProcessor messageProcessor;
     private final TaskManager taskManager;
+
+    //only for unit test purposes
+    protected BaseConsumer(AtomicBoolean scheduledForRemoval, AtomicBoolean isRunning, TaskManager taskManager) {
+        this.name = "unit test";
+        this.scheduledForRemoval = scheduledForRemoval;
+        this.isRunning = isRunning;
+        this.taskManager = taskManager;
+        this.messageProcessor = null;
+    }
 
     protected BaseConsumer(String name, TaskManager taskManager, MessageProcessor messageProcessor) {
         this.name = name;
         this.messageProcessor = messageProcessor;
         this.taskManager = taskManager;
+        this.scheduledForRemoval = new AtomicBoolean();
+        this.isRunning = new AtomicBoolean();
         logger.info("Creating consumer {}..", name);
     }
 

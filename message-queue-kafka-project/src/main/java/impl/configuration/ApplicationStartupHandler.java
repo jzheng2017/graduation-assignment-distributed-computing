@@ -1,6 +1,6 @@
 package impl.configuration;
 
-import kafka.messagebroker.subscription.KafkaSubscriptionManager;
+import kafka.subscription.KafkaSubscriptionManager;
 import messagequeue.consumer.ConsumerManager;
 import messagequeue.consumer.builder.ConsumerBuilder;
 import messagequeue.consumer.ConsumerManagerImpl;
