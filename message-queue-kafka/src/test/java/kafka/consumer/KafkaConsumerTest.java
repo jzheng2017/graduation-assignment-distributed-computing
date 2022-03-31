@@ -55,19 +55,19 @@ class KafkaConsumerTest {
     @Test
     void testThatKafkaConsumerClosesConsumerWhenStopped() throws InterruptedException {
         kafkaConsumer.stop();
-        Thread.sleep(1); //give kafka consumer time to stop properly
+        Thread.sleep(5); //give kafka consumer time to stop properly
         verify(mockedKafkaConsumer).close();
     }
 
     @Test
     void testThatKafkaConsumerDispatchesTasks() throws InterruptedException {
-        Thread.sleep(1); //give kafka consumer time to start and poll
+        Thread.sleep(5); //give kafka consumer time to start and poll
         verify(mockedTaskManager, atLeastOnce()).executeTasks(any());
     }
 
     @Test
     void testThatKafkaConsumerCommitsOffsetAfterProcessingProperly() throws InterruptedException {
-        Thread.sleep(2);
+        Thread.sleep(5);
         verify(mockedKafkaConsumer, atLeastOnce()).commitAsync();
     }
 }
