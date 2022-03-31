@@ -37,8 +37,9 @@ class KafkaConsumerTest {
         MockitoAnnotations.openMocks(this);
         TopicPartition topicPartition = new TopicPartition("test", 0);
         consumerRecords = new ConsumerRecords<>(Map.of(topicPartition, List.of(new ConsumerRecord<>("test", 0, 0L, "key", "value"))));
+        ConsumerRecords<String, String> emptyConsumerRecords = new ConsumerRecords<>(Map.of());
         kafkaConsumer = new kafka.consumer.KafkaConsumer(mockedKafkaConsumer, "kafka", mockedTaskManager, mockedMessageProcessor);
-        when(mockedKafkaConsumer.poll(any())).thenReturn(consumerRecords);
+        when(mockedKafkaConsumer.poll(any())).thenReturn(consumerRecords).thenReturn(emptyConsumerRecords);
 
         kafkaConsumer.start();
     }
@@ -55,19 +56,19 @@ class KafkaConsumerTest {
     @Test
     void testThatKafkaConsumerClosesConsumerWhenStopped() throws InterruptedException {
         kafkaConsumer.stop();
-        Thread.sleep(5); //give kafka consumer time to stop properly
+        Thread.sleep(10); //give kafka consumer time to stop properly
         verify(mockedKafkaConsumer).close();
     }
 
     @Test
     void testThatKafkaConsumerDispatchesTasks() throws InterruptedException {
-        Thread.sleep(5); //give kafka consumer time to start and poll
+        Thread.sleep(10); //give kafka consumer time to start and poll
         verify(mockedTaskManager, atLeastOnce()).executeTasks(any());
     }
 
     @Test
     void testThatKafkaConsumerCommitsOffsetAfterProcessingProperly() throws InterruptedException {
-        Thread.sleep(5);
+        Thread.sleep(10);
         verify(mockedKafkaConsumer, atLeastOnce()).commitAsync();
     }
 }
