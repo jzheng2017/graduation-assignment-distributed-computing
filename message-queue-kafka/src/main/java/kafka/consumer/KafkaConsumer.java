@@ -1,8 +1,8 @@
 package kafka.consumer;
 
 import messagequeue.consumer.BaseConsumer;
-import messagequeue.consumer.ConsumerProperties;
 import messagequeue.consumer.MessageProcessor;
+import messagequeue.consumer.taskmanager.Task;
 import messagequeue.consumer.taskmanager.TaskManager;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
@@ -20,8 +20,8 @@ public class KafkaConsumer extends BaseConsumer {
     private Logger logger = LoggerFactory.getLogger(KafkaConsumer.class);
 
     //constructor only for unit test purposes
-    protected KafkaConsumer(org.apache.kafka.clients.consumer.KafkaConsumer<String, String> consumer, ConsumerProperties consumerProperties, TaskManager taskManager, MessageProcessor messageProcessor) {
-        super(consumerProperties.name(), taskManager, messageProcessor);
+    protected KafkaConsumer(org.apache.kafka.clients.consumer.KafkaConsumer<String, String> consumer, String name, TaskManager taskManager, MessageProcessor messageProcessor) {
+        super(name, taskManager, messageProcessor);
         this.consumer = consumer;
     }
 

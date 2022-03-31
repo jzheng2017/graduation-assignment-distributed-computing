@@ -3,7 +3,6 @@ package messagequeue.consumer;
 import messagequeue.consumer.builder.ConsumerBuilder;
 import messagequeue.consumer.taskmanager.TaskManager;
 import messagequeue.messagebroker.Consumer;
-import messagequeue.messagebroker.subscription.SubscriptionManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -22,6 +21,11 @@ public class ConsumerManagerImpl implements ConsumerManager {
     private final Set<String> consumersScheduledForRemoval = Collections.newSetFromMap(new ConcurrentHashMap<>());
     private ConsumerBuilder consumerBuilder;
     private final TaskManager taskManager;
+
+    protected ConsumerManagerImpl(Logger logger, ConsumerBuilder consumerBuilder, TaskManager taskManager) {
+        this(consumerBuilder, taskManager);
+        this.logger = logger;
+    }
 
     public ConsumerManagerImpl(ConsumerBuilder consumerBuilder, TaskManager taskManager) {
         this.consumerBuilder = consumerBuilder;
@@ -75,7 +79,7 @@ public class ConsumerManagerImpl implements ConsumerManager {
                 consumersScheduledForRemoval.add(consumerId);
                 stopConsumer(consumerId);
 
-                while (!toBeRemovedConsumer.isRunning()) {
+                while (toBeRemovedConsumer.isRunning()) {
                     try {
                         logger.info("Consumer '{}' can not be removed yet as it is still running. Waiting for {} ms...", consumerId, WAIT_FOR_REMOVAL_INTERVAL_IN_MS);
                         Thread.sleep(WAIT_FOR_REMOVAL_INTERVAL_IN_MS);
@@ -91,6 +95,8 @@ public class ConsumerManagerImpl implements ConsumerManager {
             } else {
                 logger.warn("Consumer '{}' is already scheduled for removal", consumerId);
             }
+        } else {
+            logger.warn("Consumer '{}' can not be unregistered because it has not been registered", consumerId);
         }
     }
 
