@@ -15,7 +15,7 @@
     <properties>
         <maven.compiler.source>17</maven.compiler.source>
         <maven.compiler.target>17</maven.compiler.target>
-        <aggregate.report.dir>/jacoco-report/target/site/jacoco-aggregate/jacoco.xml</aggregate.report.dir>
+        <aggregate.report.dir>target/site/jacoco-aggregate/jacoco.xml</aggregate.report.dir>
         <sonar.coverage.jacoco.xmlReportPaths>${basedir}/${aggregate.report.dir}</sonar.coverage.jacoco.xmlReportPaths>
     </properties>
 
