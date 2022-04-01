@@ -40,8 +40,6 @@ class KafkaConsumerTest {
         ConsumerRecords<String, String> emptyConsumerRecords = new ConsumerRecords<>(Map.of());
         kafkaConsumer = new kafka.consumer.KafkaConsumer(mockedKafkaConsumer, "kafka", mockedTaskManager, mockedMessageProcessor);
         when(mockedKafkaConsumer.poll(any())).thenReturn(consumerRecords).thenReturn(emptyConsumerRecords);
-
-        kafkaConsumer.start();
     }
 
 
@@ -55,6 +53,8 @@ class KafkaConsumerTest {
 
     @Test
     void testThatKafkaConsumerClosesConsumerWhenStopped() throws InterruptedException {
+        kafkaConsumer.start();
+        Thread.sleep(10); //give kafka consumer time to stop properly
         kafkaConsumer.stop();
         Thread.sleep(10); //give kafka consumer time to stop properly
         verify(mockedKafkaConsumer).close();
@@ -62,12 +62,14 @@ class KafkaConsumerTest {
 
     @Test
     void testThatKafkaConsumerDispatchesTasks() throws InterruptedException {
+        kafkaConsumer.start();
         Thread.sleep(10); //give kafka consumer time to start and poll
         verify(mockedTaskManager, atLeastOnce()).executeTasks(any());
     }
 
     @Test
     void testThatKafkaConsumerCommitsOffsetAfterProcessingProperly() throws InterruptedException {
+        kafkaConsumer.start();
         Thread.sleep(10);
         verify(mockedKafkaConsumer, atLeastOnce()).commitAsync();
     }
