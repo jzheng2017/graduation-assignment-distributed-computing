@@ -17,7 +17,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-public class ConsumerManagerImplTest {
+class ConsumerManagerImplTest {
     @InjectMocks
     private ConsumerManagerImpl consumerManager;
     @Mock
@@ -85,9 +85,10 @@ public class ConsumerManagerImplTest {
     }
 
     @Test
-    void testThatUnregisteringAConsumerThatIsAlreadyScheduledForRemovalLogsAWarning() {
+    void testThatUnregisteringAConsumerThatIsAlreadyScheduledForRemovalLogsAWarning() throws InterruptedException {
         consumerManager.registerConsumer("");
         new Thread(() -> consumerManager.unregisterConsumer(consumerIdentifier)).start(); //start in a new thread which should loop endlessly as consumer.isRunning() defaults to false as it's a mocked object
+        Thread.sleep(10);
         consumerManager.unregisterConsumer(consumerIdentifier);
         verify(mockedLogger).warn("Consumer '{}' is already scheduled for removal", consumerIdentifier);
     }
