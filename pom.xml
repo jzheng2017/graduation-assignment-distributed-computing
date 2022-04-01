@@ -15,10 +15,9 @@
     <properties>
         <maven.compiler.source>17</maven.compiler.source>
         <maven.compiler.target>17</maven.compiler.target>
-        <sonar.java.coveragePlugin>jacoco</sonar.java.coveragePlugin>
-        <sonar.dynamicAnalysis>reuseReports</sonar.dynamicAnalysis>
-        <sonar.jacoco.reportPath>${project.basedir}/../target/jacoco.exec</sonar.jacoco.reportPath>
-        <sonar.language>java</sonar.language>    </properties>
+        <aggregate.report.dir>../jacoco-report/target/site/jacoco-aggregate/jacoco.xml</aggregate.report.dir>
+        <sonar.coverage.jacoco.xmlReportPaths>${basedir}/${aggregate.report.dir}</sonar.coverage.jacoco.xmlReportPaths>
+    </properties>
 
     <dependencies>
         <dependency>
@@ -65,5 +64,6 @@
         <module>message-queue-kafka-project</module>
         <module>consumer-coordinator</module>
         <module>application-configurations</module>
+        <module>jacoco-reports</module>
     </modules>
 </project>
