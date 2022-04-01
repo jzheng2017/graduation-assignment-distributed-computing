@@ -33,7 +33,6 @@ class ConsumerManagerImplTest {
     @BeforeEach
     void setup() {
         MockitoAnnotations.openMocks(this);
-
         consumerManager = new ConsumerManagerImpl(mockedLogger, mockedConsumerBuilder, mockedTaskManager);
         when(mockedConsumerBuilder.createConsumer(anyString())).thenReturn(mockedConsumer);
         when(mockedConsumer.getIdentifier()).thenReturn(consumerIdentifier);
@@ -85,11 +84,15 @@ class ConsumerManagerImplTest {
     }
 
     @Test
-    void testThatUnregisteringAConsumerThatIsAlreadyScheduledForRemovalLogsAWarning() throws InterruptedException {
+    void testThatUnregisteringAConsumerThatIsAlreadyScheduledForRemovalLogsAWarning() {
         consumerManager.registerConsumer("");
-        new Thread(() -> consumerManager.unregisterConsumer(consumerIdentifier)).start(); //start in a new thread which should loop endlessly as consumer.isRunning() defaults to false as it's a mocked object
-        Thread.sleep(10);
+        when(mockedConsumer.isRunning()).thenThrow(RuntimeException.class).thenReturn(true); //throw an exception because the consumer needs to stay in the consumer list for the second unregister
+        try {
+            consumerManager.unregisterConsumer(consumerIdentifier);
+        } catch (Exception ignored) {
+        }
         consumerManager.unregisterConsumer(consumerIdentifier);
+
         verify(mockedLogger).warn("Consumer '{}' is already scheduled for removal", consumerIdentifier);
     }
 
