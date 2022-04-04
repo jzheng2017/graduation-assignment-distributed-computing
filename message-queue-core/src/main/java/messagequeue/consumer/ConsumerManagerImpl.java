@@ -2,7 +2,6 @@ package messagequeue.consumer;
 
 import messagequeue.consumer.builder.ConsumerBuilder;
 import messagequeue.consumer.taskmanager.TaskManager;
-import messagequeue.messagebroker.Consumer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;

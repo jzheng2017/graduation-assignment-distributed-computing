@@ -1,4 +1,4 @@
-package messagequeue.messagebroker;
+package messagequeue.consumer;
 
 import messagequeue.consumer.taskmanager.Task;
 

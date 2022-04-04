@@ -1,7 +1,5 @@
 package messagequeue.consumer;
 
-import messagequeue.messagebroker.Consumer;
-
 import java.util.List;
 import java.util.Map;
 

@@ -2,7 +2,6 @@ package kafka.consumer;
 
 import messagequeue.consumer.BaseConsumer;
 import messagequeue.consumer.MessageProcessor;
-import messagequeue.consumer.taskmanager.Task;
 import messagequeue.consumer.taskmanager.TaskManager;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
@@ -14,7 +13,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * A Kafka implementation of the {@link messagequeue.messagebroker.Consumer} interface
+ * A Kafka implementation of the {@link messagequeue.consumer.Consumer} interface
  */
 public class KafkaConsumer extends BaseConsumer {
     private Logger logger = LoggerFactory.getLogger(KafkaConsumer.class);

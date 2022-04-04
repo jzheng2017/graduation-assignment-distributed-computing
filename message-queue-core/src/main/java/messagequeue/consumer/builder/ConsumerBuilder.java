@@ -1,7 +1,7 @@
 package messagequeue.consumer.builder;
 
 import messagequeue.consumer.ConsumerProperties;
-import messagequeue.messagebroker.Consumer;
+import messagequeue.consumer.Consumer;
 import messagequeue.messagebroker.subscription.SubscriptionManager;
 import org.springframework.stereotype.Service;
 

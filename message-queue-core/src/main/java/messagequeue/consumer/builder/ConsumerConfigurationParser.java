@@ -1,9 +1,10 @@
 package messagequeue.consumer.builder;
 
+import messagequeue.consumer.Consumer;
 import messagequeue.consumer.ConsumerProperties;
 
 /**
- * A parser interface that can parse a {@link messagequeue.messagebroker.Consumer} configuration in a given format and produce a {@link ConsumerProperties} from it
+ * A parser interface that can parse a {@link Consumer} configuration in a given format and produce a {@link ConsumerProperties} from it
  */
 public interface ConsumerConfigurationParser {
     /**

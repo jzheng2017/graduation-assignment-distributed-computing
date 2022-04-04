@@ -1,7 +1,7 @@
 package messagequeue.consumer.builder;
 
 import messagequeue.consumer.ConsumerProperties;
-import messagequeue.messagebroker.Consumer;
+import messagequeue.consumer.Consumer;
 
 /**
  * A factory interface that can create a {@link Consumer} from a {@link ConsumerProperties}

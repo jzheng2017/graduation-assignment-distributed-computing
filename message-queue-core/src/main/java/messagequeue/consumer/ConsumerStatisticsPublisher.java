@@ -14,6 +14,7 @@ import java.util.Map;
 public class ConsumerStatisticsPublisher {
     private MessageBrokerProxy messageBrokerProxy;
     private ConsumerManager consumerManager;
+
     public ConsumerStatisticsPublisher(MessageBrokerProxy messageBrokerProxy, ConsumerManager consumerManager) {
         this.messageBrokerProxy = messageBrokerProxy;
         this.consumerManager = consumerManager;
@@ -22,7 +23,11 @@ public class ConsumerStatisticsPublisher {
     @Scheduled(fixedRate = 5000L)
     public void publishStatistic() throws JsonProcessingException {
         Map<String, Integer> concurrentTasksPerConsumer = consumerManager.getTotalRunningTasksForAllConsumers();
-        ConsumerStatistics consumerStatistics = new ConsumerStatistics(consumerManager.getIdentifier(), concurrentTasksPerConsumer);
+        long totalTasksCompleted = consumerManager.getTotalNumberOfCompletedTasks();
+        int totalTasksInQueue = consumerManager.getTotalNumberOfTasksInQueue();
+        long totalTasksScheduled = consumerManager.getTotalNumberOfTasksScheduled();
+
+        ConsumerStatistics consumerStatistics = new ConsumerStatistics(consumerManager.getIdentifier(),totalTasksInQueue, totalTasksCompleted, totalTasksScheduled, concurrentTasksPerConsumer);
         String json = new ObjectMapper().writeValueAsString(consumerStatistics);
         messageBrokerProxy.sendMessage("consumer-statistics", json);
     }

@@ -2,7 +2,6 @@ package messagequeue.consumer;
 
 import messagequeue.consumer.builder.ConsumerBuilder;
 import messagequeue.consumer.taskmanager.TaskManager;
-import messagequeue.messagebroker.Consumer;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

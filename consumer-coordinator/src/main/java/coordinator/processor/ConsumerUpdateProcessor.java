@@ -22,8 +22,24 @@ public class ConsumerUpdateProcessor implements MessageProcessor {
     public void process(String message) {
         JsonParser jsonParser = JsonParserFactory.getJsonParser();
         Map<String, Object> propAndValues = jsonParser.parseMap(message);
-        ConsumerStatistics consumerStatistics = new ConsumerStatistics((String)propAndValues.get("instanceId"), (Map<String, Integer>) propAndValues.get("concurrentTasksPerConsumer"));
+        ConsumerStatistics consumerStatistics = new ConsumerStatistics(
+                (String) propAndValues.get("instanceId"),
+                (int) propAndValues.get("totalTasksInQueue"),
+                getLong(propAndValues.get("totalTasksCompleted")),
+                getLong(propAndValues.get("totalTasksScheduled")),
+                (Map<String, Integer>) propAndValues.get("concurrentTasksPerConsumer")
+        );
         logger.info(String.valueOf(consumerStatistics));
         consumerCoordinator.updateConsumerStatisticOfInstance(consumerStatistics);
+    }
+
+    private long getLong(Object number) {
+        if (number instanceof Integer) {
+            return Integer.toUnsignedLong((int) number);
+        } else if (number instanceof Long) {
+            return (long)number;
+        }
+
+        throw new IllegalStateException("Can not be converted to long");
     }
 }

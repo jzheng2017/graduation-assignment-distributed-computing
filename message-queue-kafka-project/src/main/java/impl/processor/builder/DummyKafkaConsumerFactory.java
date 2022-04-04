@@ -10,14 +10,11 @@ import kafka.messagebroker.KafkaMessageBrokerProxy;
 import messagequeue.consumer.ConsumerProperties;
 import messagequeue.consumer.builder.ConsumerFactory;
 import messagequeue.consumer.taskmanager.TaskManager;
-import messagequeue.messagebroker.Consumer;
-import org.apache.kafka.clients.consumer.ConsumerConfig;
+import messagequeue.consumer.Consumer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Import;
 import org.springframework.stereotype.Service;
-
-import java.util.Properties;
 
 /**
  * Dummy {@link Consumer} factory that serves hardcoded dummy consumers. Will later be replaced by a real implementation that can construct based on consumer properties.

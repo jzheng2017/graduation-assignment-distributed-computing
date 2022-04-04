@@ -2,8 +2,6 @@ package messagequeue.consumer;
 
 import messagequeue.consumer.taskmanager.Task;
 import messagequeue.consumer.taskmanager.TaskManager;
-import messagequeue.messagebroker.Consumer;
-import messagequeue.messagebroker.MessageBrokerProxy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
