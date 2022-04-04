@@ -5,16 +5,21 @@ import messagequeue.consumer.taskmanager.TaskManager;
 import messagequeue.messagebroker.Consumer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Import;
 import org.springframework.stereotype.Service;
 
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Service
+@Import(value = {TaskManager.class, ConsumerBuilder.class})
 public class ConsumerManagerImpl implements ConsumerManager {
+    private static final String identifier = UUID.randomUUID().toString();
     private static final int WAIT_FOR_REMOVAL_INTERVAL_IN_MS = 50;
     private Logger logger = LoggerFactory.getLogger(ConsumerManagerImpl.class);
     private final Map<String, Consumer> consumers = new ConcurrentHashMap<>();
@@ -27,9 +32,15 @@ public class ConsumerManagerImpl implements ConsumerManager {
         this.logger = logger;
     }
 
+    @Autowired
     public ConsumerManagerImpl(ConsumerBuilder consumerBuilder, TaskManager taskManager) {
         this.consumerBuilder = consumerBuilder;
         this.taskManager = taskManager;
+    }
+
+    @Override
+    public String getIdentifier() {
+        return identifier;
     }
 
     @Override
@@ -153,6 +164,11 @@ public class ConsumerManagerImpl implements ConsumerManager {
     @Override
     public long getTotalNumberOfTasksScheduled() {
         return taskManager.getTotalNumberOfTasksScheduled();
+    }
+
+    @Override
+    public Map<String, Integer> getTotalRunningTasksForAllConsumers() {
+        return taskManager.getTotalNumberOfConcurrentTasksForAllConsumers();
     }
 
     @Override

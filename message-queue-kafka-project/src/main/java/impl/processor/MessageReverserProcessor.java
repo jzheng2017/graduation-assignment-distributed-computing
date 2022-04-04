@@ -1,4 +1,4 @@
-package impl.consumer;
+package impl.processor;
 
 import messagequeue.consumer.MessageProcessor;
 import messagequeue.messagebroker.MessageBrokerProxy;
@@ -15,6 +15,11 @@ public class MessageReverserProcessor implements MessageProcessor {
 
     @Override
     public void process(String message) {
+        try {
+            Thread.sleep(5000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
         messageBrokerProxy.sendMessage("reversed", new StringBuilder(message).reverse().toString());
     }
 }

@@ -3,7 +3,7 @@ package messagequeue.consumer.taskmanager;
 import messagequeue.configuration.TaskManagerProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.Import;
 import org.springframework.stereotype.Service;
 
 import java.util.Collections;
@@ -21,6 +21,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * A task manager that schedules tasks which have to be executed
  */
 @Service
+@Import(TaskManagerProperties.class)
 public class TaskManager {
     private Logger logger = LoggerFactory.getLogger(TaskManager.class);
     private ThreadPoolExecutor threadPoolExecutor;

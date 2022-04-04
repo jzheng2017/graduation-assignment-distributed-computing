@@ -11,6 +11,7 @@ import org.apache.kafka.clients.admin.ListTopicsResult;
 import org.apache.kafka.clients.admin.NewTopic;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.annotation.Import;
 import org.springframework.stereotype.Service;
 
 import java.util.Collections;
@@ -18,6 +19,7 @@ import java.util.List;
 import java.util.concurrent.ExecutionException;
 
 @Service
+@Import(value = {KafkaConfiguration.class})
 public class KafkaTopicManager implements TopicManager {
     private final Logger logger = LoggerFactory.getLogger(KafkaTopicManager.class);
     private final Admin admin;

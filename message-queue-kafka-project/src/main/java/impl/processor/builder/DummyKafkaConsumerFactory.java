@@ -1,10 +1,11 @@
-package impl.consumer.builder;
+package impl.processor.builder;
 
-import impl.consumer.MessageForwarderProcessor;
-import impl.consumer.MessagePrinterProcessor;
-import impl.consumer.MessageReverserProcessor;
+import impl.processor.MessageForwarderProcessor;
+import impl.processor.MessagePrinterProcessor;
+import impl.processor.MessageReverserProcessor;
 import kafka.configuration.KafkaProperties;
 import kafka.consumer.KafkaConsumer;
+import kafka.consumer.KafkaConsumerBuilderHelper;
 import kafka.messagebroker.KafkaMessageBrokerProxy;
 import messagequeue.consumer.ConsumerProperties;
 import messagequeue.consumer.builder.ConsumerFactory;
@@ -21,29 +22,25 @@ import java.util.Properties;
 /**
  * Dummy {@link Consumer} factory that serves hardcoded dummy consumers. Will later be replaced by a real implementation that can construct based on consumer properties.
  */
-@Import(value = {KafkaProperties.class, KafkaMessageBrokerProxy.class})
+@Import(value = {KafkaProperties.class, KafkaMessageBrokerProxy.class, KafkaConsumerBuilderHelper.class})
 @Service
 public class DummyKafkaConsumerFactory implements ConsumerFactory {
     private Logger logger = LoggerFactory.getLogger(DummyKafkaConsumerFactory.class);
     private KafkaMessageBrokerProxy kafkaMessageBrokerProxy;
     private KafkaProperties kafkaProperties;
     private TaskManager taskManager;
+    private KafkaConsumerBuilderHelper kafkaConsumerBuilderHelper;
 
-    public DummyKafkaConsumerFactory(KafkaMessageBrokerProxy kafkaMessageBrokerProxy, KafkaProperties kafkaProperties, TaskManager taskManager) {
+    public DummyKafkaConsumerFactory(KafkaMessageBrokerProxy kafkaMessageBrokerProxy, KafkaProperties kafkaProperties, TaskManager taskManager, KafkaConsumerBuilderHelper kafkaConsumerBuilderHelper) {
         this.kafkaMessageBrokerProxy = kafkaMessageBrokerProxy;
         this.kafkaProperties = kafkaProperties;
         this.taskManager = taskManager;
+        this.kafkaConsumerBuilderHelper = kafkaConsumerBuilderHelper;
     }
 
     @Override
     public Consumer createConsumer(ConsumerProperties consumerProperties) {
-        Properties properties = new Properties();
-        properties.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaProperties.getHostUrl());
-        properties.put(ConsumerConfig.GROUP_ID_CONFIG, consumerProperties.groupId());
-        properties.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, kafkaProperties.getKeyDeserializer());
-        properties.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, kafkaProperties.getValueDeserializer());
-        properties.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, false);
-        final var consumer = new org.apache.kafka.clients.consumer.KafkaConsumer<String, String>(properties);
+        final org.apache.kafka.clients.consumer.KafkaConsumer<String, String> consumer = kafkaConsumerBuilderHelper.getKafkaConsumer(consumerProperties);
 
         logger.info("A Kafka consumer created with the following settings: name {}, group id {}, key deserializer {}, value deserializer {}, auto commit {}",
                 consumerProperties.name(),

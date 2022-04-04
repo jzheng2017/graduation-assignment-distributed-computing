@@ -3,11 +3,17 @@ package messagequeue.consumer;
 import messagequeue.messagebroker.Consumer;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * The {@link ConsumerManager} is responsible for keeping track of the consumers and all other consumer-related tasks such as (un)registering consumer(s) and providing consumer information
  */
 public interface ConsumerManager {
+    /**
+     * Every instance running in the cluster has a single ConsumerManager which we can identify by the identifier
+     * @return identifier
+     */
+    String getIdentifier();
     /**
      * Construct and then register the consumer based on the passed in consumer configuration
      *
@@ -47,6 +53,8 @@ public interface ConsumerManager {
      * @return the number of running tasks
      */
     int getTotalRunningTasksForConsumer(String consumerId);
+
+    Map<String, Integer> getTotalRunningTasksForAllConsumers();
 
     int getTotalNumberOfTasksInQueue();
 

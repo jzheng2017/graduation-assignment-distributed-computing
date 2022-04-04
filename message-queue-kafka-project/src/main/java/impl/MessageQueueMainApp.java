@@ -1,16 +1,21 @@
 package impl;
 
-import messagequeue.configuration.TaskManagerProperties;
-import messagequeue.consumer.taskmanager.TaskManager;
+import messagequeue.consumer.ConsumerStatisticsPublisher;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Import;
+import org.springframework.scheduling.annotation.EnableScheduling;
 
-@Import(value = {TaskManager.class, TaskManagerProperties.class})
+import java.util.Collections;
+
 @SpringBootApplication
+@EnableScheduling
+@Import(value = {ConsumerStatisticsPublisher.class})
 public class MessageQueueMainApp {
     public static void main(String[] args) {
-        SpringApplication.run(MessageQueueMainApp.class, args);
+//        SpringApplication app = new SpringApplication(MessageQueueMainApp.class);
+//        app.setDefaultProperties(Collections.singletonMap("server.port", "8081"));
+//        app.run(args);
+        SpringApplication.run(MessageQueueMainApp.class);
     }
-
 }

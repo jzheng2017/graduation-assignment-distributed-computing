@@ -11,7 +11,7 @@ import org.springframework.boot.ApplicationRunner;
 import org.springframework.context.annotation.Import;
 import org.springframework.stereotype.Component;
 
-@Import(value = {ConsumerManagerImpl.class, ConsumerBuilder.class, KafkaSubscriptionManager.class, JsonConsumerConfigurationParser.class})
+@Import(value = {ConsumerManagerImpl.class, KafkaSubscriptionManager.class, JsonConsumerConfigurationParser.class})
 @Component
 public class ApplicationStartupHandler implements ApplicationRunner {
     //    @Autowired
