@@ -6,6 +6,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.stereotype.Service;
 
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
@@ -71,6 +73,16 @@ public class TaskManager {
         }
 
         return 0;
+    }
+
+    public Map<String, Integer> getTotalNumberOfConcurrentTasksForAllConsumers() {
+        Map<String, Integer> totalConcurrentTasksAllConsumers = new HashMap<>();
+
+        for (Map.Entry<String, AtomicInteger> consumerEntry : numberOfConcurrentTasksPerConsumer.entrySet()) {
+            totalConcurrentTasksAllConsumers.put(consumerEntry.getKey(), consumerEntry.getValue().get());
+        }
+
+        return totalConcurrentTasksAllConsumers;
     }
 
     public int getTotalNumberOfTasksInQueue() {
