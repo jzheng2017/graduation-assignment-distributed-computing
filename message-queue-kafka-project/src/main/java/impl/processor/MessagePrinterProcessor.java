@@ -10,7 +10,7 @@ public class MessagePrinterProcessor implements MessageProcessor {
     @Override
     public void process(String message) {
         try {
-            Thread.sleep(5000);
+            Thread.sleep(3000);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }

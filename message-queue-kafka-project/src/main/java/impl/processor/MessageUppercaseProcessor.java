@@ -4,22 +4,22 @@ import messagequeue.consumer.MessageProcessor;
 import messagequeue.messagebroker.MessageBrokerProxy;
 
 /**
- * An example processor which basically just forwards the message by publishing to another topic
+ * An example processor which basically just capitalizes the message and publishes to another topic
  */
-public class MessageForwarderProcessor implements MessageProcessor {
+public class MessageUppercaseProcessor implements MessageProcessor {
     private MessageBrokerProxy messageBrokerProxy;
 
-    public MessageForwarderProcessor(MessageBrokerProxy messageBrokerProxy) {
+    public MessageUppercaseProcessor(MessageBrokerProxy messageBrokerProxy) {
         this.messageBrokerProxy = messageBrokerProxy;
     }
 
     @Override
     public void process(String message) {
         try {
-            Thread.sleep(5000);
+            Thread.sleep(3000);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-        this.messageBrokerProxy.sendMessage("output", message);
+        this.messageBrokerProxy.sendMessage("output", message.toUpperCase());
     }
 }

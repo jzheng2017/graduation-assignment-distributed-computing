@@ -1,31 +1,40 @@
 package kafka.topic;
 
-import kafka.configuration.KafkaConfiguration;
+import kafka.configuration.KafkaProperties;
 import messagequeue.messagebroker.topic.FailedTopicActionException;
 import messagequeue.messagebroker.topic.TopicConfiguration;
 import messagequeue.messagebroker.topic.TopicManager;
 import org.apache.kafka.clients.admin.Admin;
+import org.apache.kafka.clients.admin.AdminClientConfig;
 import org.apache.kafka.clients.admin.CreateTopicsResult;
 import org.apache.kafka.clients.admin.DeleteTopicsResult;
 import org.apache.kafka.clients.admin.ListTopicsResult;
 import org.apache.kafka.clients.admin.NewTopic;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.context.annotation.Import;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Properties;
 import java.util.concurrent.ExecutionException;
 
 @Service
-@Import(value = {KafkaConfiguration.class})
 public class KafkaTopicManager implements TopicManager {
     private final Logger logger = LoggerFactory.getLogger(KafkaTopicManager.class);
     private final Admin admin;
 
-    public KafkaTopicManager(Admin admin) {
+    //for unit test purposes
+    protected KafkaTopicManager(Admin admin) {
         this.admin = admin;
+    }
+
+    @Autowired
+    public KafkaTopicManager(KafkaProperties kafkaProperties) {
+        Properties props = new Properties();
+        props.put(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaProperties.getHostUrl());
+        admin = Admin.create(props);
     }
 
     @Override

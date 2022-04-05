@@ -1,6 +1,6 @@
 package impl.processor.builder;
 
-import impl.processor.MessageForwarderProcessor;
+import impl.processor.MessageUppercaseProcessor;
 import impl.processor.MessagePrinterProcessor;
 import impl.processor.MessageReverserProcessor;
 import kafka.configuration.KafkaProperties;
@@ -47,7 +47,7 @@ public class DummyKafkaConsumerFactory implements ConsumerFactory {
                 false);
 
         return switch (consumerProperties.name()) {
-            case "forwarder" -> new KafkaConsumer(consumerProperties.name(), taskManager, consumer, new MessageForwarderProcessor(kafkaMessageBrokerProxy));
+            case "uppercase" -> new KafkaConsumer(consumerProperties.name(), taskManager, consumer, new MessageUppercaseProcessor(kafkaMessageBrokerProxy));
             case "reverser" -> new KafkaConsumer(consumerProperties.name(), taskManager, consumer, new MessageReverserProcessor(kafkaMessageBrokerProxy));
             case "printer" -> new KafkaConsumer(consumerProperties.name(), taskManager, consumer, new MessagePrinterProcessor());
             default -> null;
