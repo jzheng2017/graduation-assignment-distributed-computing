@@ -24,6 +24,8 @@ import java.util.concurrent.ExecutionException;
 public class KafkaTopicManager implements TopicManager {
     private final Logger logger = LoggerFactory.getLogger(KafkaTopicManager.class);
     private final Admin admin;
+    private static final int DEFAULT_NUM_PARTITIONS = 2;
+    private static final short DEFAULT_NUM_REPLICATIONS = 1;
 
     //for unit test purposes
     protected KafkaTopicManager(Admin admin) {
@@ -41,18 +43,29 @@ public class KafkaTopicManager implements TopicManager {
     public void createTopic(TopicConfiguration topicConfiguration) {
         try {
             if (!topicExists(topicConfiguration.getName())) {
-                KafkaTopicConfiguration kafkaTopicConfiguration = (KafkaTopicConfiguration) topicConfiguration;
+                String name;
+                int partitions;
+                short replication;
+
+                if (topicConfiguration instanceof KafkaTopicConfiguration kafkaTopicConfiguration) {
+                    name = kafkaTopicConfiguration.getName();
+                    partitions = kafkaTopicConfiguration.getPartitions();
+                    replication = kafkaTopicConfiguration.getReplicationFactor();
+                } else {
+                    name = topicConfiguration.getName();
+                    partitions = DEFAULT_NUM_PARTITIONS;
+                    replication = DEFAULT_NUM_REPLICATIONS;
+                }
+
                 CreateTopicsResult createTopicsResult = admin.createTopics(
                         Collections.singleton(
-                                new NewTopic(kafkaTopicConfiguration.getName(),
-                                        kafkaTopicConfiguration.getPartitions(),
-                                        (short) kafkaTopicConfiguration.getReplicationFactor())
+                                new NewTopic(name, partitions, replication)
                         ));
 
-                createTopicsResult.values().get(kafkaTopicConfiguration.getName()).get();
-                logger.info("Kafka topic created \"{}\" with {} partitions and {} replication factor", kafkaTopicConfiguration.getName(), kafkaTopicConfiguration.getPartitions(), kafkaTopicConfiguration.getReplicationFactor());
+                createTopicsResult.values().get(name).get();
+                logger.info("Kafka topic created \"{}\" with {} partitions and {} replication factor", name, partitions, replication);
             } else {
-                throw new FailedTopicActionException(String.format("The Kafka topic with the name %s already exists.", topicConfiguration.getName()));
+                logger.warn("The Kafka topic with the name {} already exists.", topicConfiguration.getName());
             }
         } catch (InterruptedException | ExecutionException e) {
             throw new FailedTopicActionException(String.format("Creating Kafka topic with the name %s failed.", topicConfiguration.getName()), e);

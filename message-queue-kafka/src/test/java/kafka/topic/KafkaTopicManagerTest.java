@@ -53,7 +53,7 @@ class KafkaTopicManagerTest {
     private List<String> fakeTopicList = List.of("unit", "testing", "is", "so", "fun");
     private final String notExistingTopicName = "unique name";
     private final int partitions = 123;
-    private final int replicationFactor = 321;
+    private final short replicationFactor = 321;
     private Map<String, KafkaFuture<Void>> futureMap;
 
     @BeforeEach
@@ -80,13 +80,6 @@ class KafkaTopicManagerTest {
         Assertions.assertEquals(topic.name(), notExistingTopicName);
         Assertions.assertEquals(topic.numPartitions(), partitions);
         Assertions.assertEquals(topic.replicationFactor(), replicationFactor);
-    }
-
-    @Test
-    void testThatCreatingATopicWithANameThatAlreadyExistsThrowsAFailedTopicActionException() {
-        TopicConfiguration topicConfiguration = new KafkaTopicConfiguration("unit", partitions, replicationFactor);
-        FailedTopicActionException exception = Assertions.assertThrows(FailedTopicActionException.class, () -> kafkaTopicManager.createTopic(topicConfiguration));
-        Assertions.assertTrue(exception.getMessage().contains("exists"));
     }
 
     @Test
