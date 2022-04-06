@@ -33,8 +33,14 @@ public interface Consumer {
      */
     void stop();
 
+  	/**
+    * Polls the broker for new messages
+    */
     List<String> poll();
 
+  	/**
+    * Cleans up the consumer after shutting down by for instance cleaning up the connection of the consumer with the broker.
+    */
     void cleanup();
 
     /**
