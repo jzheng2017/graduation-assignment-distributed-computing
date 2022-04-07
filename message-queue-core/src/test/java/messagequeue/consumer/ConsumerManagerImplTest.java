@@ -32,14 +32,14 @@ class ConsumerManagerImplTest {
     @BeforeEach
     void setup() {
         MockitoAnnotations.openMocks(this);
-        consumerManager = new ConsumerManagerImpl(mockedLogger, mockedConsumerBuilder, mockedTaskManager);
+        consumerManager = new ConsumerManagerImpl(mockedLogger, mockedTaskManager);
         when(mockedConsumerBuilder.createConsumer(anyString())).thenReturn(mockedConsumer);
         when(mockedConsumer.getIdentifier()).thenReturn(consumerIdentifier);
     }
 
     @Test
     void testThatRegisteringAConsumerPutsItCorrectly() {
-        consumerManager.registerConsumer("");
+        consumerManager.registerConsumer(mockedConsumerBuilder.createConsumer(""));
         List<Consumer> consumers = consumerManager.getAllConsumers();
 
         Assertions.assertTrue(consumers.contains(mockedConsumer));
@@ -47,14 +47,14 @@ class ConsumerManagerImplTest {
 
     @Test
     void testThatRegisteringAlreadyRegisteredConsumerLogsIt() {
-        consumerManager.registerConsumer("");
-        consumerManager.registerConsumer("");
+        consumerManager.registerConsumer(mockedConsumerBuilder.createConsumer(""));
+        consumerManager.registerConsumer(mockedConsumerBuilder.createConsumer(""));
         verify(mockedLogger).warn("Consumer '{}' has already been registered.", consumerIdentifier);
     }
 
     @Test
     void testThatRegisteringAConsumerAlsoStartsIt() {
-        consumerManager.registerConsumer("");
+        consumerManager.registerConsumer(mockedConsumerBuilder.createConsumer(""));
 
         verify(mockedConsumer).start();
     }
@@ -68,7 +68,7 @@ class ConsumerManagerImplTest {
 
     @Test
     void testThatStartingAConsumerThatIsAlreadyStartedLogsAWarning() {
-        consumerManager.registerConsumer("");
+        consumerManager.registerConsumer(mockedConsumerBuilder.createConsumer(""));
         when(mockedConsumer.isRunning()).thenReturn(true);
 
         consumerManager.startConsumer(consumerIdentifier);
@@ -84,7 +84,7 @@ class ConsumerManagerImplTest {
 
     @Test
     void testThatUnregisteringAConsumerThatIsAlreadyScheduledForRemovalLogsAWarning() {
-        consumerManager.registerConsumer("");
+        consumerManager.registerConsumer(mockedConsumerBuilder.createConsumer(""));
         when(mockedConsumer.isRunning()).thenThrow(RuntimeException.class).thenReturn(true); //throw an exception because the consumer needs to stay in the consumer list for the second unregister
         try {
             consumerManager.unregisterConsumer(consumerIdentifier);
@@ -97,7 +97,7 @@ class ConsumerManagerImplTest {
 
     @Test
     void testThatUnregisteringAConsumerStopsTheConsumerAndRemovesItFromTheConsumerList() {
-        consumerManager.registerConsumer("");
+        consumerManager.registerConsumer(mockedConsumerBuilder.createConsumer(""));
 
         Assertions.assertTrue(consumerManager.getAllConsumers().contains(mockedConsumer));
         when(mockedConsumer.isRunning())

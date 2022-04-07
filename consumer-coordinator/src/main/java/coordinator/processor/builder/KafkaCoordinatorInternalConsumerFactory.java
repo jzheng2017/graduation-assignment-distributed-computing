@@ -1,23 +1,23 @@
 package coordinator.processor.builder;
 
 import coordinator.ConsumerCoordinator;
-import coordinator.processor.ConsumerUpdateProcessor;
-import kafka.configuration.KafkaProperties;
+import coordinator.processor.ConsumerRegistrationProcessor;
+import coordinator.processor.ConsumerStatisticsProcessor;
 import kafka.consumer.KafkaConsumer;
 import kafka.consumer.KafkaConsumerBuilderHelper;
+import messagequeue.consumer.Consumer;
 import messagequeue.consumer.ConsumerProperties;
-import messagequeue.consumer.builder.ConsumerFactory;
+import messagequeue.consumer.builder.internal.InternalConsumerFactory;
 import messagequeue.consumer.taskmanager.TaskManager;
-import messagequeue.messagebroker.Consumer;
-import org.springframework.context.annotation.Import;
+import org.springframework.stereotype.Service;
 
-@Import(value = {KafkaConsumerBuilderHelper.class, TaskManager.class, KafkaProperties.class})
-public class KafkaConsumerFactory implements ConsumerFactory {
+@Service
+public class KafkaCoordinatorInternalConsumerFactory implements InternalConsumerFactory {
     private KafkaConsumerBuilderHelper kafkaConsumerBuilderHelper;
     private ConsumerCoordinator consumerCoordinator;
     private TaskManager taskManager;
 
-    public KafkaConsumerFactory(KafkaConsumerBuilderHelper kafkaConsumerBuilderHelper, ConsumerCoordinator consumerCoordinator, TaskManager taskManager) {
+    public KafkaCoordinatorInternalConsumerFactory(KafkaConsumerBuilderHelper kafkaConsumerBuilderHelper, ConsumerCoordinator consumerCoordinator, TaskManager taskManager) {
         this.kafkaConsumerBuilderHelper = kafkaConsumerBuilderHelper;
         this.consumerCoordinator = consumerCoordinator;
         this.taskManager = taskManager;
@@ -27,7 +27,8 @@ public class KafkaConsumerFactory implements ConsumerFactory {
     public Consumer createConsumer(ConsumerProperties consumerProperties) {
         final org.apache.kafka.clients.consumer.KafkaConsumer<String, String> kafkaConsumer = kafkaConsumerBuilderHelper.getKafkaConsumer(consumerProperties);
         return switch (consumerProperties.name()) {
-            case "consumer-statistics-updater" -> new KafkaConsumer(consumerProperties.name(), taskManager, kafkaConsumer, new ConsumerUpdateProcessor(consumerCoordinator));
+            case "consumer-statistics" -> new KafkaConsumer(consumerProperties.name(), true, taskManager, kafkaConsumer, new ConsumerStatisticsProcessor(consumerCoordinator));
+            case "consumer-registration" -> new KafkaConsumer(consumerProperties.name(), true, taskManager, kafkaConsumer, new ConsumerRegistrationProcessor(consumerCoordinator));
             default -> null;
         };
     }

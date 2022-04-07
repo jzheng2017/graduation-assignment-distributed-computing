@@ -10,7 +10,6 @@ import org.springframework.stereotype.Service;
 import java.util.Map;
 
 @Service
-@Import(value = {ConsumerManagerImpl.class})
 public class ConsumerStatisticsPublisher {
     private MessageBrokerProxy messageBrokerProxy;
     private ConsumerManager consumerManager;

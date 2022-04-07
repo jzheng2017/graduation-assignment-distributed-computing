@@ -21,7 +21,6 @@ import java.util.concurrent.atomic.AtomicInteger;
  * A task manager that schedules tasks which have to be executed
  */
 @Service
-@Import(TaskManagerProperties.class)
 public class TaskManager {
     private Logger logger = LoggerFactory.getLogger(TaskManager.class);
     private ThreadPoolExecutor threadPoolExecutor;

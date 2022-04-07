@@ -13,11 +13,10 @@ public interface ConsumerManager {
      */
     String getIdentifier();
     /**
-     * Construct and then register the consumer based on the passed in consumer configuration
+     * Construct and then register the consumer
      *
-     * @param consumerConfiguration a consumer configuration
      */
-    void registerConsumer(String consumerConfiguration);
+    void registerConsumer(Consumer consumer);
 
     void startConsumer(String consumerId);
 
@@ -36,6 +35,13 @@ public interface ConsumerManager {
     void shutdown();
 
     List<Consumer> getAllConsumers();
+
+    /**
+     * Determines whether a consumer is used internally
+     * @param consumerIdentifier the identifier of the consumer
+     * @return true if used internally, false otherwise
+     */
+    boolean isConsumerInternal(String consumerIdentifier);
 
     /**
      * Get the total number of running tasks of all consumers

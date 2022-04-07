@@ -10,11 +10,11 @@ import org.springframework.boot.json.JsonParserFactory;
 
 import java.util.Map;
 
-public class ConsumerUpdateProcessor implements MessageProcessor {
-    private Logger logger = LoggerFactory.getLogger(ConsumerUpdateProcessor.class);
-    public ConsumerCoordinator consumerCoordinator;
+public class ConsumerStatisticsProcessor implements MessageProcessor {
+    private Logger logger = LoggerFactory.getLogger(ConsumerStatisticsProcessor.class);
+    private ConsumerCoordinator consumerCoordinator;
 
-    public ConsumerUpdateProcessor(ConsumerCoordinator consumerCoordinator) {
+    public ConsumerStatisticsProcessor(ConsumerCoordinator consumerCoordinator) {
         this.consumerCoordinator = consumerCoordinator;
     }
 

@@ -18,6 +18,7 @@ public abstract class BaseConsumer implements Consumer {
     protected final AtomicBoolean isRunning;
     private final MessageProcessor messageProcessor;
     private final TaskManager taskManager;
+    private final boolean isInternal;
 
     //only for unit test purposes
     protected BaseConsumer(AtomicBoolean scheduledForRemoval, AtomicBoolean isRunning, TaskManager taskManager) {
@@ -26,14 +27,16 @@ public abstract class BaseConsumer implements Consumer {
         this.isRunning = isRunning;
         this.taskManager = taskManager;
         this.messageProcessor = null;
+        this.isInternal = true;
     }
 
-    protected BaseConsumer(String name, TaskManager taskManager, MessageProcessor messageProcessor) {
+    protected BaseConsumer(String name, boolean isInternal, TaskManager taskManager, MessageProcessor messageProcessor) {
         this.name = name;
         this.messageProcessor = messageProcessor;
         this.taskManager = taskManager;
         this.scheduledForRemoval = new AtomicBoolean();
         this.isRunning = new AtomicBoolean();
+        this.isInternal = isInternal;
         logger.info("Creating consumer {}..", name);
     }
 
@@ -81,6 +84,11 @@ public abstract class BaseConsumer implements Consumer {
     @Override
     public boolean isRunning() {
         return isRunning.get();
+    }
+
+    @Override
+    public boolean isInternal() {
+        return isInternal;
     }
 
     private Task createTask(String message) {

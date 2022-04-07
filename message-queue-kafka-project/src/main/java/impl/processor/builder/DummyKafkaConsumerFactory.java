@@ -7,8 +7,12 @@ import kafka.configuration.KafkaProperties;
 import kafka.consumer.KafkaConsumer;
 import kafka.consumer.KafkaConsumerBuilderHelper;
 import kafka.messagebroker.KafkaMessageBrokerProxy;
+import messagequeue.consumer.ConsumerManager;
+import messagequeue.consumer.ConsumerManagerImpl;
 import messagequeue.consumer.ConsumerProperties;
+import messagequeue.consumer.builder.ConsumerBuilder;
 import messagequeue.consumer.builder.ConsumerFactory;
+import messagequeue.consumer.processor.ConsumerManagerProcessor;
 import messagequeue.consumer.taskmanager.TaskManager;
 import messagequeue.consumer.Consumer;
 import org.slf4j.Logger;
@@ -19,7 +23,6 @@ import org.springframework.stereotype.Service;
 /**
  * Dummy {@link Consumer} factory that serves hardcoded dummy consumers. Will later be replaced by a real implementation that can construct based on consumer properties.
  */
-@Import(value = {KafkaProperties.class, KafkaMessageBrokerProxy.class, KafkaConsumerBuilderHelper.class})
 @Service
 public class DummyKafkaConsumerFactory implements ConsumerFactory {
     private Logger logger = LoggerFactory.getLogger(DummyKafkaConsumerFactory.class);
@@ -47,9 +50,9 @@ public class DummyKafkaConsumerFactory implements ConsumerFactory {
                 false);
 
         return switch (consumerProperties.name()) {
-            case "uppercase" -> new KafkaConsumer(consumerProperties.name(), taskManager, consumer, new MessageUppercaseProcessor(kafkaMessageBrokerProxy));
-            case "reverser" -> new KafkaConsumer(consumerProperties.name(), taskManager, consumer, new MessageReverserProcessor(kafkaMessageBrokerProxy));
-            case "printer" -> new KafkaConsumer(consumerProperties.name(), taskManager, consumer, new MessagePrinterProcessor());
+            case "uppercase" -> new KafkaConsumer(consumerProperties.name(), false, taskManager, consumer, new MessageUppercaseProcessor(kafkaMessageBrokerProxy));
+            case "reverser" -> new KafkaConsumer(consumerProperties.name(), false, taskManager, consumer, new MessageReverserProcessor(kafkaMessageBrokerProxy));
+            case "printer" -> new KafkaConsumer(consumerProperties.name(), false, taskManager, consumer, new MessagePrinterProcessor());
             default -> null;
         };
     }

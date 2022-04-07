@@ -22,7 +22,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 class KafkaConsumerTest {
-    @InjectMocks
     private kafka.consumer.KafkaConsumer kafkaConsumer;
     @Mock
     private KafkaConsumer<String, String> mockedKafkaConsumer;

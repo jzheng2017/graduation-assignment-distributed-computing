@@ -1,11 +1,9 @@
 package messagequeue.consumer;
 
-import messagequeue.consumer.builder.ConsumerBuilder;
 import messagequeue.consumer.taskmanager.TaskManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Import;
 import org.springframework.stereotype.Service;
 
 import java.util.Collections;
@@ -16,24 +14,21 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Service
-@Import(value = {TaskManager.class, ConsumerBuilder.class})
 public class ConsumerManagerImpl implements ConsumerManager {
     private static final String identifier = UUID.randomUUID().toString();
     private static final int WAIT_FOR_REMOVAL_INTERVAL_IN_MS = 50;
     private Logger logger = LoggerFactory.getLogger(ConsumerManagerImpl.class);
     private final Map<String, Consumer> consumers = new ConcurrentHashMap<>();
     private final Set<String> consumersScheduledForRemoval = Collections.newSetFromMap(new ConcurrentHashMap<>());
-    private ConsumerBuilder consumerBuilder;
     private final TaskManager taskManager;
 
-    protected ConsumerManagerImpl(Logger logger, ConsumerBuilder consumerBuilder, TaskManager taskManager) {
-        this(consumerBuilder, taskManager);
+    protected ConsumerManagerImpl(Logger logger, TaskManager taskManager) {
+        this(taskManager);
         this.logger = logger;
     }
 
     @Autowired
-    public ConsumerManagerImpl(ConsumerBuilder consumerBuilder, TaskManager taskManager) {
-        this.consumerBuilder = consumerBuilder;
+    public ConsumerManagerImpl(TaskManager taskManager) {
         this.taskManager = taskManager;
     }
 
@@ -42,14 +37,7 @@ public class ConsumerManagerImpl implements ConsumerManager {
         return identifier;
     }
 
-    @Override
-    public void registerConsumer(String consumerConfiguration) {
-        final Consumer consumer = consumerBuilder.createConsumer(consumerConfiguration);
-
-        registerConsumer(consumer);
-    }
-
-    public void registerConsumer(Consumer consumer) { //TODO: allowed for now because ConsumerBuilder is not build yet. Eventually it should only be the case that you pass in a configuration and a consumer gets constructed from that
+    public void registerConsumer(Consumer consumer) {
         final String consumerId = consumer.getIdentifier();
         logger.info("Trying to register consumer '{}'", consumerId);
         if (!consumers.containsKey(consumerId)) {
@@ -138,6 +126,16 @@ public class ConsumerManagerImpl implements ConsumerManager {
     @Override
     public List<Consumer> getAllConsumers() {
         return consumers.values().stream().toList();
+    }
+
+    @Override
+    public boolean isConsumerInternal(String consumerIdentifier) {
+        synchronized (consumers) {
+            if (consumers.containsKey(consumerIdentifier)) {
+                return consumers.get(consumerIdentifier).isInternal();
+            }
+        }
+        throw new IllegalArgumentException(String.format("Consumer %s is not registered", consumerIdentifier));
     }
 
     @Override
