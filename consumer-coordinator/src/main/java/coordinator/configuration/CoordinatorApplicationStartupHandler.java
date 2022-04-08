@@ -1,8 +1,9 @@
 package coordinator.configuration;
 
 import coordinator.ConsumerCoordinator;
-import messagequeue.consumer.ConsumerManager;
-import messagequeue.consumer.builder.ConsumerBuilder;
+import kafka.topic.KafkaTopicConfiguration;
+import messagequeue.messagebroker.MessageBrokerProxy;
+import messagequeue.messagebroker.topic.TopicManager;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.stereotype.Component;
@@ -10,13 +11,42 @@ import org.springframework.stereotype.Component;
 @Component
 public class CoordinatorApplicationStartupHandler implements ApplicationRunner {
     private ConsumerCoordinator consumerCoordinator;
-
-    public CoordinatorApplicationStartupHandler(ConsumerCoordinator consumerCoordinator) {
+    private TopicManager topicManager;
+    private MessageBrokerProxy messageBrokerProxy;
+    public CoordinatorApplicationStartupHandler(ConsumerCoordinator consumerCoordinator, TopicManager topicManager, MessageBrokerProxy messageBrokerProxy) {
         this.consumerCoordinator = consumerCoordinator;
+        this.topicManager = topicManager;
+        this.messageBrokerProxy = messageBrokerProxy;
     }
 
     @Override
     public void run(ApplicationArguments args) throws Exception {
-        new Thread(() -> consumerCoordinator.deploy()).start();
+        topicManager.createTopic(new KafkaTopicConfiguration("input", 2, (short)1));
+        topicManager.createTopic(new KafkaTopicConfiguration("output", 2, (short)1));
+        topicManager.createTopic(new KafkaTopicConfiguration("reversed", 2, (short)1));
+//        for (int i = 0; i < 1000; i++) {
+//            messageBrokerProxy.sendMessage("input", "a");
+//        }
+        final String upperCaseJson = "{\n" +
+                " \"name\": \"uppercase\",\n" +
+                " \"groupId\": \"uppercase1\",\n" +
+                " \"subscriptions\": [\"input\"],\n" +
+                " \"replicas\": 2\n" +
+                "}";
+        final String reverserJson = "{\n" +
+                " \"name\": \"reverser\",\n" +
+                " \"groupId\": \"reverser1\",\n" +
+                " \"subscriptions\": [\"output\"],\n" +
+                " \"replicas\": 2\n" +
+                "}";
+        final String printerJson = "{\n" +
+                " \"name\": \"printer\",\n" +
+                " \"groupId\": \"printer1\",\n" +
+                " \"subscriptions\": [\"reversed\"],\n" +
+                " \"replicas\": 2\n" +
+                "}";
+        consumerCoordinator.addConsumerConfiguration(upperCaseJson);
+        consumerCoordinator.addConsumerConfiguration(reverserJson);
+        consumerCoordinator.addConsumerConfiguration(printerJson);
     }
 }

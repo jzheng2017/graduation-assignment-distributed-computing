@@ -16,7 +16,7 @@ import java.util.concurrent.ConcurrentHashMap;
 @Service
 public class ConsumerManagerImpl implements ConsumerManager {
     private static final String identifier = UUID.randomUUID().toString();
-    private static final int WAIT_FOR_REMOVAL_INTERVAL_IN_MS = 50;
+    private static final int WAIT_FOR_REMOVAL_INTERVAL_IN_MS = 1000;
     private Logger logger = LoggerFactory.getLogger(ConsumerManagerImpl.class);
     private final Map<String, Consumer> consumers = new ConcurrentHashMap<>();
     private final Set<String> consumersScheduledForRemoval = Collections.newSetFromMap(new ConcurrentHashMap<>());

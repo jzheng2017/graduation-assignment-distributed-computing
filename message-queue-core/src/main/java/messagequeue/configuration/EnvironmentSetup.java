@@ -34,9 +34,9 @@ public class EnvironmentSetup {
 
     public void setup() {
         if (isConsumerInstance) {
-            registerInstanceToCoordinator();
             setupConsumerInstanceInternalTopics();
             setupConsumerInstanceInternalConsumers();
+            registerInstanceToCoordinator();
         } else {
             setupCoordinatorInternalTopics();
             setupCoordinatorInternalConsumers();
@@ -58,7 +58,15 @@ public class EnvironmentSetup {
     }
 
     private void setupConsumerInstanceInternalConsumers() {
-        consumerManager.registerConsumer(consumerBuilder.createConsumer(new ConsumerProperties("consumer-manager", "consumer-manager", Set.of(consumerManager.getIdentifier() + "-consumers"))));
+        consumerManager.registerConsumer(
+                consumerBuilder.createConsumer(
+                        new ConsumerProperties(
+                                "consumer-manager",
+                                consumerManager.getIdentifier() + "-consumer-manager",
+                                Set.of(consumerManager.getIdentifier() + "-consumers"),
+                                2)
+                )
+        );
         logger.info("Registered internal consumers");
     }
 
@@ -73,8 +81,8 @@ public class EnvironmentSetup {
 
     private void setupCoordinatorInternalConsumers() {
         List<ConsumerProperties> consumerProperties = List.of(
-                new ConsumerProperties("consumer-statistics", "statistics", Set.of("consumer-statistics")),
-                new ConsumerProperties("consumer-registration", "registration", Set.of("consumer-registration"))
+                new ConsumerProperties("consumer-statistics", "statistics", Set.of("consumer-statistics"), 1),
+                new ConsumerProperties("consumer-registration", "registration", Set.of("consumer-registration"), 1)
         );
 
         for (ConsumerProperties consumerProperty : consumerProperties) {

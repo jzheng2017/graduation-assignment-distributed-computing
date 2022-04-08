@@ -1,16 +1,13 @@
 package impl;
 
-import messagequeue.consumer.ConsumerStatisticsPublisher;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.context.annotation.Import;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
 import java.util.Collections;
 
-@SpringBootApplication
+@SpringBootApplication(scanBasePackages = {"messagequeue", "kafka", "impl"})
 @EnableScheduling
-@Import(value = {ConsumerStatisticsPublisher.class})
 public class MessageQueueMainApp {
     public static void main(String[] args) {
 //        SpringApplication app = new SpringApplication(MessageQueueMainApp.class);
@@ -19,3 +16,4 @@ public class MessageQueueMainApp {
         SpringApplication.run(MessageQueueMainApp.class);
     }
 }
+

@@ -39,6 +39,8 @@ public class ConsumerManagerProcessor implements MessageProcessor {
                 String consumerId = (String)propAndValues.get("consumerId");
                 consumerManager.unregisterConsumer(consumerId);
             }
+
+            case "shutdown" -> consumerManager.shutdown();
         }
     }
 }

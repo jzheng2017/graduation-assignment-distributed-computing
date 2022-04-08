@@ -1,6 +1,6 @@
 package messagequeue.consumer;
 
-import java.util.Map;
+import java.util.List;
 
-public record ConsumerStatistics(String instanceId, int totalTasksInQueue, long totalTasksCompleted, long totalTasksScheduled, Map<String, Integer> concurrentTasksPerConsumer) {
+public record ConsumerStatistics(String instanceId, int totalTasksInQueue, long totalTasksCompleted, long totalTasksScheduled, List<ConsumerTaskCount> concurrentTasksPerConsumer, long timestamp) {
 }

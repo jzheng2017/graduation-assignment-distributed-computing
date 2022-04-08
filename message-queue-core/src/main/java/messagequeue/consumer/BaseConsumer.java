@@ -51,6 +51,7 @@ public abstract class BaseConsumer implements Consumer {
     @Override
     public void stop() {
         scheduledForRemoval.set(true);
+        isRunning.set(false);
     }
 
     @Override
@@ -60,8 +61,8 @@ public abstract class BaseConsumer implements Consumer {
 
             if (tasksToBeExecuted.size() > 0) {
                 try {
+                    logger.info("Consumer '{}' dispatched {} messages to the TaskManager for processing", name, tasksToBeExecuted.size());
                     taskManager.executeTasks(tasksToBeExecuted);
-                    logger.info("Consumer '{}' created {} new task(s) and will be dispatched for execution", name, tasksToBeExecuted.size());
                     logger.info("{} tasks successfully processed by consumer '{}'", tasksToBeExecuted.size(), name);
                     acknowledge();
                 } catch (InterruptedException e) {
@@ -71,7 +72,6 @@ public abstract class BaseConsumer implements Consumer {
         }
 
         cleanup();
-        isRunning.set(false);
         logger.info("Closed consumer '{}' and stopped running", name);
     }
 

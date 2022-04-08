@@ -19,7 +19,7 @@ public class JsonConsumerConfigurationParser implements ConsumerConfigurationPar
         return new ConsumerProperties(
                 (String) propAndValues.get("name"),
                 (String) propAndValues.get("groupId"),
-                new HashSet<>((List<String>) propAndValues.get("subscriptions"))
-        );
+                new HashSet<>((List<String>) propAndValues.get("subscriptions")),
+                (int)propAndValues.get("replicas"));
     }
 }
