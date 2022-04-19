@@ -25,7 +25,7 @@ public class TaskManager {
     private Logger logger = LoggerFactory.getLogger(TaskManager.class);
     private ThreadPoolExecutor threadPoolExecutor;
     private final Map<String, AtomicInteger> numberOfConcurrentTasksPerConsumer = new ConcurrentHashMap<>();
-
+    private final Map<String, AtomicInteger> numberOfTasksProcessedPerConsumer = new ConcurrentHashMap<>();
     public TaskManager(TaskManagerProperties taskManagerProperties) {
         final int corePoolSize = taskManagerProperties.getThreadPoolSize();
         final int maxPoolSize = taskManagerProperties.getThreadPoolSize();
@@ -46,7 +46,7 @@ public class TaskManager {
                 tasks.stream()
                         .map(task -> (Callable<Void>) () -> {
                             AtomicInteger concurrentTasksOfConsumer;
-
+                            AtomicInteger totalTasksProcessedByConsumer;
                             synchronized (numberOfConcurrentTasksPerConsumer) {
                                 concurrentTasksOfConsumer = numberOfConcurrentTasksPerConsumer.get(task.consumerId());
                                 if (concurrentTasksOfConsumer == null) {
@@ -55,9 +55,18 @@ public class TaskManager {
                                 }
                             }
 
+                            synchronized (numberOfTasksProcessedPerConsumer) {
+                                totalTasksProcessedByConsumer = numberOfTasksProcessedPerConsumer.get(task.consumerId());
+                                if (totalTasksProcessedByConsumer == null) {
+                                    totalTasksProcessedByConsumer = new AtomicInteger();
+                                    numberOfTasksProcessedPerConsumer.put(task.consumerId(), totalTasksProcessedByConsumer);
+                                }
+                            }
+
                             concurrentTasksOfConsumer.incrementAndGet();
                             task.task().run();
                             concurrentTasksOfConsumer.decrementAndGet();
+                            totalTasksProcessedByConsumer.incrementAndGet();
 
                             return null;
                         })

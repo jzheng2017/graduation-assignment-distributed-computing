@@ -65,5 +65,6 @@
         <module>consumer-coordinator</module>
         <module>application-configurations</module>
         <module>jacoco-reports</module>
+        <module>data-storage</module>
     </modules>
 </project>

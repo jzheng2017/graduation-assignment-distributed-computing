@@ -7,10 +7,10 @@ import org.springframework.boot.json.JsonParserFactory;
 
 import java.util.Map;
 
-public class ConsumerRegistrationProcessor implements MessageProcessor {
+public class InstanceRegistrationProcessor implements MessageProcessor {
     private ConsumerCoordinator consumerCoordinator;
 
-    public ConsumerRegistrationProcessor(ConsumerCoordinator consumerCoordinator) {
+    public InstanceRegistrationProcessor(ConsumerCoordinator consumerCoordinator) {
         this.consumerCoordinator = consumerCoordinator;
     }
 

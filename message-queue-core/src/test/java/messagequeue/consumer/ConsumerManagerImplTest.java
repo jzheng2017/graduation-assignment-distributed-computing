@@ -107,4 +107,12 @@ class ConsumerManagerImplTest {
         verify(mockedConsumer).stop();
         Assertions.assertFalse(consumerManager.getAllConsumers().contains(mockedConsumer));
     }
+
+    @Test
+    void testThatCheckingWhetherAConsumerIsInternalWorksCorrectly() {
+        consumerManager.registerConsumer(mockedConsumerBuilder.createConsumer(""));
+        when(mockedConsumer.isInternal()).thenReturn(true).thenReturn(false);
+        Assertions.assertTrue(consumerManager.isConsumerInternal(consumerIdentifier));
+        Assertions.assertFalse(consumerManager.isConsumerInternal(consumerIdentifier));
+    }
 }

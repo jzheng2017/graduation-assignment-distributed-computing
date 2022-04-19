@@ -1,27 +1,25 @@
 package messagequeue.consumer;
 
+import datastorage.KVClient;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import messagequeue.messagebroker.MessageBrokerProxy;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
-import java.time.LocalDateTime;
-import java.time.ZoneOffset;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
 @ConditionalOnProperty(value = "consumer.statistics.publisher", havingValue = "on")
 public class ConsumerStatisticsPublisher {
-    private MessageBrokerProxy messageBrokerProxy;
     private ConsumerManager consumerManager;
+    private KVClient kvClient;
 
-    public ConsumerStatisticsPublisher(MessageBrokerProxy messageBrokerProxy, ConsumerManager consumerManager) {
-        this.messageBrokerProxy = messageBrokerProxy;
+    public ConsumerStatisticsPublisher(KVClient kvClient, ConsumerManager consumerManager) {
+        this.kvClient = kvClient;
         this.consumerManager = consumerManager;
     }
 
@@ -31,15 +29,22 @@ public class ConsumerStatisticsPublisher {
         long totalTasksCompleted = consumerManager.getTotalNumberOfCompletedTasks();
         int totalTasksInQueue = consumerManager.getTotalNumberOfTasksInQueue();
         long totalTasksScheduled = consumerManager.getTotalNumberOfTasksScheduled();
+        List<String> activeRunningConsumers = consumerManager.getAllConsumers().stream().map(Consumer::getIdentifier).toList();
+        List<ConsumerTaskCount> concurrentTasksPerConsumerList = concurrentTasksPerConsumer.entrySet().stream().map(entry -> {
+            String consumerId = entry.getKey();
+            int taskCount = entry.getValue();
+            return new ConsumerTaskCount(consumerId, taskCount, consumerManager.isConsumerInternal(consumerId));
+        }).collect(Collectors.toList());
 
         ConsumerStatistics consumerStatistics = new ConsumerStatistics(
                 consumerManager.getIdentifier(),
                 totalTasksInQueue, totalTasksCompleted,
                 totalTasksScheduled,
-                concurrentTasksPerConsumer.entrySet().stream().map(entry -> new ConsumerTaskCount(entry.getKey(), entry.getValue())).collect(Collectors.toList()),
+                concurrentTasksPerConsumerList,
+                activeRunningConsumers,
                 Instant.now().getEpochSecond());
 
-        String json = new ObjectMapper().registerModule(new JavaTimeModule()).writeValueAsString(consumerStatistics);
-        messageBrokerProxy.sendMessage("consumer-statistics", json);
+        String json = new ObjectMapper().writeValueAsString(consumerStatistics);
+        kvClient.put("consumer-statistics-" + consumerStatistics.instanceId(), json);
     }
 }

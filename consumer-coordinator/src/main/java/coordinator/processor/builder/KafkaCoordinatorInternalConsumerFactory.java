@@ -1,7 +1,7 @@
 package coordinator.processor.builder;
 
 import coordinator.ConsumerCoordinator;
-import coordinator.processor.ConsumerRegistrationProcessor;
+import coordinator.processor.InstanceRegistrationProcessor;
 import coordinator.processor.ConsumerStatisticsProcessor;
 import kafka.consumer.KafkaConsumer;
 import kafka.consumer.KafkaConsumerBuilderHelper;
@@ -28,7 +28,7 @@ public class KafkaCoordinatorInternalConsumerFactory implements InternalConsumer
         final org.apache.kafka.clients.consumer.KafkaConsumer<String, String> kafkaConsumer = kafkaConsumerBuilderHelper.getKafkaConsumer(consumerProperties);
         return switch (consumerProperties.name()) {
             case "consumer-statistics" -> new KafkaConsumer(consumerProperties.name(), true, taskManager, kafkaConsumer, new ConsumerStatisticsProcessor(consumerCoordinator));
-            case "consumer-registration" -> new KafkaConsumer(consumerProperties.name(), true, taskManager, kafkaConsumer, new ConsumerRegistrationProcessor(consumerCoordinator));
+            case "consumer-registration" -> new KafkaConsumer(consumerProperties.name(), true, taskManager, kafkaConsumer, new InstanceRegistrationProcessor(consumerCoordinator));
             default -> null;
         };
     }

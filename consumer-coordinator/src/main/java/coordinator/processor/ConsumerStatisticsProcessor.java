@@ -35,6 +35,7 @@ public class ConsumerStatisticsProcessor implements MessageProcessor {
                 getLong(propAndValues.get("totalTasksCompleted")),
                 getLong(propAndValues.get("totalTasksScheduled")),
                 getConsumerTaskCount(concurrentTasksPerConsumer),
+                (List<String>)propAndValues.get("activeConsumers"),
                 getLong(propAndValues.get("timestamp"))
         );
         logger.info(String.valueOf(consumerStatistics));
@@ -45,7 +46,7 @@ public class ConsumerStatisticsProcessor implements MessageProcessor {
         List<ConsumerTaskCount> consumerTaskCountList = new ArrayList<>();
 
         for (Map<String, Object> map : list) {
-            consumerTaskCountList.add(new ConsumerTaskCount((String)map.get("consumerId"), (int)map.get("count")));
+            consumerTaskCountList.add(new ConsumerTaskCount((String)map.get("consumerId"), (int)map.get("count"), (boolean) map.get("internal")));
         }
 
         return consumerTaskCountList;

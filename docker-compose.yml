@@ -28,6 +28,16 @@ services:
       - KAFKA_CFG_INTER_BROKER_LISTENER_NAME=CLIENT
     depends_on:
       - zookeeper
+  etcd:
+    image: 'bitnami/etcd:latest'
+    environment:
+      - ALLOW_NONE_AUTHENTICATION=yes
+      - ETCD_ADVERTISE_CLIENT_URLS=http://localhost:2379
+    ports:
+      - 2379:2379
+      - 2380:2380
+    networks:
+      - kafka-network
 #  project:
 #    image: 'message-queue-kafka-project:latest'
 #    networks:

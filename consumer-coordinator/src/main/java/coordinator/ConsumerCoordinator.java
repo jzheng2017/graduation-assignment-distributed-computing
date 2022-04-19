@@ -30,7 +30,7 @@ import java.util.stream.Collectors;
 public class ConsumerCoordinator {
     private final Logger logger = LoggerFactory.getLogger(ConsumerCoordinator.class);
     private static final long DEFAULT_MISSED_HEARTBEAT_FOR_REMOVAL_IN_SECONDS = 10L;
-    private static final int DEFAULT_DIFFERENCE_IN_CONSUMING_FOR_REBALANCE = 10;
+    private static final int MAX_DIFFERENCE_IN_CONSUMPTION_BEFORE_REBALANCE = 10;
     private final Map<String, ConsumerStatistics> consumerStatisticsPerInstance = new ConcurrentHashMap<>();
     private final Set<String> registeredInstanceIds = Collections.newSetFromMap(new ConcurrentHashMap<>());
     private final Set<ConsumerInstanceEntry> activeConsumersOnInstances = Collections.newSetFromMap(new ConcurrentHashMap<>());
@@ -38,6 +38,7 @@ public class ConsumerCoordinator {
     private final Queue<String> consumersToBeDistributed = new ConcurrentLinkedQueue<>();
     private final ConsumerDistributor consumerDistributor;
     private final MessageBrokerProxy messageBrokerProxy;
+    private boolean firstTimeDistributing = true;
 
     public ConsumerCoordinator(ConsumerDistributor consumerDistributor, MessageBrokerProxy messageBrokerProxy) {
         this.consumerDistributor = consumerDistributor;
@@ -194,21 +195,28 @@ public class ConsumerCoordinator {
         }
         logger.info("Calculating whether a consumer rebalance is needed..");
         ConsumerStatistics busiestInstance = consumerStatistics.get(0);
-        ConsumerStatistics leastBusiestInstance = consumerStatistics.get(0);
+        ConsumerStatistics leastBusyInstance = consumerStatistics.get(0);
+        int busiestInstanceConcurrentTaskCount = Integer.MIN_VALUE;
+        int leastBusyInstanceConcurrentTaskCount = Integer.MAX_VALUE;
 
         for (ConsumerStatistics consumerStatistic : consumerStatistics) {
-            if (consumerStatistic.totalTasksInQueue() > busiestInstance.totalTasksInQueue()) {
+            int currentInstanceConcurrentTaskCount = getTotalConcurrentTasks(consumerStatistic);
+            busiestInstanceConcurrentTaskCount = getTotalConcurrentTasks(busiestInstance);
+            leastBusyInstanceConcurrentTaskCount = getTotalConcurrentTasks(leastBusyInstance);
+
+            if (currentInstanceConcurrentTaskCount > busiestInstanceConcurrentTaskCount) {
                 busiestInstance = consumerStatistic;
             }
 
-            if (consumerStatistic.totalTasksInQueue() < leastBusiestInstance.totalTasksInQueue()) {
-                leastBusiestInstance = consumerStatistic;
+            if (currentInstanceConcurrentTaskCount < leastBusyInstanceConcurrentTaskCount) {
+                leastBusyInstance = consumerStatistic;
             }
         }
-        final int consumptionDifferenceBetweenBusiestAndLeastBusyInstance = busiestInstance.totalTasksInQueue() - leastBusiestInstance.totalTasksInQueue();
 
-        if (consumptionDifferenceBetweenBusiestAndLeastBusyInstance >= DEFAULT_DIFFERENCE_IN_CONSUMING_FOR_REBALANCE) {
-            logger.warn("A consumer rebalance will be performed due to consumption imbalance between busiest and least busiest instance, namely {}", consumptionDifferenceBetweenBusiestAndLeastBusyInstance);
+        final int consumptionDifferenceBetweenBusiestAndLeastBusyInstance = busiestInstanceConcurrentTaskCount - leastBusyInstanceConcurrentTaskCount;
+
+        if (consumptionDifferenceBetweenBusiestAndLeastBusyInstance >= MAX_DIFFERENCE_IN_CONSUMPTION_BEFORE_REBALANCE) {
+            logger.warn("A consumer rebalance will be performed due to consumption imbalance between busiest and least busy instance, namely a difference of {} tasks", consumptionDifferenceBetweenBusiestAndLeastBusyInstance);
 
             if (busiestInstance.concurrentTasksPerConsumer().isEmpty()) {
                 return;
@@ -226,6 +234,15 @@ public class ConsumerCoordinator {
         }
     }
 
+    private int getTotalConcurrentTasks(ConsumerStatistics consumerStatistics) {
+        return consumerStatistics
+                .concurrentTasksPerConsumer()
+                .stream()
+                .filter(consumer -> !consumer.internal())
+                .mapToInt(ConsumerTaskCount::count)
+                .sum();
+    }
+
     private void removeConsumerFromInstance(String instanceId, String consumerId) {
         consumerDistributor.removeConsumer(instanceId, consumerId);
         activeConsumersOnInstances.remove(new ConsumerInstanceEntry(instanceId, consumerId));
@@ -241,7 +258,8 @@ public class ConsumerCoordinator {
 
         consumerStatistics.sort(
                 Comparator
-                        .comparing(ConsumerStatistics::totalTasksInQueue)
+                        .comparing(this::getTotalConcurrentTasks)
+                        .thenComparing(ConsumerStatistics::totalTasksInQueue)
                         .thenComparing(ConsumerStatistics::totalTasksCompleted)
         );
 
