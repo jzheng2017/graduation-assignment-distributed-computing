@@ -2,6 +2,8 @@ package coordinator;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import datastorage.KVClient;
+import datastorage.configuration.EtcdKeyPrefix;
 import messagequeue.consumer.ConsumerProperties;
 import messagequeue.consumer.ConsumerStatistics;
 import messagequeue.consumer.ConsumerTaskCount;
@@ -38,45 +40,38 @@ public class ConsumerCoordinator {
     private final Queue<String> consumersToBeDistributed = new ConcurrentLinkedQueue<>();
     private final ConsumerDistributor consumerDistributor;
     private final MessageBrokerProxy messageBrokerProxy;
-    private boolean firstTimeDistributing = true;
+    private final KVClient kvClient;
 
-    public ConsumerCoordinator(ConsumerDistributor consumerDistributor, MessageBrokerProxy messageBrokerProxy) {
+    public ConsumerCoordinator(ConsumerDistributor consumerDistributor, MessageBrokerProxy messageBrokerProxy, KVClient kvClient) {
         this.consumerDistributor = consumerDistributor;
         this.messageBrokerProxy = messageBrokerProxy;
+        this.kvClient = kvClient;
     }
 
     public void updateConsumerStatisticOfInstance(ConsumerStatistics consumerStatistics) {
         consumerStatisticsPerInstance.put(consumerStatistics.instanceId(), consumerStatistics);
     }
 
-    public void registerInstance(String instanceId) {
-        synchronized (registeredInstanceIds) {
-            if (!registeredInstanceIds.contains(instanceId)) {
-                this.registeredInstanceIds.add(instanceId);
-                logger.info("Registered instance with id '{}'", instanceId);
+    public void registerWorker(String workerId) {
+        final String key = EtcdKeyPrefix.WORKER_REGISTRATION + "-" + workerId;
+        kvClient.get(key).thenAccept(getResponse -> {
+            if (!getResponse.keyValues().isEmpty()) {
+                kvClient.put(key, Long.toString(Instant.now().getEpochSecond())).thenAccept(putResponse -> logger.info("Worker '{}' has been registered", workerId));
             } else {
-                logger.warn("Instance with id '{}' has already been registered", instanceId);
+                logger.warn("Can not register worker '{}' because it already has been registered", workerId);
             }
-        }
+        });
     }
 
-    public void unregisterInstance(String instanceId) {
-        synchronized (registeredInstanceIds) {
-            if (registeredInstanceIds.contains(instanceId)) {
-                try {
-                    this.messageBrokerProxy.sendMessage(instanceId + "-consumers", new ObjectMapper().writeValueAsString(new ShutdownConsumerManagerRequest("shutdown")));
-                    requeueConsumers(instanceId);
-                } catch (JsonProcessingException e) {
-                    logger.warn("Can not serialize request", e);
-                }
-                this.registeredInstanceIds.remove(instanceId);
-                this.consumerStatisticsPerInstance.remove(instanceId);
-                logger.info("Unregistered instance with id '{}'", instanceId);
+    public void unregisterWorker(String workerId) {
+        final String key = EtcdKeyPrefix.WORKER_REGISTRATION + "-" + workerId;
+        kvClient.get(key).thenAccept(getResponse -> {
+            if (!getResponse.keyValues().isEmpty()) {
+                kvClient.delete(key).thenAccept(deleteResponse -> logger.info("Worker '{}' has been unregistered", workerId));
             } else {
-                logger.warn("Instance with id '{}' can not be unregistered because it can not be found.", instanceId);
-                this.consumerStatisticsPerInstance.remove(instanceId);
+                logger.warn("Can not unregister worker '{}' because it is not registered", workerId);
             }
-        }
+        });
     }
 
     private void requeueConsumers(String instanceId) {
@@ -96,45 +91,36 @@ public class ConsumerCoordinator {
         ConsumerProperties consumerProperties = new ConsumerProperties(
                 (String) propAndValues.get("name"),
                 (String) propAndValues.get("groupId"),
-                new HashSet<>((List<String>) propAndValues.get("subscriptions")),
-                (int) propAndValues.get("replicas"));
+                new HashSet<>((List<String>) propAndValues.get("subscriptions"))
+        );
 
-        synchronized (consumerConfigurations) {
-            if (!consumerConfigurations.containsKey(consumerProperties.name())) {
-                consumerConfigurations.put(consumerProperties.name(), consumerProperties);
-                logger.info("Consumer configuration '{}' has been registered", consumerProperties.name());
-            } else {
-                logger.warn("Consumer configuration '{}' has already been added", consumerProperties.name());
-                return;
-            }
-        }
-
-        synchronized (consumersToBeDistributed) {
-            if (!consumersToBeDistributed.contains(consumerProperties.name())) {
-                for (int i = 0; i < consumerProperties.replicas(); i++) {
-                    consumersToBeDistributed.add(consumerProperties.name());
-                }
-                logger.info("Consumer '{}' has been added to the queue for distribution", consumerProperties.name());
-            } else {
-                logger.warn("Consumer '{}' has already been queued for distribution", consumerProperties.name());
-                return;
-            }
-        }
-
+        final String key = EtcdKeyPrefix.CONSUMER_CONFIGURATION + "-" + consumerProperties.name();
+        kvClient.get(key)
+                .thenAccept(getResponse -> {
+                    try {
+                        kvClient.put(key, new ObjectMapper().writeValueAsString(consumerProperties)).thenAccept(putResponse -> {
+                            if (getResponse.keyValues().isEmpty()) {
+                                logger.info("Added consumer configuration '{}'", consumerProperties.name());
+                            } else {
+                                logger.info("Consumer configuration '{}' was already present. The configuration has now been updated.", consumerProperties.name());
+                            }
+                        });
+                    } catch (JsonProcessingException e) {
+                        logger.error("Consumer '{}' could not be added as something went wrong with serialization", consumerProperties.name());
+                    }
+                });
         logger.info("Added consumer configuration: {}", consumerProperties);
     }
 
     public void removeConsumerConfiguration(String consumerId) {
-        synchronized (consumerConfigurations) {
-            if (consumerConfigurations.containsKey(consumerId)) {
-                Set<String> consumerInstances = getAllConsumersOfRunningOnInstance(consumerId);
-                consumerInstances.forEach(instanceId -> consumerDistributor.removeConsumer(instanceId, consumerId));
-                consumerConfigurations.remove(consumerId);
-                logger.info("Consumer '{}' has been unregistered and stopped on all instances", consumerId);
+        final String key = EtcdKeyPrefix.CONSUMER_CONFIGURATION + "-" + consumerId;
+        kvClient.get(key).thenAccept(getResponse -> {
+            if (!getResponse.keyValues().isEmpty()) {
+                logger.warn("Consumer configuration '{}' can not be removed as it is not present", consumerId);
             } else {
-                logger.warn("Consumer with id '{}' not found", consumerId);
+                kvClient.delete(key).thenAccept(deleteResponse -> logger.info("Consumer configuration '{}' has been removed", consumerId));
             }
-        }
+        });
     }
 
     private Set<String> getAllConsumersOfRunningOnInstance(String instanceId) {
@@ -182,7 +168,7 @@ public class ConsumerCoordinator {
 
             if (noHeartbeatSignalReceived) {
                 logger.warn("Instance '{}' has not been responding for {} seconds. It will be unregistered.", consumerStatistic.instanceId(), timeSinceLastHeartbeatInSeconds);
-                unregisterInstance(consumerStatistic.instanceId());
+                unregisterWorker(consumerStatistic.instanceId());
             }
         }
     }

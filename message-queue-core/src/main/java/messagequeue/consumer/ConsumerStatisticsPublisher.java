@@ -3,6 +3,7 @@ package messagequeue.consumer;
 import datastorage.KVClient;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import datastorage.configuration.EtcdKeyPrefix;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -34,7 +35,7 @@ public class ConsumerStatisticsPublisher {
             String consumerId = entry.getKey();
             int taskCount = entry.getValue();
             return new ConsumerTaskCount(consumerId, taskCount, consumerManager.isConsumerInternal(consumerId));
-        }).collect(Collectors.toList());
+        }).toList();
 
         ConsumerStatistics consumerStatistics = new ConsumerStatistics(
                 consumerManager.getIdentifier(),
@@ -45,6 +46,6 @@ public class ConsumerStatisticsPublisher {
                 Instant.now().getEpochSecond());
 
         String json = new ObjectMapper().writeValueAsString(consumerStatistics);
-        kvClient.put("consumer-statistics-" + consumerStatistics.instanceId(), json);
+        kvClient.put(EtcdKeyPrefix.CONSUMER_STATISTICS + "-" + consumerStatistics.instanceId(), json);
     }
 }

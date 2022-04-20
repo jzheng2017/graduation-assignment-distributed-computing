@@ -21,9 +21,9 @@ public class CoordinatorApplicationStartupHandler implements ApplicationRunner {
 
     @Override
     public void run(ApplicationArguments args) throws Exception {
-        topicManager.createTopic(new KafkaTopicConfiguration("input", 2, (short)1));
-        topicManager.createTopic(new KafkaTopicConfiguration("output", 2, (short)1));
-        topicManager.createTopic(new KafkaTopicConfiguration("reversed", 2, (short)1));
+        topicManager.createTopic(new KafkaTopicConfiguration("input", 1, (short)1));
+        topicManager.createTopic(new KafkaTopicConfiguration("output", 1, (short)1));
+        topicManager.createTopic(new KafkaTopicConfiguration("reversed", 1, (short)1));
 //        for (int i = 0; i < 1000; i++) {
 //            messageBrokerProxy.sendMessage("input", "a");
 //        }
@@ -31,19 +31,16 @@ public class CoordinatorApplicationStartupHandler implements ApplicationRunner {
                 " \"name\": \"uppercase\",\n" +
                 " \"groupId\": \"uppercase1\",\n" +
                 " \"subscriptions\": [\"input\"],\n" +
-                " \"replicas\": 2\n" +
                 "}";
         final String reverserJson = "{\n" +
                 " \"name\": \"reverser\",\n" +
                 " \"groupId\": \"reverser1\",\n" +
                 " \"subscriptions\": [\"output\"],\n" +
-                " \"replicas\": 2\n" +
                 "}";
         final String printerJson = "{\n" +
                 " \"name\": \"printer\",\n" +
                 " \"groupId\": \"printer1\",\n" +
                 " \"subscriptions\": [\"reversed\"],\n" +
-                " \"replicas\": 2\n" +
                 "}";
         consumerCoordinator.addConsumerConfiguration(upperCaseJson);
         consumerCoordinator.addConsumerConfiguration(reverserJson);

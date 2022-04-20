@@ -29,13 +29,15 @@ public class EtcdKVClient implements KVClient {
 
     @Override
     public CompletableFuture<PutResponse> put(String key, String value) {
-        return kvClient.put(ByteSequence.from(key.getBytes()), ByteSequence.from(value.getBytes()))
+        return kvClient
+                .put(ByteSequence.from(key.getBytes()), ByteSequence.from(value.getBytes()))
                 .thenApply(response -> new PutResponse(response.getPrevKv().getValue().toString()));
     }
 
     @Override
     public CompletableFuture<GetResponse> get(String key) {
-        return kvClient.get(ByteSequence.from(key.getBytes()))
+        return kvClient
+                .get(ByteSequence.from(key.getBytes()))
                 .thenApply(response -> new GetResponse(
                                 response.getKvs()
                                         .stream()
@@ -50,7 +52,8 @@ public class EtcdKVClient implements KVClient {
 
     @Override
     public CompletableFuture<DeleteResponse> delete(String key) {
-        return kvClient.delete(ByteSequence.from(key.getBytes()))
+        return kvClient
+                .delete(ByteSequence.from(key.getBytes()))
                 .thenApply(response -> new DeleteResponse(
                                 response.getPrevKvs()
                                         .stream()

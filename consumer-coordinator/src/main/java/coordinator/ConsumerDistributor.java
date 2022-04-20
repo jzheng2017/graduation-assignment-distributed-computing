@@ -18,21 +18,21 @@ public class ConsumerDistributor {
     }
 
     public void addConsumer(String instanceId, ConsumerProperties consumerProperties) {
-        try {
-            String payload = new ObjectMapper().writeValueAsString(new AddConsumerRequest("add", consumerProperties));
-            messageBrokerProxy.sendMessage(instanceId + "-consumers", payload);
-            logger.info("Distributed a consumer to instance '{}'", instanceId);
-        } catch (JsonProcessingException e) {
-            logger.warn("Could not serialize request", e);
-        }
+//        try {
+//            String payload = new ObjectMapper().writeValueAsString(new AddConsumerRequest("add", consumerProperties));
+//            messageBrokerProxy.sendMessage(instanceId + "-consumers", payload);
+//            logger.info("Distributed a consumer to instance '{}'", instanceId);
+//        } catch (JsonProcessingException e) {
+//            logger.warn("Could not serialize request", e);
+//        }
     }
 
     public void removeConsumer(String instanceId, String consumerId) {
-        try {
-            String payload = new ObjectMapper().writeValueAsString(new RemoveConsumerRequest("remove", consumerId));
-            messageBrokerProxy.sendMessage(instanceId + "-consumers", payload);
-        } catch (JsonProcessingException e) {
-            logger.warn("Could not serialize request", e);
-        }
+//        try {
+//            String payload = new ObjectMapper().writeValueAsString(new RemoveConsumerRequest("remove", consumerId));
+//            messageBrokerProxy.sendMessage(instanceId + "-consumers", payload);
+//        } catch (JsonProcessingException e) {
+//            logger.warn("Could not serialize request", e);
+//        }
     }
 }
