@@ -3,18 +3,18 @@ package datastorage;
 import datastorage.configuration.EtcdProperties;
 import io.etcd.jetcd.ByteSequence;
 import io.etcd.jetcd.Client;
-import io.etcd.jetcd.Lease;
 import io.etcd.jetcd.Lock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Service;
 
 import java.util.concurrent.CompletableFuture;
 
+@Service
 public class EtcdLockClient implements LockClient {
     private Logger logger = LoggerFactory.getLogger(EtcdLockClient.class);
     private static final long DEFAULT_LOCK_DURATION_SECONDS = 60L;
     private Lock lockClient;
-    private Lease leaseClient;
 
     public EtcdLockClient(EtcdProperties etcdProperties) {
         Client client = Client
@@ -22,7 +22,6 @@ public class EtcdLockClient implements LockClient {
                 .endpoints(etcdProperties.getBaseUrl())
                 .build();
         this.lockClient = client.getLockClient();
-        this.leaseClient = client.getLeaseClient();
     }
 
     @Override
