@@ -1,7 +1,5 @@
-package kafka.messagebroker.topic;
+package kafka.topic;
 
-import kafka.topic.KafkaTopicConfiguration;
-import kafka.topic.KafkaTopicManager;
 import messagequeue.messagebroker.topic.FailedTopicActionException;
 import messagequeue.messagebroker.topic.TopicConfiguration;
 import org.apache.kafka.clients.admin.Admin;

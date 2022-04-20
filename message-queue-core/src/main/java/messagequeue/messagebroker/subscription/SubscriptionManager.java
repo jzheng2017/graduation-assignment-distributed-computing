@@ -1,44 +1,29 @@
 package messagequeue.messagebroker.subscription;
 
+import java.util.Map;
 import java.util.Set;
 
-/**
- * This interface allows a class to be a subscriber to a topic
- */
-public interface Subscriber {
-    /**
-     * Subscribe to a topic
-     *
-     * @param topicName the name of the topic
-     */
-    void subscribe(String topicName);
+public interface SubscriptionManager {
 
     /**
      * Subscribe to a set of topics
      *
      * @param topicList a set of topic names
      */
-    void subscribe(Set<String> topicList);
-
-    /**
-     * Unsubscribe to a topic
-     *
-     * @param topicName the topic name
-     */
-    void unsubscribe(String topicName);
+    void subscribe(Set<String> topicList, Map<String, Object> consumerContext);
 
     /**
      * Unsubscribe from a set of topics
      * @param topicList a set of topic names
      */
-    void unsubscribe(Set<String> topicList);
+    void unsubscribe(Set<String> topicList, Map<String, Object> consumerContext);
 
     /**
      * Get all topics that the subscriber is subscribed to
      *
      * @return a list of topic subscriptions
      */
-    Set<Subscription> getSubscriptions();
+    Set<Subscription> getSubscriptions(Map<String, Object> consumerContext);
 
     /**
      * Determine whether the subscriber is subscribed to a given topic
@@ -46,5 +31,5 @@ public interface Subscriber {
      * @param topicName the name of the topic
      * @return true if it is subscribed to the topic, false otherwise
      */
-    boolean isSubscribed(String topicName);
+    boolean isSubscribed(String topicName, Map<String, Object> consumerContext);
 }
