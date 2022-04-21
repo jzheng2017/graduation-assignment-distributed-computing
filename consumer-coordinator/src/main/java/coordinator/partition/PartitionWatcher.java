@@ -35,6 +35,9 @@ public class PartitionWatcher {
         public void onNext(WatchResponse watchResponse) {
             List<WatchEvent> events = watchResponse.events();
             boolean valueReallyChanged = events.stream().anyMatch(event -> !event.prevValue().equals(event.currentValue()));
+            if (valueReallyChanged) {
+                partitionManager.resetPartitionAssignmentsAndReassign();
+            }
         }
 
         @Override
@@ -44,7 +47,7 @@ public class PartitionWatcher {
 
         @Override
         public void onCompleted() {
-            logger.info("Finished watching the resource/key '{}'", KeyPrefix.PARTITION_COUNT);
+            logger.info("Stopped watching the resource/key '{}'", KeyPrefix.PARTITION_COUNT);
         }
     }
 }

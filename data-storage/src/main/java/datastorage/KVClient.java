@@ -16,11 +16,19 @@ public interface KVClient {
     CompletableFuture<PutResponse> put(String key, String value);
 
     /**
-     * Get the value that is bound to the key. It will return all values that has the same prefix as the provided key.
+     * Get the value that is bound to the key.
      * @param key the key to find values for
      * @return
      */
     CompletableFuture<GetResponse> get(String key);
+
+    /**
+     * Get all values for which the key matches the provided prefix.
+     * @param prefix the prefix to match to
+     * @return
+     */
+    CompletableFuture<GetResponse> getByPrefix(String prefix);
+
 
     /**
      * Delete the value that is bound to the provided key
@@ -28,4 +36,13 @@ public interface KVClient {
      * @return
      */
     CompletableFuture<DeleteResponse> delete(String key);
+
+    /**
+     * Delete all keys that matches the provided prefix
+     * @param prefix the prefix
+     * @return
+     */
+    CompletableFuture<DeleteResponse> deleteByPrefix(String prefix);
+
+    boolean keyExists(String key);
 }

@@ -34,20 +34,22 @@ public class EtcdLockClient implements LockClient {
 
     @Override
     public CompletableFuture<Void> lock(String name) {
-        return lockClient.lock(ByteSequence.from(name.getBytes()), 0).thenAccept(c -> logger.info("Lock with the name '{}' acquired", name));
+        return lockClient.lock(ByteSequence.from(name.getBytes()), 0).thenAccept(c -> logger.info("Lock '{}' acquired", name));
     }
 
     @Override
     public CompletableFuture<Void> unlock(String name) {
-        return lockClient.unlock(ByteSequence.from(name.getBytes())).thenAccept(c -> logger.info("Lock with the name '{}' released", name));
+        return lockClient.unlock(ByteSequence.from(name.getBytes())).thenAccept(c -> logger.info("Lock '{}' released", name));
     }
 
     @Override
-    public  <T> T acquireLockAndExecute(String lockName, Supplier<T> supplier) {
+    public <T> T acquireLockAndExecute(String lockName, Supplier<T> supplier) {
         try {
-            T value = lock(lockName).thenApply(ignore -> supplier.get()).get();
-            unlock(lockName);
-            return value;
+            return lock(lockName).thenApplyAsync(ignore -> {
+                T value = supplier.get();
+                unlock(lockName);
+                return value;
+            }).get();
         } catch (InterruptedException | ExecutionException e) {
             logger.info("Could not successfully acquire lock '{}' or execute the supplier", lockName, e);
             return null;

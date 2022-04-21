@@ -6,7 +6,7 @@ import org.springframework.stereotype.Service;
 public class Util {
 
     public String getSubstringAfterPrefix(String prefix, String original) {
-        int cutOff = original.indexOf(prefix);
+        int cutOff = original.indexOf(prefix) + prefix.length();
         return original.substring(cutOff);
     }
 }

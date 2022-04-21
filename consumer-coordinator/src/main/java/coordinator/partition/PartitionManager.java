@@ -5,14 +5,23 @@ import datastorage.KVClient;
 import datastorage.LockClient;
 import datastorage.configuration.KeyPrefix;
 import datastorage.configuration.LockNames;
+import datastorage.dto.GetResponse;
 import messagequeue.configuration.EnvironmentSetup;
+import org.checkerframework.checker.units.qual.Prefix;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
+import java.util.stream.Collectors;
 
 @Service
 public class PartitionManager {
@@ -20,6 +29,7 @@ public class PartitionManager {
     private KVClient kvClient;
     private LockClient lockClient;
     private Util util;
+    private Set<Integer> assignedPartitions = Collections.newSetFromMap(new ConcurrentHashMap<>());
 
     public PartitionManager(KVClient kvClient, LockClient lockClient, Util util) {
         this.kvClient = kvClient;
@@ -57,6 +67,46 @@ public class PartitionManager {
         );
     }
 
+    public int computeBestPartition() {
+        logger.info("Computing best partition...");
+        return lockClient.acquireLockAndExecute(
+                LockNames.PARTITION_LOCK,
+                () -> {
+                    int numberOfPartitions = getNumberOfPartitions();
+                    Map<Integer, String> partitionAssignments = getPartitionAssignments();
+
+                    for (int i = 0; i < numberOfPartitions; i++) {
+                        if (!partitionAssignments.containsKey(i)) {
+                            logger.info("Computed best partition: {}", i);
+                            return i; //return lowest partition
+                        }
+                    }
+
+                    logger.warn("No partition could be computed.");
+                    return Integer.MIN_VALUE; //means no partition was available
+                }
+        );
+    }
+
+    public Map<Integer, String> getPartitionAssignments() {
+        try {
+            return kvClient
+                    .get(KeyPrefix.PARTITION_ASSIGNMENT)
+                    .get()
+                    .keyValues()
+                    .entrySet()
+                    .stream()
+                    .collect(
+                            Collectors.toMap(
+                                    entry -> Integer.parseInt(util.getSubstringAfterPrefix(KeyPrefix.PARTITION_ASSIGNMENT, entry.getKey())),
+                                    Map.Entry::getValue)
+                    );
+        } catch (InterruptedException | ExecutionException e) {
+            logger.warn("Could not retrieve partition assignments", e);
+            return new HashMap<>();
+        }
+    }
+
     /**
      * Remove partition assignment from a worker
      *
@@ -66,14 +116,15 @@ public class PartitionManager {
         final String partitionAssignmentKey = KeyPrefix.PARTITION_ASSIGNMENT + "-" + partition;
         lockClient.acquireLockAndExecute(
                 LockNames.PARTITION_LOCK,
-                () -> kvClient.get(partitionAssignmentKey).thenAccept(partitionAssignmentResponse -> {
-                            if (!partitionAssignmentResponse.keyValues().isEmpty()) {
-                                kvClient.delete(partitionAssignmentKey).thenAccept(deleteResponse -> logger.info("Partition assignment for partition {} removed", partition));
-                            } else {
-                                logger.info("Partition assignment for partition {} can not be removed as there is no assignment present.", partition);
-                            }
-                        }
-                )
+                () -> {
+                    if (kvClient.keyExists(partitionAssignmentKey)) {
+                        kvClient.delete(partitionAssignmentKey).thenAccept(deleteResponse -> logger.info("Partition assignment for partition {} removed", partition));
+                    } else {
+                        logger.info("Partition assignment for partition {} can not be removed as there is no assignment present.", partition);
+                    }
+
+                    return null;
+                }
         );
     }
 
@@ -140,6 +191,46 @@ public class PartitionManager {
         } catch (InterruptedException | ExecutionException e) {
             logger.warn("Could not retrieve the number of partitions. Defaulting to partition count that was known on startup.", e);
             return EnvironmentSetup.NUMBER_OF_PARTITIONS;
+        }
+    }
+
+    public void resetPartitionAssignmentsAndReassign() {
+        lockClient.acquireLockAndExecute(
+                LockNames.PARTITION_LOCK,
+                () -> kvClient.deleteByPrefix(KeyPrefix.PARTITION_ASSIGNMENT).thenAcceptAsync(deleteResponse -> assignPartitionsToWorkers())
+        );
+    }
+
+    private void assignPartitionsToWorkers() {
+        List<String> workers = getAvailableWorkers();
+        int partitionCount = getNumberOfPartitions();
+        //when all partition assignments are reset, just use a round-robin assignment
+        if (workers.size() >= partitionCount) {
+            logger.warn("There are more workers available than partitions. Partitions: {}, Workers: {}", partitionCount, workers.size());
+            for (int i = 0; i < partitionCount; i++) {
+                kvClient.put(KeyPrefix.PARTITION_ASSIGNMENT + "-" + i, workers.get(i));
+            }
+        } else {
+            logger.warn("There are more partitions available than workers. Partitions: {}, Workers: {}", partitionCount, workers.size());
+            for (int i = 0; i < workers.size(); i++) {
+                kvClient.put(KeyPrefix.PARTITION_ASSIGNMENT + "-" + i, workers.get(i));
+            }
+        }
+    }
+
+    private List<String> getAvailableWorkers() {
+        try {
+            return kvClient
+                    .getByPrefix(KeyPrefix.WORKER_REGISTRATION)
+                    .thenApply(GetResponse::keyValues)
+                    .get()
+                    .keySet()
+                    .stream()
+                    .map(key -> util.getSubstringAfterPrefix(KeyPrefix.WORKER_REGISTRATION + "-", key))
+                    .toList();
+        } catch (InterruptedException | ExecutionException e) {
+            logger.warn("Could not get the available workers", e);
+            return new ArrayList<>();
         }
     }
 }
