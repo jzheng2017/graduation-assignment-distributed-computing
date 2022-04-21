@@ -30,17 +30,17 @@ public class CoordinatorApplicationStartupHandler implements ApplicationRunner {
         final String upperCaseJson = "{\n" +
                 " \"name\": \"uppercase\",\n" +
                 " \"groupId\": \"uppercase1\",\n" +
-                " \"subscriptions\": [\"input\"],\n" +
+                " \"subscriptions\": [\"input\"]\n" +
                 "}";
         final String reverserJson = "{\n" +
                 " \"name\": \"reverser\",\n" +
                 " \"groupId\": \"reverser1\",\n" +
-                " \"subscriptions\": [\"output\"],\n" +
+                " \"subscriptions\": [\"output\"]\n" +
                 "}";
         final String printerJson = "{\n" +
                 " \"name\": \"printer\",\n" +
                 " \"groupId\": \"printer1\",\n" +
-                " \"subscriptions\": [\"reversed\"],\n" +
+                " \"subscriptions\": [\"reversed\"]\n" +
                 "}";
         consumerCoordinator.addConsumerConfiguration(upperCaseJson);
         consumerCoordinator.addConsumerConfiguration(reverserJson);

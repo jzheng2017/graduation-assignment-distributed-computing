@@ -1,5 +1,8 @@
 package datastorage.configuration;
 
+/**
+ * All key prefixes used are defined here
+ */
 public class KeyPrefix {
     public static final String WORKER_REGISTRATION = "worker-registration";
     public static final String CONSUMER_STATISTICS = "consumer-statistics";

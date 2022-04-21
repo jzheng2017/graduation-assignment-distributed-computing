@@ -10,6 +10,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+import javax.annotation.PreDestroy;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -27,6 +28,11 @@ public class EtcdWatchClient implements WatchClient {
                 .endpoints(etcdProperties.getBaseUrl())
                 .build();
         this.watchClient = client.getWatchClient();
+    }
+
+    @PreDestroy
+    void cleanup() {
+        this.watchClient.close();
     }
 
     @Override

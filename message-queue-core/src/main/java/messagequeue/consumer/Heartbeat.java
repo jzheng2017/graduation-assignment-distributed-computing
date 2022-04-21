@@ -1,7 +1,7 @@
 package messagequeue.consumer;
 
 import datastorage.KVClient;
-import datastorage.configuration.EtcdKeyPrefix;
+import datastorage.configuration.KeyPrefix;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -25,7 +25,7 @@ public class Heartbeat {
     @Scheduled(fixedDelay = 5000L)
     public void sendHeartbeat() {
         kvClient.put(
-                        EtcdKeyPrefix.WORKER_HEARTBEAT + "-" + consumerManager.getIdentifier(),
+                        KeyPrefix.WORKER_HEARTBEAT + "-" + consumerManager.getIdentifier(),
                         Long.toString(Instant.now().getEpochSecond())
                 )
                 .thenAccept(response -> logger.trace("Sent heartbeat from '{}' at {}", consumerManager.getIdentifier(), Instant.now().getEpochSecond(), response));

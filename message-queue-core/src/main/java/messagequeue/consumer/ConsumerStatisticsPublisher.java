@@ -3,7 +3,7 @@ package messagequeue.consumer;
 import datastorage.KVClient;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import datastorage.configuration.EtcdKeyPrefix;
+import datastorage.configuration.KeyPrefix;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -11,7 +11,6 @@ import org.springframework.stereotype.Service;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 @Service
 @ConditionalOnProperty(value = "consumer.statistics.publisher", havingValue = "on")
@@ -46,6 +45,6 @@ public class ConsumerStatisticsPublisher {
                 Instant.now().getEpochSecond());
 
         String json = new ObjectMapper().writeValueAsString(consumerStatistics);
-        kvClient.put(EtcdKeyPrefix.CONSUMER_STATISTICS + "-" + consumerStatistics.instanceId(), json);
+        kvClient.put(KeyPrefix.CONSUMER_STATISTICS + "-" + consumerStatistics.instanceId(), json);
     }
 }
