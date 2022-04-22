@@ -46,7 +46,7 @@ public class PartitionManager {
     public void assignPartition(int partition, String workerId) {
         lockClient.acquireLockAndExecute(
                 LockNames.PARTITION_LOCK,
-                () -> kvClient.get(KeyPrefix.PARTITION_COUNT).thenAccept(
+                () -> kvClient.get(KeyPrefix.PARTITION_COUNT).thenAcceptAsync(
                         partitionResponse -> {
                             int partitionCount = Integer.parseInt(partitionResponse.keyValues().get(KeyPrefix.PARTITION_COUNT));
 
@@ -59,7 +59,7 @@ public class PartitionManager {
                                     assignedPartition -> logger.warn("Worker '{}' has already been assigned to the partition {}", workerId, assignedPartition),
                                     () -> getWorkerAssignedToPartition(partition).ifPresentOrElse(
                                             assignedWorker -> logger.info("Partition {} has already been assigned to worker '{}'", partition, assignedWorker),
-                                            () -> kvClient.put(KeyPrefix.PARTITION_ASSIGNMENT + "-" + partition, workerId).thenAccept(putResponse -> logger.info("Partition {} has been assigned to worker '{}'", partition, workerId))
+                                            () -> kvClient.put(KeyPrefix.PARTITION_ASSIGNMENT + "-" + partition, workerId).thenAcceptAsync(putResponse -> logger.info("Partition {} has been assigned to worker '{}'", partition, workerId))
                                     )
                             );
                         }
@@ -68,10 +68,10 @@ public class PartitionManager {
     }
 
     public int computeBestPartition() {
-        logger.info("Computing best partition...");
         return lockClient.acquireLockAndExecute(
                 LockNames.PARTITION_LOCK,
                 () -> {
+                    logger.info("Computing best partition...");
                     int numberOfPartitions = getNumberOfPartitions();
                     Map<Integer, String> partitionAssignments = getPartitionAssignments();
 
@@ -118,7 +118,7 @@ public class PartitionManager {
                 LockNames.PARTITION_LOCK,
                 () -> {
                     if (kvClient.keyExists(partitionAssignmentKey)) {
-                        kvClient.delete(partitionAssignmentKey).thenAccept(deleteResponse -> logger.info("Partition assignment for partition {} removed", partition));
+                        kvClient.delete(partitionAssignmentKey).thenAcceptAsync(deleteResponse -> logger.info("Partition assignment for partition {} removed", partition));
                     } else {
                         logger.info("Partition assignment for partition {} can not be removed as there is no assignment present.", partition);
                     }
@@ -177,7 +177,7 @@ public class PartitionManager {
      * @param partitionCount the number of partitions
      */
     public void createPartitions(int partitionCount) {
-        kvClient.put(KeyPrefix.PARTITION_COUNT, Integer.toString(partitionCount)).thenAccept(putResponse -> logger.info("Updated partition count to {}, old partition count was: {}", partitionCount, putResponse.prevValue()));
+        kvClient.put(KeyPrefix.PARTITION_COUNT, Integer.toString(partitionCount)).thenAcceptAsync(putResponse -> logger.info("Updated partition count to {}, old partition count was: {}", partitionCount, putResponse.prevValue()));
     }
 
     /**
@@ -205,7 +205,7 @@ public class PartitionManager {
         List<String> workers = getAvailableWorkers();
         int partitionCount = getNumberOfPartitions();
         //when all partition assignments are reset, just use a round-robin assignment
-        if (workers.size() >= partitionCount) {
+        if (workers.size() > partitionCount) {
             logger.warn("There are more workers available than partitions. Partitions: {}, Workers: {}", partitionCount, workers.size());
             for (int i = 0; i < partitionCount; i++) {
                 kvClient.put(KeyPrefix.PARTITION_ASSIGNMENT + "-" + i, workers.get(i));

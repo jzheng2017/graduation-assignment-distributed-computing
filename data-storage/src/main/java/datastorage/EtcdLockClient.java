@@ -6,6 +6,7 @@ import io.etcd.jetcd.Client;
 import io.etcd.jetcd.Lock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.PreDestroy;
@@ -19,6 +20,12 @@ public class EtcdLockClient implements LockClient {
     private static final long DEFAULT_LOCK_DURATION_SECONDS = 60L;
     private Lock lockClient;
 
+    //only for unit test purposes
+    EtcdLockClient(Lock lock) {
+        this.lockClient = lock;
+    }
+
+    @Autowired
     public EtcdLockClient(EtcdProperties etcdProperties) {
         Client client = Client
                 .builder()
@@ -34,25 +41,23 @@ public class EtcdLockClient implements LockClient {
 
     @Override
     public CompletableFuture<Void> lock(String name) {
-        return lockClient.lock(ByteSequence.from(name.getBytes()), 0).thenAccept(c -> logger.info("Lock '{}' acquired", name));
+        return lockClient.lock(ByteSequence.from(name.getBytes()), 0).thenAcceptAsync(c -> logger.info("Lock '{}' acquired", name));
     }
 
     @Override
     public CompletableFuture<Void> unlock(String name) {
-        return lockClient.unlock(ByteSequence.from(name.getBytes())).thenAccept(c -> logger.info("Lock '{}' released", name));
+        return lockClient.unlock(ByteSequence.from(name.getBytes())).thenAcceptAsync(c -> logger.info("Lock '{}' released", name));
     }
 
     @Override
     public <T> T acquireLockAndExecute(String lockName, Supplier<T> supplier) {
         try {
-            return lock(lockName).thenApplyAsync(ignore -> {
-                T value = supplier.get();
-                unlock(lockName);
-                return value;
-            }).get();
+            return lock(lockName).thenApplyAsync(ignore -> supplier.get()).get();
         } catch (InterruptedException | ExecutionException e) {
             logger.info("Could not successfully acquire lock '{}' or execute the supplier", lockName, e);
             return null;
+        } finally {
+            unlock(lockName);
         }
     }
 }

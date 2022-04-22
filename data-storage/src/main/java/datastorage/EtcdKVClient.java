@@ -12,6 +12,7 @@ import io.etcd.jetcd.options.GetOption;
 import io.netty.util.concurrent.CompleteFuture;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.PreDestroy;
@@ -24,6 +25,11 @@ public class EtcdKVClient implements KVClient {
     private Logger logger = LoggerFactory.getLogger(EtcdKVClient.class);
     private KV kvClient;
 
+    //only for unit test purposes
+    EtcdKVClient(KV kvClient) {
+        this.kvClient = kvClient;
+    }
+    @Autowired
     public EtcdKVClient(EtcdProperties etcdProperties) {
         this.kvClient = Client
                 .builder()
@@ -85,16 +91,6 @@ public class EtcdKVClient implements KVClient {
         );
     }
 
-    @Override
-    public boolean keyExists(String key) {
-        try {
-            return get(key).thenApply(getResponse -> !getResponse.keyValues().isEmpty()).get();
-        } catch (InterruptedException | ExecutionException e) {
-            logger.warn("Could not successfully check for key '{}' existence", key);
-            return false;
-        }
-    }
-
     private CompletableFuture<DeleteResponse> deleteWithOptions(String keyOrPrefix, DeleteOption deleteOption) {
         return kvClient
                 .delete(ByteSequence.from(keyOrPrefix.getBytes()), deleteOption)
@@ -109,5 +105,15 @@ public class EtcdKVClient implements KVClient {
                                         )
                         )
                 );
+    }
+
+    @Override
+    public boolean keyExists(String key) {
+        try {
+            return get(key).thenApply(getResponse -> !getResponse.keyValues().isEmpty()).get();
+        } catch (InterruptedException | ExecutionException e) {
+            logger.warn("Could not successfully check for key '{}' existence", key);
+            return false;
+        }
     }
 }

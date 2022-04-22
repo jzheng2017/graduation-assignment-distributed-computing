@@ -11,16 +11,15 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.PreDestroy;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Service
 public class EtcdWatchClient implements WatchClient {
     private Logger logger = LoggerFactory.getLogger(EtcdWatchClient.class);
     private Watch watchClient;
-    private Map<String, Watch.Watcher> watchers = new HashMap<>();
+    private final Map<String, Watch.Watcher> watchers = new ConcurrentHashMap<>();
 
     public EtcdWatchClient(EtcdProperties etcdProperties) {
         Client client = Client
@@ -37,23 +36,32 @@ public class EtcdWatchClient implements WatchClient {
 
     @Override
     public void watch(String key, WatchListener watchListener) {
-        watchClient.watch(
-                ByteSequence.from(key.getBytes()),
-                watchResponse -> watchListener.onNext(new WatchResponse(mapWatchEvents(watchResponse.getEvents()))),
-                watchListener::onError,
-                watchListener::onCompleted
-        );
-        logger.info("Registered listener to watch key '{}'", key);
+        synchronized (watchers) {
+            if (!watchers.containsKey(key)) {
+                Watch.Watcher watcher = watchClient.watch(
+                        ByteSequence.from(key.getBytes()),
+                        watchResponse -> watchListener.onNext(new WatchResponse(mapWatchEvents(watchResponse.getEvents()))),
+                        watchListener::onError,
+                        watchListener::onCompleted
+                );
+                watchers.put(key, watcher);
+                logger.info("Registered listener to watch key '{}'", key);
+            } else {
+                logger.warn("Can not add new watcher to listen to key '{}' because there is already an existing watch listening to it", key);
+            }
+        }
     }
 
     @Override
     public void unwatch(String key) {
-        if (watchers.containsKey(key)) {
-            watchers.get(key).close();
-            watchers.remove(key);
-            logger.info("Unwatched key '{}'", key);
-        } else {
-            logger.warn("Can not unwatch key '{}' as no active watch has been registered on that key", key);
+        synchronized (watchers) {
+            if (watchers.containsKey(key)) {
+                watchers.get(key).close();
+                watchers.remove(key);
+                logger.info("Unwatched key '{}'", key);
+            } else {
+                logger.warn("Can not unwatch key '{}' as no active watch has been registered on that key", key);
+            }
         }
     }
 
@@ -65,7 +73,6 @@ public class EtcdWatchClient implements WatchClient {
                         event.getKeyValue().getValue().toString(),
                         event.getPrevKV().getKey().toString(),
                         event.getPrevKV().getValue().toString()
-                ))
-                .collect(Collectors.toList());
+                )).toList();
     }
 }
