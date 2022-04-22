@@ -1,4 +1,4 @@
-package messagequeue.consumer;
+package coordinator.dto;
 
 import java.util.List;
 

@@ -1,18 +1,14 @@
 package coordinator;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import coordinator.dto.ConsumerProperties;
+import coordinator.dto.ConsumerStatistics;
+import coordinator.dto.ConsumerTaskCount;
 import datastorage.KVClient;
-import datastorage.configuration.EtcdKeyPrefix;
-import messagequeue.consumer.ConsumerProperties;
-import messagequeue.consumer.ConsumerStatistics;
-import messagequeue.consumer.ConsumerTaskCount;
-import messagequeue.messagebroker.MessageBrokerProxy;
+import datastorage.configuration.KeyPrefix;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.json.JsonParser;
 import org.springframework.boot.json.JsonParserFactory;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
@@ -38,40 +34,36 @@ public class ConsumerCoordinator {
     private final Set<ConsumerInstanceEntry> activeConsumersOnInstances = Collections.newSetFromMap(new ConcurrentHashMap<>());
     private final Map<String, ConsumerProperties> consumerConfigurations = new ConcurrentHashMap<>();
     private final Queue<String> consumersToBeDistributed = new ConcurrentLinkedQueue<>();
-    private final ConsumerDistributor consumerDistributor;
-    private final MessageBrokerProxy messageBrokerProxy;
     private final KVClient kvClient;
 
-    public ConsumerCoordinator(ConsumerDistributor consumerDistributor, MessageBrokerProxy messageBrokerProxy, KVClient kvClient) {
-        this.consumerDistributor = consumerDistributor;
-        this.messageBrokerProxy = messageBrokerProxy;
+    public ConsumerCoordinator( KVClient kvClient) {
         this.kvClient = kvClient;
     }
 
     public void updateConsumerStatisticOfInstance(ConsumerStatistics consumerStatistics) {
-        consumerStatisticsPerInstance.put(consumerStatistics.instanceId(), consumerStatistics);
+        consumerStatisticsPerInstance.put(consumerStatistics.workerId(), consumerStatistics);
     }
 
     public void registerWorker(String workerId) {
-        final String key = EtcdKeyPrefix.WORKER_REGISTRATION + "-" + workerId;
-        kvClient.get(key).thenAccept(getResponse -> {
-            if (!getResponse.keyValues().isEmpty()) {
-                kvClient.put(key, Long.toString(Instant.now().getEpochSecond())).thenAccept(putResponse -> logger.info("Worker '{}' has been registered", workerId));
-            } else {
-                logger.warn("Can not register worker '{}' because it already has been registered", workerId);
-            }
-        });
+        final String key = KeyPrefix.WORKER_REGISTRATION + "-" + workerId;
+        if (kvClient.keyExists(key)) {
+            kvClient.put(key, Long.toString(Instant.now().getEpochSecond())).thenAcceptAsync(putResponse -> logger.info("Worker '{}' has been registered", workerId));
+        } else {
+            logger.warn("Can not register worker '{}' because it already has been registered", workerId);
+        }
     }
 
     public void unregisterWorker(String workerId) {
-        final String key = EtcdKeyPrefix.WORKER_REGISTRATION + "-" + workerId;
-        kvClient.get(key).thenAccept(getResponse -> {
-            if (!getResponse.keyValues().isEmpty()) {
-                kvClient.delete(key).thenAccept(deleteResponse -> logger.info("Worker '{}' has been unregistered", workerId));
-            } else {
-                logger.warn("Can not unregister worker '{}' because it is not registered", workerId);
-            }
-        });
+        final String registrationKey = KeyPrefix.WORKER_REGISTRATION + "-" + workerId;
+        final String statisticsKey = KeyPrefix.WORKER_STATISTICS + "-" + workerId;
+        final String partitionAssignmentKey = KeyPrefix.PARTITION_ASSIGNMENT + "-" + workerId;
+        if (kvClient.keyExists(registrationKey)) {
+            kvClient.delete(registrationKey).thenAcceptAsync(deleteResponse -> logger.info("Worker '{}' has been unregistered", workerId));
+            kvClient.delete(statisticsKey).thenAcceptAsync(deleteResponse -> logger.info("Consumer statistics of worker '{}' removed", workerId));
+            kvClient.delete(partitionAssignmentKey).thenAcceptAsync(deleteResponse -> logger.info("Removed worker '{}' partition assignment", workerId));
+        } else {
+            logger.warn("Can not unregister worker '{}' because it is not registered", workerId);
+        }
     }
 
     private void requeueConsumers(String instanceId) {
@@ -94,33 +86,31 @@ public class ConsumerCoordinator {
                 new HashSet<>((List<String>) propAndValues.get("subscriptions"))
         );
 
-        final String key = EtcdKeyPrefix.CONSUMER_CONFIGURATION + "-" + consumerProperties.name();
-        kvClient.get(key)
-                .thenAccept(getResponse -> {
-                    try {
-                        kvClient.put(key, new ObjectMapper().writeValueAsString(consumerProperties)).thenAccept(putResponse -> {
-                            if (getResponse.keyValues().isEmpty()) {
-                                logger.info("Added consumer configuration '{}'", consumerProperties.name());
-                            } else {
-                                logger.info("Consumer configuration '{}' was already present. The configuration has now been updated.", consumerProperties.name());
-                            }
-                        });
-                    } catch (JsonProcessingException e) {
-                        logger.error("Consumer '{}' could not be added as something went wrong with serialization", consumerProperties.name());
-                    }
-                });
+        final String key = KeyPrefix.CONSUMER_CONFIGURATION + "-" + consumerProperties.name();
+//        kvClient.get(key)
+//                .thenAccept(getResponse -> {
+//                    try {
+//                        kvClient.put(key, new ObjectMapper().writeValueAsString(consumerProperties)).thenAccept(putResponse -> {
+//                            if (getResponse.keyValues().isEmpty()) {
+//                                logger.info("Added consumer configuration '{}'", consumerProperties.name());
+//                            } else {
+//                                logger.info("Consumer configuration '{}' was already present. The configuration has now been updated.", consumerProperties.name());
+//                            }
+//                        });
+//                    } catch (JsonProcessingException e) {
+//                        logger.error("Consumer '{}' could not be added as something went wrong with serialization", consumerProperties.name());
+//                    }
+//                });
         logger.info("Added consumer configuration: {}", consumerProperties);
     }
 
     public void removeConsumerConfiguration(String consumerId) {
-        final String key = EtcdKeyPrefix.CONSUMER_CONFIGURATION + "-" + consumerId;
-        kvClient.get(key).thenAccept(getResponse -> {
-            if (!getResponse.keyValues().isEmpty()) {
-                logger.warn("Consumer configuration '{}' can not be removed as it is not present", consumerId);
-            } else {
-                kvClient.delete(key).thenAccept(deleteResponse -> logger.info("Consumer configuration '{}' has been removed", consumerId));
-            }
-        });
+        final String key = KeyPrefix.CONSUMER_CONFIGURATION + "-" + consumerId;
+        if (kvClient.keyExists(key)) {
+            kvClient.delete(key).thenAcceptAsync(deleteResponse -> logger.info("Consumer configuration '{}' has been removed", consumerId));
+        } else {
+            logger.warn("Consumer configuration '{}' can not be removed as it is not present", consumerId);
+        }
     }
 
     private Set<String> getAllConsumersOfRunningOnInstance(String instanceId) {
@@ -131,94 +121,107 @@ public class ConsumerCoordinator {
                 .collect(Collectors.toSet());
     }
 
-    @Scheduled(fixedDelay = 5000L)
-    public void distributeConsumersThatAreQueued() {
-        final int maxConsecutiveNumberOfFailsBeforeStopping = 5;
-        int tries = 0;
-        while (!consumersToBeDistributed.isEmpty()) {
-            String consumerId = consumersToBeDistributed.poll();
-            if (consumerId == null) {
-                break;
-            }
+//    @Scheduled(fixedDelay = 5000L)
+//    public void distributeConsumersThatAreQueued() {
+//        final int maxConsecutiveNumberOfFailsBeforeStopping = 5;
+//        int tries = 0;
+//        while (!consumersToBeDistributed.isEmpty()) {
+//            String consumerId = consumersToBeDistributed.poll();
+//            if (consumerId == null) {
+//                break;
+//            }
+//
+//            String workerId = getLeastBusyConsumerInstanceToPlaceConsumerOn(consumerId);
+//            if (workerId == null) {
+//                consumersToBeDistributed.add(consumerId);
+//                if (tries >= maxConsecutiveNumberOfFailsBeforeStopping) {
+//                    break;
+//                }
+//
+//                tries++;
+//                continue;
+//            } else {
+//                tries = 0;
+//            }
+//
+//            ConsumerProperties consumerProperties = consumerConfigurations.get(consumerId);
+//            consumerDistributor.addConsumer(workerId, consumerProperties);
+//            activeConsumersOnInstances.add(new ConsumerInstanceEntry(workerId, consumerId));
+//        }
+//    }
 
-            String instanceId = getLeastBusyConsumerInstanceToPlaceConsumerOn(consumerId);
-            if (instanceId == null) {
-                consumersToBeDistributed.add(consumerId);
-                if (tries >= maxConsecutiveNumberOfFailsBeforeStopping) {
-                    break;
-                }
+//    @Scheduled(fixedDelay = 5000L)
+//    public void checkHealth() {
+//        kvClient.get(KeyPrefix.CONSUMER_STATISTICS).thenAccept(
+//                getResponse -> {
+//                    Map<String, String> consumerStatistics = getResponse.keyValues();
+//                    for (Map.Entry<String, String> consumerStatistic : consumerStatistics.entrySet()) {
+//                        final long timeSinceLastHeartbeatInSeconds = Instant.now().getEpochSecond() - Long.parseLong(consumerStatistic.getValue());
+//                        final boolean noHeartbeatSignalReceived = timeSinceLastHeartbeatInSeconds >= DEFAULT_MISSED_HEARTBEAT_FOR_REMOVAL_IN_SECONDS;
+//                        if (noHeartbeatSignalReceived) {
+//                            logger.warn("Worker '{}' has not been responding for {} seconds. It will be unregistered.", consumerStatistic.workerId(), timeSinceLastHeartbeatInSeconds);
+//                            unregisterWorker(consumerStatistic.workerId());
+//                        }
+//                    }
+//                }
+//        );
+//        for (ConsumerStatistics consumerStatistic : consumerStatisticsPerInstance.values()) {
+//            final long timeSinceLastHeartbeatInSeconds = Instant.now().getEpochSecond() - consumerStatistic.timestamp();
+//            final boolean noHeartbeatSignalReceived = timeSinceLastHeartbeatInSeconds >= DEFAULT_MISSED_HEARTBEAT_FOR_REMOVAL_IN_SECONDS;
+//
+//            if (noHeartbeatSignalReceived) {
+//                logger.warn("Instance '{}' has not been responding for {} seconds. It will be unregistered.", consumerStatistic.workerId(), timeSinceLastHeartbeatInSeconds);
+//                unregisterWorker(consumerStatistic.workerId());
+//            }
+//        }
+//    }
 
-                tries++;
-                continue;
-            } else {
-                tries = 0;
-            }
-
-            ConsumerProperties consumerProperties = consumerConfigurations.get(consumerId);
-            consumerDistributor.addConsumer(instanceId, consumerProperties);
-            activeConsumersOnInstances.add(new ConsumerInstanceEntry(instanceId, consumerId));
-        }
-    }
-
-    @Scheduled(fixedDelay = 5000L)
-    public void checkHealth() {
-        for (ConsumerStatistics consumerStatistic : consumerStatisticsPerInstance.values()) {
-            final long timeSinceLastHeartbeatInSeconds = Instant.now().getEpochSecond() - consumerStatistic.timestamp();
-            final boolean noHeartbeatSignalReceived = timeSinceLastHeartbeatInSeconds >= DEFAULT_MISSED_HEARTBEAT_FOR_REMOVAL_IN_SECONDS;
-
-            if (noHeartbeatSignalReceived) {
-                logger.warn("Instance '{}' has not been responding for {} seconds. It will be unregistered.", consumerStatistic.instanceId(), timeSinceLastHeartbeatInSeconds);
-                unregisterWorker(consumerStatistic.instanceId());
-            }
-        }
-    }
-
-    @Scheduled(fixedDelay = 5000L)
-    public void requeueConsumersThatAreDisproportionatelyConsuming() {
-        List<ConsumerStatistics> consumerStatistics = new ArrayList<>(consumerStatisticsPerInstance.values());
-        if (consumerStatistics.size() <= 1) {
-            return;
-        }
-        logger.info("Calculating whether a consumer rebalance is needed..");
-        ConsumerStatistics busiestInstance = consumerStatistics.get(0);
-        ConsumerStatistics leastBusyInstance = consumerStatistics.get(0);
-        int busiestInstanceConcurrentTaskCount = Integer.MIN_VALUE;
-        int leastBusyInstanceConcurrentTaskCount = Integer.MAX_VALUE;
-
-        for (ConsumerStatistics consumerStatistic : consumerStatistics) {
-            int currentInstanceConcurrentTaskCount = getTotalConcurrentTasks(consumerStatistic);
-            busiestInstanceConcurrentTaskCount = getTotalConcurrentTasks(busiestInstance);
-            leastBusyInstanceConcurrentTaskCount = getTotalConcurrentTasks(leastBusyInstance);
-
-            if (currentInstanceConcurrentTaskCount > busiestInstanceConcurrentTaskCount) {
-                busiestInstance = consumerStatistic;
-            }
-
-            if (currentInstanceConcurrentTaskCount < leastBusyInstanceConcurrentTaskCount) {
-                leastBusyInstance = consumerStatistic;
-            }
-        }
-
-        final int consumptionDifferenceBetweenBusiestAndLeastBusyInstance = busiestInstanceConcurrentTaskCount - leastBusyInstanceConcurrentTaskCount;
-
-        if (consumptionDifferenceBetweenBusiestAndLeastBusyInstance >= MAX_DIFFERENCE_IN_CONSUMPTION_BEFORE_REBALANCE) {
-            logger.warn("A consumer rebalance will be performed due to consumption imbalance between busiest and least busy instance, namely a difference of {} tasks", consumptionDifferenceBetweenBusiestAndLeastBusyInstance);
-
-            if (busiestInstance.concurrentTasksPerConsumer().isEmpty()) {
-                return;
-            }
-
-            ConsumerTaskCount busiestConsumer = busiestInstance.concurrentTasksPerConsumer().get(0);
-
-            for (ConsumerTaskCount consumer : busiestInstance.concurrentTasksPerConsumer()) {
-                if (consumer.count() > busiestConsumer.count()) {
-                    busiestConsumer = consumer;
-                }
-            }
-
-            removeConsumerFromInstance(busiestInstance.instanceId(), busiestConsumer.consumerId());
-        }
-    }
+//    @Scheduled(fixedDelay = 5000L)
+//    public void requeueConsumersThatAreDisproportionatelyConsuming() {
+//        List<ConsumerStatistics> consumerStatistics = new ArrayList<>(consumerStatisticsPerInstance.values());
+//        if (consumerStatistics.size() <= 1) {
+//            return;
+//        }
+//        logger.info("Calculating whether a consumer rebalance is needed..");
+//        ConsumerStatistics busiestInstance = consumerStatistics.get(0);
+//        ConsumerStatistics leastBusyInstance = consumerStatistics.get(0);
+//        int busiestInstanceConcurrentTaskCount = Integer.MIN_VALUE;
+//        int leastBusyInstanceConcurrentTaskCount = Integer.MAX_VALUE;
+//
+//        for (ConsumerStatistics consumerStatistic : consumerStatistics) {
+//            int currentInstanceConcurrentTaskCount = getTotalConcurrentTasks(consumerStatistic);
+//            busiestInstanceConcurrentTaskCount = getTotalConcurrentTasks(busiestInstance);
+//            leastBusyInstanceConcurrentTaskCount = getTotalConcurrentTasks(leastBusyInstance);
+//
+//            if (currentInstanceConcurrentTaskCount > busiestInstanceConcurrentTaskCount) {
+//                busiestInstance = consumerStatistic;
+//            }
+//
+//            if (currentInstanceConcurrentTaskCount < leastBusyInstanceConcurrentTaskCount) {
+//                leastBusyInstance = consumerStatistic;
+//            }
+//        }
+//
+//        final int consumptionDifferenceBetweenBusiestAndLeastBusyInstance = busiestInstanceConcurrentTaskCount - leastBusyInstanceConcurrentTaskCount;
+//
+//        if (consumptionDifferenceBetweenBusiestAndLeastBusyInstance >= MAX_DIFFERENCE_IN_CONSUMPTION_BEFORE_REBALANCE) {
+//            logger.warn("A consumer rebalance will be performed due to consumption imbalance between busiest and least busy instance, namely a difference of {} tasks", consumptionDifferenceBetweenBusiestAndLeastBusyInstance);
+//
+//            if (busiestInstance.concurrentTasksPerConsumer().isEmpty()) {
+//                return;
+//            }
+//
+//            ConsumerTaskCount busiestConsumer = busiestInstance.concurrentTasksPerConsumer().get(0);
+//
+//            for (ConsumerTaskCount consumer : busiestInstance.concurrentTasksPerConsumer()) {
+//                if (consumer.count() > busiestConsumer.count()) {
+//                    busiestConsumer = consumer;
+//                }
+//            }
+//
+//            removeConsumerFromInstance(busiestInstance.workerId(), busiestConsumer.consumerId());
+//        }
+//    }
 
     private int getTotalConcurrentTasks(ConsumerStatistics consumerStatistics) {
         return consumerStatistics
@@ -230,7 +233,7 @@ public class ConsumerCoordinator {
     }
 
     private void removeConsumerFromInstance(String instanceId, String consumerId) {
-        consumerDistributor.removeConsumer(instanceId, consumerId);
+//        consumerDistributor.removeConsumer(instanceId, consumerId);
         activeConsumersOnInstances.remove(new ConsumerInstanceEntry(instanceId, consumerId));
         consumersToBeDistributed.add(consumerId);
         logger.info("Consumer '{}' removed from instance '{}' due to consumer rebalance", consumerId, instanceId);
@@ -251,8 +254,8 @@ public class ConsumerCoordinator {
 
 
         for (ConsumerStatistics instance : consumerStatistics) {
-            if (!activeConsumersOnInstances.contains(new ConsumerInstanceEntry(instance.instanceId(), consumerId))) {
-                return instance.instanceId();
+            if (!activeConsumersOnInstances.contains(new ConsumerInstanceEntry(instance.workerId(), consumerId))) {
+                return instance.workerId();
             }
         }
 

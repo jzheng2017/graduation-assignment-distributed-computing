@@ -94,7 +94,7 @@ public class EtcdKVClient implements KVClient {
     private CompletableFuture<DeleteResponse> deleteWithOptions(String keyOrPrefix, DeleteOption deleteOption) {
         return kvClient
                 .delete(ByteSequence.from(keyOrPrefix.getBytes()), deleteOption)
-                .thenApply(response -> new DeleteResponse(
+                .thenApplyAsync(response -> new DeleteResponse(
                                 response.getPrevKvs()
                                         .stream()
                                         .collect(
@@ -110,7 +110,7 @@ public class EtcdKVClient implements KVClient {
     @Override
     public boolean keyExists(String key) {
         try {
-            return get(key).thenApply(getResponse -> !getResponse.keyValues().isEmpty()).get();
+            return get(key).thenApplyAsync(getResponse -> !getResponse.keyValues().isEmpty()).get();
         } catch (InterruptedException | ExecutionException e) {
             logger.warn("Could not successfully check for key '{}' existence", key);
             return false;

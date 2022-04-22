@@ -28,6 +28,6 @@ public class Heartbeat {
                         KeyPrefix.WORKER_HEARTBEAT + "-" + consumerManager.getIdentifier(),
                         Long.toString(Instant.now().getEpochSecond())
                 )
-                .thenAccept(response -> logger.trace("Sent heartbeat from '{}' at {}", consumerManager.getIdentifier(), Instant.now().getEpochSecond(), response));
+                .thenAcceptAsync(response -> logger.trace("Sent heartbeat from '{}' at {}", consumerManager.getIdentifier(), Instant.now().getEpochSecond(), response));
     }
 }

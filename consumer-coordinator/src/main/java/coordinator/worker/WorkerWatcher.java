@@ -31,7 +31,7 @@ public class WorkerWatcher {
     }
 
     private void watchForWorkerChanges() {
-        watchClient.watch(KeyPrefix.WORKER_REGISTRATION, new WorkerRegistrationChangedWatchListener());
+        watchClient.watchByPrefix(KeyPrefix.WORKER_REGISTRATION, new WorkerRegistrationChangedWatchListener());
     }
 
     public class WorkerRegistrationChangedWatchListener implements WatchListener {

@@ -45,6 +45,6 @@ public class ConsumerStatisticsPublisher {
                 Instant.now().getEpochSecond());
 
         String json = new ObjectMapper().writeValueAsString(consumerStatistics);
-        kvClient.put(KeyPrefix.WORKER_STATISTICS + "-" + consumerStatistics.instanceId(), json);
+        kvClient.put(KeyPrefix.WORKER_STATISTICS + "-" + consumerStatistics.workerId(), json);
     }
 }

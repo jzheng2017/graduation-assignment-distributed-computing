@@ -1,13 +1,13 @@
 package coordinator.partition;
 
 import coordinator.Util;
+import coordinator.configuration.EnvironmentSetup;
 import datastorage.KVClient;
 import datastorage.LockClient;
 import datastorage.configuration.KeyPrefix;
 import datastorage.configuration.LockNames;
 import datastorage.dto.GetResponse;
-import messagequeue.configuration.EnvironmentSetup;
-import org.checkerframework.checker.units.qual.Prefix;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -222,7 +222,7 @@ public class PartitionManager {
         try {
             return kvClient
                     .getByPrefix(KeyPrefix.WORKER_REGISTRATION)
-                    .thenApply(GetResponse::keyValues)
+                    .thenApplyAsync(GetResponse::keyValues)
                     .get()
                     .keySet()
                     .stream()

@@ -12,6 +12,13 @@ public interface WatchClient {
     void watch(String key, WatchListener watchListener);
 
     /**
+     * Register a listener to listen to the specified prefix. If a value for a key changed that matches the prefix then the listener will be notified.
+     * @param prefix prefix to listen for
+     * @param watchListener the listener
+     */
+    void watchByPrefix(String prefix, WatchListener watchListener);
+
+    /**
      * Stop watching a specific key
      * @param key key to stop listening for
      */

@@ -10,7 +10,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.PreDestroy;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Supplier;
 
@@ -19,6 +21,7 @@ public class EtcdLockClient implements LockClient {
     private Logger logger = LoggerFactory.getLogger(EtcdLockClient.class);
     private static final long DEFAULT_LOCK_DURATION_SECONDS = 60L;
     private Lock lockClient;
+    private Map<String, String> lockOwnerships = new ConcurrentHashMap<>();
 
     //only for unit test purposes
     EtcdLockClient(Lock lock) {
@@ -41,12 +44,26 @@ public class EtcdLockClient implements LockClient {
 
     @Override
     public CompletableFuture<Void> lock(String name) {
-        return lockClient.lock(ByteSequence.from(name.getBytes()), 0).thenAcceptAsync(c -> logger.info("Lock '{}' acquired", name));
+        logger.info("Trying to acquire lock '{}'", name);
+        return lockClient.lock(ByteSequence.from(name.getBytes()), 0).thenAcceptAsync(lockResponse -> {
+            lockOwnerships.put(name, lockResponse.getKey().toString());
+            logger.info("Lock '{}' acquired", name);
+        });
     }
 
     @Override
     public CompletableFuture<Void> unlock(String name) {
-        return lockClient.unlock(ByteSequence.from(name.getBytes())).thenAcceptAsync(c -> logger.info("Lock '{}' released", name));
+        String lockOwnershipKey = lockOwnerships.get(name);
+        if (lockOwnershipKey != null) {
+            logger.info("Trying to release lock '{}'", name);
+            return lockClient.unlock(ByteSequence.from(lockOwnershipKey.getBytes())).thenAcceptAsync(c -> {
+                lockOwnerships.remove(name);
+                logger.info("Lock '{}' released", name);
+            });
+        } else {
+            logger.warn("Could not unlock '{}' as there is no active lock on it", name);
+            return null;
+        }
     }
 
     @Override

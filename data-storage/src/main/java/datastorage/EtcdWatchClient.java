@@ -6,6 +6,7 @@ import datastorage.dto.WatchResponse;
 import io.etcd.jetcd.ByteSequence;
 import io.etcd.jetcd.Client;
 import io.etcd.jetcd.Watch;
+import io.etcd.jetcd.options.WatchOption;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -44,18 +45,28 @@ public class EtcdWatchClient implements WatchClient {
 
     @Override
     public void watch(String key, WatchListener watchListener) {
+        watchWithOption(key, watchListener, WatchOption.DEFAULT);
+    }
+
+    @Override
+    public void watchByPrefix(String prefix, WatchListener watchListener) {
+        watchWithOption(prefix, watchListener, WatchOption.newBuilder().isPrefix(true).build());
+    }
+
+    private void watchWithOption(String keyOrPrefix, WatchListener watchListener, WatchOption watchOption) {
         synchronized (watchers) {
-            if (!watchers.containsKey(key)) {
+            if (!watchers.containsKey(keyOrPrefix)) {
                 Watch.Watcher watcher = watchClient.watch(
-                        ByteSequence.from(key.getBytes()),
+                        ByteSequence.from(keyOrPrefix.getBytes()),
+                        watchOption,
                         watchResponse -> watchListener.onNext(new WatchResponse(mapWatchEvents(watchResponse.getEvents()))),
                         watchListener::onError,
                         watchListener::onCompleted
                 );
-                watchers.put(key, watcher);
-                logger.info("Registered listener to watch key '{}'", key);
+                watchers.put(keyOrPrefix, watcher);
+                logger.info("Registered listener to watch key '{}'", keyOrPrefix);
             } else {
-                logger.warn("Can not add new watcher to listen to key '{}' because there is already an existing watch listening to it", key);
+                logger.warn("Can not add new watcher to listen to key '{}' because there is already an existing watch listening to it", keyOrPrefix);
             }
         }
     }

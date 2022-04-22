@@ -20,6 +20,6 @@ public class KafkaConfiguration {
 
     @Bean
     public EnvironmentSetup environmentSetup(ConsumerManager consumerManager, KVClient kvClient) {
-        return new EnvironmentSetup(true, consumerManager, kvClient);
+        return new EnvironmentSetup(consumerManager, kvClient);
     }
 }

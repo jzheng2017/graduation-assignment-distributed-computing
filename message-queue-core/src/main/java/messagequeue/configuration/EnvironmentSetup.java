@@ -10,33 +10,21 @@ import java.time.Instant;
 
 public class EnvironmentSetup {
     private Logger logger = LoggerFactory.getLogger(EnvironmentSetup.class);
-    private final boolean isConsumerInstance;
     private ConsumerManager consumerManager;
     private KVClient kvClient;
-    public static final int NUMBER_OF_PARTITIONS = 3;
 
 
-    public EnvironmentSetup(boolean isConsumerInstance, ConsumerManager consumerManager, KVClient kvClient) {
-        this.isConsumerInstance = isConsumerInstance;
+    public EnvironmentSetup(ConsumerManager consumerManager, KVClient kvClient) {
         this.consumerManager = consumerManager;
         this.kvClient = kvClient;
     }
 
     public void setup() {
-        if (isConsumerInstance) {
-            registerWorker();
-        } else {
-            createPartitions();
-        }
+        registerWorker();
     }
 
     private void registerWorker() {
-        kvClient.put(KeyPrefix.WORKER_REGISTRATION + "-" + consumerManager.getIdentifier(), Long.toString(Instant.now().getEpochSecond()));
-        logger.info("Registered worker '{}'", consumerManager.getIdentifier());
-    }
-
-    private void createPartitions() {
-        kvClient.put(KeyPrefix.PARTITION_COUNT, Integer.toString(NUMBER_OF_PARTITIONS));
-        logger.info("Created '{}' partitions", NUMBER_OF_PARTITIONS);
+        kvClient.put(KeyPrefix.WORKER_REGISTRATION + "-" + consumerManager.getIdentifier(), Long.toString(Instant.now().getEpochSecond()))
+                .thenAcceptAsync(ignore -> logger.info("Registered worker '{}'", consumerManager.getIdentifier()));
     }
 }
