@@ -8,6 +8,7 @@ import io.etcd.jetcd.Client;
 import io.etcd.jetcd.Watch;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.PreDestroy;
@@ -19,8 +20,15 @@ import java.util.concurrent.ConcurrentHashMap;
 public class EtcdWatchClient implements WatchClient {
     private Logger logger = LoggerFactory.getLogger(EtcdWatchClient.class);
     private Watch watchClient;
-    private final Map<String, Watch.Watcher> watchers = new ConcurrentHashMap<>();
+    private Map<String, Watch.Watcher> watchers = new ConcurrentHashMap<>();
 
+    //only for unit test purposes
+    EtcdWatchClient(Watch watchClient, Map<String, Watch.Watcher> watchers) {
+        this.watchClient = watchClient;
+        this.watchers = watchers;
+    }
+
+    @Autowired
     public EtcdWatchClient(EtcdProperties etcdProperties) {
         Client client = Client
                 .builder()
