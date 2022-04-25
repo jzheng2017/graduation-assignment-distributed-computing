@@ -1,52 +1,122 @@
 package coordinator.partition;
 
-import datastorage.configuration.EtcdProperties;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
+import coordinator.configuration.EnvironmentConfiguration;
+import datastorage.KVClient;
+import datastorage.LockClient;
+import datastorage.configuration.KeyPrefix;
+import datastorage.configuration.LockNames;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.context.TestConfiguration;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.context.annotation.Profile;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.ContextConfiguration;
-import org.testcontainers.containers.GenericContainer;
-import org.testcontainers.utility.DockerImageName;
 
-import javax.annotation.PostConstruct;
+import java.time.Instant;
+import java.util.Map;
+import java.util.concurrent.ExecutionException;
 
 import static org.mockito.Mockito.when;
 
-@SpringBootTest
-@ActiveProfiles("test")
-@ContextConfiguration(classes = {PartitionManagerIntegrationTest.TestConfig.class})
-public class PartitionManagerIntegrationTest {
-    public static final int DEFAULT_ETCD_PORT = 2379;
+
+public class PartitionManagerIntegrationTest extends BaseIntegrationTest {
     @Autowired
     private PartitionManager partitionManager;
-    public static GenericContainer etcd;
+    private final String workerId = "1";
 
-    @BeforeAll
-    static void beforeAll() {
-        etcd = new GenericContainer(DockerImageName.parse("bitnami/etcd:latest")).withExposedPorts(DEFAULT_ETCD_PORT).withEnv("ALLOW_NONE_AUTHENTICATION", "yes");
-        etcd.start();
-    }
-
-    @AfterAll
-    static void afterAll() {
-        etcd.close();
-    }
-
-
-
-    @TestConfiguration
-    @Profile("test")
-    public static class TestConfig {
-        @MockBean
-        private EtcdProperties etcdProperties;
-        @PostConstruct
-        public void setup() {
-            when(etcdProperties.getBaseUrl()).thenReturn("http://localhost:" + etcd.getMappedPort(DEFAULT_ETCD_PORT));
+    @BeforeEach
+    void setup() throws ExecutionException, InterruptedException {
+        String[] keyPrefixesToDelete = new String[]{KeyPrefix.PARTITION_ASSIGNMENT, KeyPrefix.WORKER_REGISTRATION, KeyPrefix.WORKER_HEARTBEAT, KeyPrefix.WORKER_STATISTICS};
+        for (String keyPrefix : keyPrefixesToDelete) { //cleanup the store
+            kvClient.deleteByPrefix(keyPrefix).get();
         }
+        partitionManager.createPartitions(environmentConfiguration.getPartitions());
+        kvClient.put(KeyPrefix.WORKER_REGISTRATION + "-" + workerId, String.valueOf(Instant.now().getEpochSecond()));
+    }
+
+    @Test
+    void testThatTheNumberOfPartitionsMatchesWhatIsConfigured() {
+        final int expectedNumberOfPartitions = environmentConfiguration.getPartitions();
+        final int actualNumberOfPartitions = partitionManager.getNumberOfPartitions();
+
+        Assertions.assertEquals(expectedNumberOfPartitions, actualNumberOfPartitions);
+    }
+
+    @Test
+    void testThatAssigningAPartitionToAWorkerWorksCorrectly() throws InterruptedException {
+        final int partitionNumber = 0;
+        partitionManager.assignPartition(partitionNumber, workerId);
+
+        Map<Integer, String> partitionAssignments = partitionManager.getPartitionAssignments();
+        Assertions.assertTrue(partitionAssignments.containsKey(partitionNumber));
+        Assertions.assertEquals(workerId, partitionAssignments.get(partitionNumber));
+    }
+
+    @Test
+    void testThatAssigningAPartitionToANonExistingWorkerDoesNotWork() throws InterruptedException {
+        final int partitionNumber = 0;
+        partitionManager.assignPartition(partitionNumber, "I do not exist!");
+        Thread.sleep(100);
+        Map<Integer, String> partitionAssignments = partitionManager.getPartitionAssignments();
+        Assertions.assertFalse(partitionAssignments.containsKey(partitionNumber));
+    }
+
+    @Test
+    void testThatAssigningAPartitionNumberThatExceedsTheNumberOfAvailablePartitionsDoesNotWork() {
+        final int partitionNumber = environmentConfiguration.getPartitions(); //partitions are 0 indexed, so if getPartitions for instance returns 4 then only partitions {0, 1, 2, 3} exists and 4 should be out of range.
+        partitionManager.assignPartition(partitionNumber, workerId);
+
+        Map<Integer, String> partitionAssignments = partitionManager.getPartitionAssignments();
+        Assertions.assertFalse(partitionAssignments.containsKey(partitionNumber));
+    }
+
+    @Test
+    void testThatAssigningMultiplePartitionsToASingleWorkerIsNotAllowed() {
+        partitionManager.assignPartition(0, workerId);
+        partitionManager.assignPartition(1, workerId);
+
+        Map<Integer, String> partitionAssignments = partitionManager.getPartitionAssignments();
+        Assertions.assertTrue(partitionAssignments.containsKey(0));
+        Assertions.assertFalse(partitionAssignments.containsKey(1));
+    }
+
+    @Test
+    void testThatRemovingAPartitionAssignmentFromAWorkerWorksCorrectly() {
+        final int partitionNumber = 0;
+        partitionManager.assignPartition(partitionNumber, workerId);
+
+        //ensure that partition has been assigned to the worker
+        Assertions.assertTrue(partitionManager.getPartitionAssignments().containsKey(partitionNumber));
+        Assertions.assertEquals(workerId, partitionManager.getPartitionAssignments().get(partitionNumber));
+
+        partitionManager.removePartitionAssignment(partitionNumber);
+        Assertions.assertFalse(partitionManager.getPartitionAssignments().containsKey(partitionNumber));
+    }
+
+    @Test
+    void testThatPartitionAssignmentToAllAvailableWorkersWorksCorrectly() throws ExecutionException, InterruptedException {
+        final int numberOfPartitions = partitionManager.getNumberOfPartitions();
+
+        for (int i = 0; i < numberOfPartitions; i++) {
+            kvClient.put(KeyPrefix.WORKER_REGISTRATION + "-" + i, String.valueOf(Instant.now().getEpochSecond())).get();
+        }
+
+        partitionManager.resetPartitionAssignmentsAndReassign();
+
+        //the partition numbers in the map must be unique, so if the size of the map equals the number of partitions, then all partitions have been distributed
+        Assertions.assertEquals(numberOfPartitions, partitionManager.getPartitionAssignments().size());
+    }
+
+    @Test
+    void testThatCreatingNewPartitionsWorksCorrectly() {
+        final int newPartitionCount = 6;
+        Assertions.assertEquals(environmentConfiguration.getPartitions(), partitionManager.getNumberOfPartitions());
+        partitionManager.createPartitions(newPartitionCount);
+        Assertions.assertEquals(newPartitionCount, partitionManager.getNumberOfPartitions());
+    }
+
+    @Test
+    void testThatChangingPartitionCountToZeroOrNegativeIsNotAllowed() {
+        Assertions.assertThrows(IllegalArgumentException.class, () -> partitionManager.createPartitions(0));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> partitionManager.createPartitions(-1));
     }
 }

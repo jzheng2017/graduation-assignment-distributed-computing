@@ -88,6 +88,7 @@ public class PartitionManager {
      * @param partition the partition number (0-indexed)
      */
     public void removePartitionAssignment(int partition) {
+        logger.info("Trying to remove partition assignment of partition '{}'", partition);
         final String partitionAssignmentKey = KeyPrefix.PARTITION_ASSIGNMENT + "-" + partition;
         lockClient.acquireLockAndExecute(
                 LockNames.PARTITION_LOCK,
@@ -149,12 +150,20 @@ public class PartitionManager {
      * @param partitionCount the number of partitions
      */
     public void createPartitions(int partitionCount) {
-        kvClient.put(KeyPrefix.PARTITION_COUNT, Integer.toString(partitionCount))
-                .thenAccept(putResponse -> logger.info(
-                        "Updated partition count to {}, old partition count was: {}",
-                        partitionCount,
-                        putResponse.prevValue().isEmpty() ? 0 : putResponse.prevValue())
-                );
+        if (partitionCount <= 0) {
+            throw new IllegalArgumentException("The number of partitions must be greater than 0.");
+        }
+
+        try {
+            kvClient.put(KeyPrefix.PARTITION_COUNT, Integer.toString(partitionCount))
+                    .thenAccept(putResponse -> logger.info(
+                            "Updated partition count to {}, old partition count was: {}",
+                            partitionCount,
+                            putResponse.prevValue().isEmpty() ? 0 : putResponse.prevValue())
+                    ).get();
+        } catch (InterruptedException | ExecutionException e) {
+            logger.warn("Could not successfully create/update partition count to '{}'", partitionCount);
+        }
     }
 
     /**
@@ -200,7 +209,14 @@ public class PartitionManager {
     public void resetPartitionAssignmentsAndReassign() {
         lockClient.acquireLockAndExecute(
                 LockNames.PARTITION_LOCK,
-                () -> kvClient.deleteByPrefix(KeyPrefix.PARTITION_ASSIGNMENT).thenAccept(deleteResponse -> assignPartitionsToWorkers())
+                () -> {
+                    try {
+                        return kvClient.deleteByPrefix(KeyPrefix.PARTITION_ASSIGNMENT).thenAccept(deleteResponse -> assignPartitionsToWorkers()).get();
+                    } catch (InterruptedException | ExecutionException e) {
+                        logger.warn("Something went wrong will resetting and reassigning the partition assignments..", e);
+                        return null;
+                    }
+                }
         );
     }
 
