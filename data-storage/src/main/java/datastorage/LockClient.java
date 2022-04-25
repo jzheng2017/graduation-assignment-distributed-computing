@@ -14,14 +14,14 @@ public interface LockClient {
      * @param name name of the lock
      * @return
      */
-    CompletableFuture<Void> lock(String name);
+    void lock(String name);
 
     /**
      * Release the lock with the passed in name
      * @param name name of the lock
      * @return
      */
-    CompletableFuture<Void> unlock(String name);
+    void unlock(String name);
 
     /**
      * Acquire the lock and execute the given supplier

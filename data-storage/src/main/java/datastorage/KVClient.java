@@ -44,5 +44,10 @@ public interface KVClient {
      */
     CompletableFuture<DeleteResponse> deleteByPrefix(String prefix);
 
+    /**
+     * Determines whether the passed in key exists in the store
+     * @param key the key
+     * @return true if it exists, false otherwise
+     */
     boolean keyExists(String key);
 }

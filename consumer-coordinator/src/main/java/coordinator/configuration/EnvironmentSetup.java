@@ -1,8 +1,8 @@
 package coordinator.configuration;
 
 import coordinator.ConsumerCoordinator;
+import coordinator.partition.PartitionManager;
 import datastorage.KVClient;
-import datastorage.configuration.KeyPrefix;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.ApplicationArguments;
@@ -13,12 +13,13 @@ import org.springframework.stereotype.Component;
 public class EnvironmentSetup implements ApplicationRunner {
     private Logger logger = LoggerFactory.getLogger(EnvironmentSetup.class);
     private ConsumerCoordinator consumerCoordinator;
-    private KVClient kvClient;
-    public static final int NUMBER_OF_PARTITIONS = 3;
+    private EnvironmentConfiguration environmentConfiguration;
+    private PartitionManager partitionManager;
 
-    public EnvironmentSetup(ConsumerCoordinator consumerCoordinator, KVClient kvClient) {
+    public EnvironmentSetup(ConsumerCoordinator consumerCoordinator, EnvironmentConfiguration environmentConfiguration, PartitionManager partitionManager, KVClient kvClient) {
         this.consumerCoordinator = consumerCoordinator;
-        this.kvClient = kvClient;
+        this.environmentConfiguration = environmentConfiguration;
+        this.partitionManager = partitionManager;
     }
 
     @Override
@@ -45,7 +46,7 @@ public class EnvironmentSetup implements ApplicationRunner {
     }
 
     private void createPartitions() {
-        kvClient.put(KeyPrefix.PARTITION_COUNT, Integer.toString(NUMBER_OF_PARTITIONS))
-                .thenAcceptAsync(ignore -> logger.info("Created '{}' partitions", NUMBER_OF_PARTITIONS));
+        final int numberOfPartitions = environmentConfiguration.getPartitions();
+        partitionManager.createPartitions(numberOfPartitions);
     }
 }

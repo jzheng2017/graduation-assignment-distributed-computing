@@ -44,26 +44,62 @@ public class PartitionManager {
      * @param workerId  the id of the worker instance
      */
     public void assignPartition(int partition, String workerId) {
+        logger.info("Start partition assignment process of partition '{}' for worker '{}'", partition, workerId);
         lockClient.acquireLockAndExecute(
                 LockNames.PARTITION_LOCK,
-                () -> kvClient.get(KeyPrefix.PARTITION_COUNT).thenAcceptAsync(
-                        partitionResponse -> {
-                            int partitionCount = Integer.parseInt(partitionResponse.keyValues().get(KeyPrefix.PARTITION_COUNT));
+                () -> {
+                    try {
+                        return kvClient.get(KeyPrefix.PARTITION_COUNT).thenAccept(
+                                partitionResponse -> {
+                                    int partitionCount = Integer.parseInt(partitionResponse.keyValues().get(KeyPrefix.PARTITION_COUNT));
 
-                            if (partition >= partitionCount) {
-                                logger.warn("Can not assign partition {} to worker {} as it exceeds the number of available partitions (0-indexed), namely: {}", partition, workerId, partitionCount);
-                                return;
-                            }
+                                    if (partition >= partitionCount) {
+                                        logger.warn("Can not assign partition {} to worker {} as it exceeds the number of available partitions (0-indexed), namely: {}", partition, workerId, partitionCount);
+                                        return;
+                                    }
 
-                            getPartitionOfWorker(workerId).ifPresentOrElse(
-                                    assignedPartition -> logger.warn("Worker '{}' has already been assigned to the partition {}", workerId, assignedPartition),
-                                    () -> getWorkerAssignedToPartition(partition).ifPresentOrElse(
-                                            assignedWorker -> logger.info("Partition {} has already been assigned to worker '{}'", partition, assignedWorker),
-                                            () -> kvClient.put(KeyPrefix.PARTITION_ASSIGNMENT + "-" + partition, workerId).thenAcceptAsync(putResponse -> logger.info("Partition {} has been assigned to worker '{}'", partition, workerId))
-                                    )
-                            );
-                        }
-                )
+                                    if (!getAvailableWorkers().contains(workerId)) {
+                                        logger.warn("Can not assign partition {} to worker {} as the worker does not exist.", partition, workerId);
+                                        return;
+                                    }
+
+                                    getPartitionOfWorker(workerId).ifPresentOrElse(
+                                            assignedPartition -> logger.warn("Worker '{}' has already been assigned to the partition {}", workerId, assignedPartition),
+                                            () -> getWorkerAssignedToPartition(partition).ifPresentOrElse(
+                                                    assignedWorker -> logger.info("Partition {} has already been assigned to worker '{}'", partition, assignedWorker),
+                                                    () -> kvClient.put(KeyPrefix.PARTITION_ASSIGNMENT + "-" + partition, workerId).thenAccept(putResponse -> logger.info("Partition {} has been assigned to worker '{}'", partition, workerId))
+                                            )
+                                    );
+                                }
+                        ).get();
+                    } catch (InterruptedException | ExecutionException e) {
+                        logger.warn("Could not successfully assign partition '{}' to worker '{}'", partition, workerId, e);
+                    }
+                    return null;
+                }
+        );
+
+        logger.info("Partition assignment of partition '{}' for worker '{}' finished", partition, workerId);
+    }
+
+    /**
+     * Remove partition assignment from a worker
+     *
+     * @param partition the partition number (0-indexed)
+     */
+    public void removePartitionAssignment(int partition) {
+        final String partitionAssignmentKey = KeyPrefix.PARTITION_ASSIGNMENT + "-" + partition;
+        lockClient.acquireLockAndExecute(
+                LockNames.PARTITION_LOCK,
+                () -> {
+                    if (kvClient.keyExists(partitionAssignmentKey)) {
+                        kvClient.delete(partitionAssignmentKey).thenAccept(deleteResponse -> logger.info("Partition assignment for partition {} removed", partition));
+                    } else {
+                        logger.info("Partition assignment for partition {} can not be removed as there is no assignment present.", partition);
+                    }
+
+                    return null;
+                }
         );
     }
 
@@ -91,14 +127,14 @@ public class PartitionManager {
     public Map<Integer, String> getPartitionAssignments() {
         try {
             return kvClient
-                    .get(KeyPrefix.PARTITION_ASSIGNMENT)
+                    .getByPrefix(KeyPrefix.PARTITION_ASSIGNMENT)
                     .get()
                     .keyValues()
                     .entrySet()
                     .stream()
                     .collect(
                             Collectors.toMap(
-                                    entry -> Integer.parseInt(util.getSubstringAfterPrefix(KeyPrefix.PARTITION_ASSIGNMENT, entry.getKey())),
+                                    entry -> Integer.parseInt(util.getSubstringAfterPrefix(KeyPrefix.PARTITION_ASSIGNMENT + "-", entry.getKey())),
                                     Map.Entry::getValue)
                     );
         } catch (InterruptedException | ExecutionException e) {
@@ -108,76 +144,17 @@ public class PartitionManager {
     }
 
     /**
-     * Remove partition assignment from a worker
-     *
-     * @param partition the partition number (0-indexed)
-     */
-    public void removePartitionAssignment(int partition) {
-        final String partitionAssignmentKey = KeyPrefix.PARTITION_ASSIGNMENT + "-" + partition;
-        lockClient.acquireLockAndExecute(
-                LockNames.PARTITION_LOCK,
-                () -> {
-                    if (kvClient.keyExists(partitionAssignmentKey)) {
-                        kvClient.delete(partitionAssignmentKey).thenAcceptAsync(deleteResponse -> logger.info("Partition assignment for partition {} removed", partition));
-                    } else {
-                        logger.info("Partition assignment for partition {} can not be removed as there is no assignment present.", partition);
-                    }
-
-                    return null;
-                }
-        );
-    }
-
-    /**
-     * Get the partition number that was assigned to the worker
-     *
-     * @param workerId the id of the worker
-     * @return the partition number
-     */
-    public Optional<Integer> getPartitionOfWorker(String workerId) {
-        try {
-            Map<String, String> partitionAssignments = kvClient.get(KeyPrefix.PARTITION_ASSIGNMENT).get().keyValues();
-            for (Map.Entry<String, String> partitionAssignment : partitionAssignments.entrySet()) {
-                if (partitionAssignment.getValue().equals(workerId)) {
-                    int partitionNumber = Integer.parseInt(util.getSubstringAfterPrefix(KeyPrefix.PARTITION_ASSIGNMENT + "-", partitionAssignment.getKey()));
-
-                    logger.info("Partition assignment for worker '{}' found, namely: {}", workerId, partitionNumber);
-                    return Optional.of(partitionNumber);
-                }
-            }
-
-            logger.info("Partition of worker '{}' could not be found. Either the worker does not exist or it has not been assigned a partition");
-            return Optional.empty();
-        } catch (InterruptedException | ExecutionException e) {
-            logger.warn("Could not get partition of worker '{}'", workerId, e);
-            return Optional.empty();
-        }
-    }
-
-    /**
-     * Get the worker that has been assigned to the partition
-     *
-     * @param partition the partition number (0-indexed)
-     * @return the id of the worker
-     */
-    public Optional<String> getWorkerAssignedToPartition(int partition) {
-        try {
-            String workerId = kvClient.get(KeyPrefix.PARTITION_ASSIGNMENT + "-" + partition).get().keyValues().get(KeyPrefix.PARTITION_ASSIGNMENT + "-" + partition);
-
-            return Optional.of(workerId);
-        } catch (InterruptedException | ExecutionException e) {
-            logger.warn("Could not retrieve worker that is assigned to partition {}", partition, e);
-            return Optional.empty();
-        }
-    }
-
-    /**
      * Replace the current number of partitions by the new partition count
      *
      * @param partitionCount the number of partitions
      */
     public void createPartitions(int partitionCount) {
-        kvClient.put(KeyPrefix.PARTITION_COUNT, Integer.toString(partitionCount)).thenAcceptAsync(putResponse -> logger.info("Updated partition count to {}, old partition count was: {}", partitionCount, putResponse.prevValue()));
+        kvClient.put(KeyPrefix.PARTITION_COUNT, Integer.toString(partitionCount))
+                .thenAccept(putResponse -> logger.info(
+                        "Updated partition count to {}, old partition count was: {}",
+                        partitionCount,
+                        putResponse.prevValue().isEmpty() ? 0 : putResponse.prevValue())
+                );
     }
 
     /**
@@ -190,15 +167,58 @@ public class PartitionManager {
             return Integer.parseInt(kvClient.get(KeyPrefix.PARTITION_COUNT).get().keyValues().get(KeyPrefix.PARTITION_COUNT));
         } catch (InterruptedException | ExecutionException e) {
             logger.warn("Could not retrieve the number of partitions. Defaulting to partition count that was known on startup.", e);
-            return EnvironmentSetup.NUMBER_OF_PARTITIONS;
+            throw new IllegalStateException("Could not get the number of partitions.", e);
+        }
+    }
+
+    /**
+     * Get the partition number that was assigned to the worker
+     *
+     * @param workerId the id of the worker
+     * @return the partition number
+     */
+    private Optional<Integer> getPartitionOfWorker(String workerId) {
+        try {
+            Map<String, String> partitionAssignments = kvClient.getByPrefix(KeyPrefix.PARTITION_ASSIGNMENT).get().keyValues();
+            for (Map.Entry<String, String> partitionAssignment : partitionAssignments.entrySet()) {
+                if (partitionAssignment.getValue().equals(workerId)) {
+                    int partitionNumber = Integer.parseInt(util.getSubstringAfterPrefix(KeyPrefix.PARTITION_ASSIGNMENT + "-", partitionAssignment.getKey()));
+
+                    logger.info("Partition assignment for worker '{}' found, namely: {}", workerId, partitionNumber);
+                    return Optional.of(partitionNumber);
+                }
+            }
+
+            logger.info("Partition of worker '{}' could not be found. Either the worker does not exist or it has not been assigned a partition", workerId);
+            return Optional.empty();
+        } catch (InterruptedException | ExecutionException e) {
+            logger.warn("Could not get partition of worker '{}'", workerId, e);
+            return Optional.empty();
         }
     }
 
     public void resetPartitionAssignmentsAndReassign() {
         lockClient.acquireLockAndExecute(
                 LockNames.PARTITION_LOCK,
-                () -> kvClient.deleteByPrefix(KeyPrefix.PARTITION_ASSIGNMENT).thenAcceptAsync(deleteResponse -> assignPartitionsToWorkers())
+                () -> kvClient.deleteByPrefix(KeyPrefix.PARTITION_ASSIGNMENT).thenAccept(deleteResponse -> assignPartitionsToWorkers())
         );
+    }
+
+    /**
+     * Get the worker that has been assigned to the partition
+     *
+     * @param partition the partition number (0-indexed)
+     * @return the id of the worker
+     */
+    private Optional<String> getWorkerAssignedToPartition(int partition) {
+        try {
+            String workerId = kvClient.get(KeyPrefix.PARTITION_ASSIGNMENT + "-" + partition).get().keyValues().get(KeyPrefix.PARTITION_ASSIGNMENT + "-" + partition);
+
+            return Optional.ofNullable(workerId);
+        } catch (InterruptedException | ExecutionException e) {
+            logger.warn("Could not retrieve worker that is assigned to partition {}", partition, e);
+            return Optional.empty();
+        }
     }
 
     private void assignPartitionsToWorkers() {
@@ -222,7 +242,7 @@ public class PartitionManager {
         try {
             return kvClient
                     .getByPrefix(KeyPrefix.WORKER_REGISTRATION)
-                    .thenApplyAsync(GetResponse::keyValues)
+                    .thenApply(GetResponse::keyValues)
                     .get()
                     .keySet()
                     .stream()
