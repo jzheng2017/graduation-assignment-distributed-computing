@@ -15,7 +15,6 @@ import java.util.concurrent.CompletableFuture;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 public class EtcdLockClientTest {
@@ -27,12 +26,13 @@ public class EtcdLockClientTest {
     @Mock
     private UnlockResponse unlockResponse;
     private final String lockName = "A very special lock";
-
+    private final String returnedLockName = "abcedfgh";
     @BeforeEach
     void setup() {
         MockitoAnnotations.openMocks(this);
         this.etcdLockClient = new EtcdLockClient(lock);
         when(lock.lock(any(), anyLong())).thenReturn(CompletableFuture.supplyAsync(() -> lockResponse));
+        when(lockResponse.getKey()).thenReturn(ByteSequence.from(returnedLockName.getBytes()));
         when(lock.unlock(any())).thenReturn(CompletableFuture.supplyAsync(() -> unlockResponse));
     }
 
@@ -44,8 +44,9 @@ public class EtcdLockClientTest {
 
     @Test
     void testThatUnlockingConfiguresTheRequestCorrectly() {
+        etcdLockClient.lock(lockName);
         etcdLockClient.unlock(lockName);
-        Mockito.verify(lock).unlock(ByteSequence.from(lockName.getBytes()));
+        Mockito.verify(lock).unlock(ByteSequence.from(returnedLockName.getBytes()));
     }
 
     @Test
@@ -59,7 +60,7 @@ public class EtcdLockClientTest {
 
         Mockito.verify(lock).lock(ByteSequence.from(lockName.getBytes()), 0);
         Assertions.assertTrue(executeMe.executed);
-        Mockito.verify(lock).unlock(ByteSequence.from(lockName.getBytes()));
+        Mockito.verify(lock).unlock(ByteSequence.from(returnedLockName.getBytes()));
     }
 
     private class ExecuteMe {

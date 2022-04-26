@@ -1,20 +1,30 @@
 package coordinator.partition;
 
 import coordinator.BaseIntegrationTest;
+import coordinator.worker.WorkerWatcher;
 import datastorage.configuration.KeyPrefix;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.web.context.support.GenericWebApplicationContext;
 
 import java.time.Instant;
 import java.util.concurrent.ExecutionException;
 
-@ActiveProfiles("test-with-watchers")
 public class PartitionWatcherIntegrationTest extends BaseIntegrationTest {
-
+    @Autowired
+    private GenericWebApplicationContext context;
+    private PartitionWatcher partitionWatcher;
+    private WorkerWatcher workerWatcher;
     @BeforeEach
     void setup() throws ExecutionException, InterruptedException {
+        context.registerBean("partitionWatcher", PartitionWatcher.class);
+        context.registerBean("workerWatcher", WorkerWatcher.class);
+        partitionWatcher = (PartitionWatcher) context.getBean("partitionWatcher");
+        workerWatcher = (WorkerWatcher) context.getBean("workerWatcher");
+
         final int numberOfPartitions = partitionManager.getNumberOfPartitions();
 
         for (int i = 0; i < numberOfPartitions; i++) {

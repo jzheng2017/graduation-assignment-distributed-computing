@@ -14,7 +14,7 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 
 @Service
-@Profile(value = {"dev", "kubernetes", "test-with-watchers"})
+@Profile(value = {"dev", "kubernetes"})
 public class PartitionWatcher {
     private Logger logger = LoggerFactory.getLogger(PartitionWatcher.class);
     private KVClient kvClient;

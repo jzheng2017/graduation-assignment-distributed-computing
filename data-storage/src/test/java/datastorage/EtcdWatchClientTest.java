@@ -2,6 +2,7 @@ package datastorage;
 
 import io.etcd.jetcd.ByteSequence;
 import io.etcd.jetcd.Watch;
+import io.etcd.jetcd.options.WatchOption;
 import io.etcd.jetcd.watch.WatchResponse;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -36,14 +37,14 @@ public class EtcdWatchClientTest {
         MockitoAnnotations.openMocks(this);
         this.watchers = new HashMap<>();
         this.etcdWatchClient = new EtcdWatchClient(watch, watchers);
-        when(watch.watch(any(), any(Consumer.class), any(), any())).thenReturn(watcher);
+        when(watch.watch(any(), any(WatchOption.class), any(Consumer.class), any(), any())).thenReturn(watcher);
     }
 
     @Test
     void testThatWatchingAKeyConfiguresAndStoresCorrectly() {
         etcdWatchClient.watch(fakeKey, watchListener);
 
-        Mockito.verify(watch).watch(eq(ByteSequence.from(fakeKey.getBytes())), any(Consumer.class), any(), any());
+        Mockito.verify(watch).watch(eq(ByteSequence.from(fakeKey.getBytes())), any(WatchOption.class), any(Consumer.class), any(), any());
         Assertions.assertTrue(watchers.containsKey(fakeKey));
         Assertions.assertEquals(watcher, watchers.get(fakeKey));
     }

@@ -49,7 +49,7 @@ public class PartitionManager {
                 LockNames.PARTITION_LOCK,
                 () -> {
                     try {
-                        return kvClient.get(KeyPrefix.PARTITION_COUNT).thenAccept(
+                        return kvClient.get(KeyPrefix.PARTITION_COUNT).thenAcceptAsync(
                                 partitionResponse -> {
                                     int partitionCount = Integer.parseInt(partitionResponse.keyValues().get(KeyPrefix.PARTITION_COUNT));
 
@@ -67,7 +67,13 @@ public class PartitionManager {
                                             assignedPartition -> logger.warn("Worker '{}' has already been assigned to the partition {}", workerId, assignedPartition),
                                             () -> getWorkerAssignedToPartition(partition).ifPresentOrElse(
                                                     assignedWorker -> logger.info("Partition {} has already been assigned to worker '{}'", partition, assignedWorker),
-                                                    () -> kvClient.put(KeyPrefix.PARTITION_ASSIGNMENT + "-" + partition, workerId).thenAccept(putResponse -> logger.info("Partition {} has been assigned to worker '{}'", partition, workerId))
+                                                    () -> {
+                                                        try {
+                                                            kvClient.put(KeyPrefix.PARTITION_ASSIGNMENT + "-" + partition, workerId).thenAcceptAsync(putResponse -> logger.info("Partition {} has been assigned to worker '{}'", partition, workerId)).get();
+                                                        } catch (InterruptedException | ExecutionException e) {
+                                                            logger.error("Could not assign partition '{}' to worker '{}'", partition, workerId);
+                                                        }
+                                                    }
                                             )
                                     );
                                 }
@@ -94,7 +100,11 @@ public class PartitionManager {
                 LockNames.PARTITION_LOCK,
                 () -> {
                     if (kvClient.keyExists(partitionAssignmentKey)) {
-                        kvClient.delete(partitionAssignmentKey).thenAccept(deleteResponse -> logger.info("Partition assignment for partition {} removed", partition));
+                        try {
+                            kvClient.delete(partitionAssignmentKey).thenAcceptAsync(deleteResponse -> logger.info("Partition assignment for partition {} removed", partition)).get();
+                        } catch (InterruptedException | ExecutionException e) {
+                            logger.warn("Could not remove partition '{}'", partition, e);
+                        }
                     } else {
                         logger.info("Partition assignment for partition {} can not be removed as there is no assignment present.", partition);
                     }
@@ -156,7 +166,7 @@ public class PartitionManager {
 
         try {
             kvClient.put(KeyPrefix.PARTITION_COUNT, Integer.toString(partitionCount))
-                    .thenAccept(putResponse -> logger.info(
+                    .thenAcceptAsync(putResponse -> logger.info(
                             "Updated partition count to {}, old partition count was: {}",
                             partitionCount,
                             putResponse.prevValue().isEmpty() ? 0 : putResponse.prevValue())
@@ -211,7 +221,7 @@ public class PartitionManager {
                 LockNames.PARTITION_LOCK,
                 () -> {
                     try {
-                        return kvClient.deleteByPrefix(KeyPrefix.PARTITION_ASSIGNMENT).thenAccept(deleteResponse -> assignPartitionsToWorkers()).get();
+                        return kvClient.deleteByPrefix(KeyPrefix.PARTITION_ASSIGNMENT).thenAcceptAsync(deleteResponse -> assignPartitionsToWorkers()).get();
                     } catch (InterruptedException | ExecutionException e) {
                         logger.warn("Something went wrong will resetting and reassigning the partition assignments..", e);
                         return null;

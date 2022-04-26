@@ -21,7 +21,7 @@ public class EtcdLockClient implements LockClient {
     private Logger logger = LoggerFactory.getLogger(EtcdLockClient.class);
     private static final long DEFAULT_LOCK_DURATION_SECONDS = 60L;
     private Lock lockClient;
-    private final Map<String, String> lockOwnerships = new ConcurrentHashMap<>();
+    private final Map<String, LockDetail> lockOwnerships = new ConcurrentHashMap<>();
 
     //only for unit test purposes
     EtcdLockClient(Lock lock) {
@@ -45,43 +45,52 @@ public class EtcdLockClient implements LockClient {
     @Override
     public void lock(String name) {
         logger.info("Trying to acquire lock '{}'", name);
-        synchronized (lockOwnerships) {
-            try {
-               LockResponse lockResponse = lockClient.lock(ByteSequence.from(name.getBytes()), 0).get();
-                logger.info("Lock '{}' acquired", name);
-                lockOwnerships.put(name, lockResponse.getKey().toString());
-            } catch (InterruptedException | ExecutionException e) {
-                logger.warn("Lock '{}' could not be successfully acquired.",name, e);
-            }
+        try {
+            LockResponse lockResponse = lockClient.lock(ByteSequence.from(name.getBytes()), 0).get();
+            logger.info("Lock '{}' acquired", name);
+            lockOwnerships.put(name, new LockDetail(lockResponse.getKey().toString(), Thread.currentThread().getId()));
+        } catch (InterruptedException | ExecutionException e) {
+            logger.warn("Lock '{}' could not be successfully acquired.", name, e);
         }
     }
 
     @Override
     public void unlock(String name) {
-        synchronized (lockOwnerships) {
-            String lockOwnershipKey = lockOwnerships.get(name);
-            if (lockOwnershipKey != null) {
+        LockDetail lockDetail = lockOwnerships.get(name);
+        if (lockDetail != null) {
+            if (lockDetail.threadOwnerId == Thread.currentThread().getId()) {
                 logger.info("Trying to release lock '{}'", name);
                 try {
-                    lockClient.unlock(ByteSequence.from(lockOwnershipKey.getBytes())).get();
+                    lockClient.unlock(ByteSequence.from(lockDetail.lockOwnershipKey.getBytes())).get();
                     logger.info("Lock '{}' released", name);
                     lockOwnerships.remove(name);
                 } catch (InterruptedException | ExecutionException e) {
                     logger.warn("Lock '{}' could not be successfully released.", name, e);
                 }
             } else {
-                logger.warn("Could not unlock '{}' as there is no active lock on it", name);
+                logger.warn("Not allowed to release lock '{}' as the current thread '{}' is not the owner of it", name, Thread.currentThread().getId());
             }
+        } else {
+            logger.warn("Could not unlock '{}' as there is no active lock on it", name);
         }
     }
 
     @Override
     public <T> T acquireLockAndExecute(String lockName, Supplier<T> supplier) {
-        synchronized (lockOwnerships) {
+        boolean unlocked = false;
+        try {
             lock(lockName);
             T value = supplier.get();
             unlock(lockName);
+            unlocked = true;
             return value;
+        } finally {
+            if (!unlocked) {
+                unlock(lockName);
+            }
         }
+    }
+
+    private record LockDetail(String lockOwnershipKey, long threadOwnerId) {
     }
 }

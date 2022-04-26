@@ -16,7 +16,7 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 
 @Service
-@Profile(value = {"dev", "kubernetes", "test-with-watchers"})
+@Profile(value = {"dev", "kubernetes"})
 public class WorkerWatcher {
     private Logger logger = LoggerFactory.getLogger(WorkerWatcher.class);
     private KVClient kvClient;
