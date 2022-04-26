@@ -1,5 +1,7 @@
 package messagequeue.consumer;
 
+import messagequeue.consumer.builder.ConsumerBuilder;
+import messagequeue.consumer.builder.ConsumerConfigurationStore;
 import messagequeue.consumer.taskmanager.TaskManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,15 +23,26 @@ public class ConsumerManagerImpl implements ConsumerManager {
     private final Map<String, Consumer> consumers = new ConcurrentHashMap<>();
     private final Set<String> consumersScheduledForRemoval = Collections.newSetFromMap(new ConcurrentHashMap<>());
     private final TaskManager taskManager;
+    private ConsumerConfigurationStore consumerConfigurationStore;
+    private ConsumerBuilder consumerBuilder;
 
-    protected ConsumerManagerImpl(Logger logger, TaskManager taskManager) {
-        this(taskManager);
+    //for unit test purposes only
+    protected ConsumerManagerImpl(Logger logger, TaskManager taskManager, ConsumerConfigurationStore consumerConfigurationStore, ConsumerBuilder consumerBuilder) {
+        this(taskManager, consumerConfigurationStore, consumerBuilder);
         this.logger = logger;
     }
 
     @Autowired
-    public ConsumerManagerImpl(TaskManager taskManager) {
+    public ConsumerManagerImpl(TaskManager taskManager, ConsumerConfigurationStore consumerConfigurationStore, ConsumerBuilder consumerBuilder) {
         this.taskManager = taskManager;
+        this.consumerConfigurationStore = consumerConfigurationStore;
+        this.consumerBuilder = consumerBuilder;
+    }
+
+    public void registerConsumer(String consumerId) {
+        String consumerConfiguration = consumerConfigurationStore.getConsumerConfiguration(consumerId);
+        Consumer consumer = consumerBuilder.createConsumer(consumerConfiguration);
+        registerConsumer(consumer);
     }
 
     public void registerConsumer(Consumer consumer) {
@@ -119,8 +132,8 @@ public class ConsumerManagerImpl implements ConsumerManager {
     }
 
     @Override
-    public List<Consumer> getAllConsumers() {
-        return consumers.values().stream().toList();
+    public List<String> getAllConsumers() {
+        return consumers.keySet().stream().toList();
     }
 
     @Override

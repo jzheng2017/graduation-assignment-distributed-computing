@@ -33,7 +33,7 @@ public class WorkerStatisticsPublisher {
         long totalTasksCompleted = consumerManager.getTotalNumberOfCompletedTasks();
         int totalTasksInQueue = consumerManager.getTotalNumberOfTasksInQueue();
         long totalTasksScheduled = consumerManager.getTotalNumberOfTasksScheduled();
-        List<String> activeRunningConsumers = consumerManager.getAllConsumers().stream().map(Consumer::getIdentifier).toList();
+        List<String> activeRunningConsumers = consumerManager.getAllConsumers();
         List<ConsumerTaskCount> concurrentTasksPerConsumerList = concurrentTasksPerConsumer.entrySet().stream().map(entry -> {
             String consumerId = entry.getKey();
             int taskCount = entry.getValue();

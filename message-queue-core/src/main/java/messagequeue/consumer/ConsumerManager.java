@@ -11,7 +11,7 @@ public interface ConsumerManager {
      * Construct and then register the consumer
      *
      */
-    void registerConsumer(Consumer consumer);
+    void registerConsumer(String consumerId);
 
     void startConsumer(String consumerId);
 
@@ -29,7 +29,7 @@ public interface ConsumerManager {
      */
     void shutdown();
 
-    List<Consumer> getAllConsumers();
+    List<String> getAllConsumers();
 
     /**
      * Determines whether a consumer is used internally

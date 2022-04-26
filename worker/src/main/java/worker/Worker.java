@@ -7,7 +7,7 @@ import java.util.UUID;
 @Service
 public class Worker {
     private final static String identifier = UUID.randomUUID().toString();
-
+    private int assignedPartition;
     /**
      * Every instance running in the cluster has a single ConsumerManager which we can identify by the identifier
      *
@@ -15,5 +15,13 @@ public class Worker {
      */
     public String getIdentifier() {
         return identifier;
+    }
+
+    public void setAssignedPartition(int assignedPartition) {
+        this.assignedPartition = assignedPartition;
+    }
+
+    public int getAssignedPartition() {
+        return assignedPartition;
     }
 }

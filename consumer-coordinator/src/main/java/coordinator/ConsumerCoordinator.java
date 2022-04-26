@@ -31,9 +31,7 @@ public class ConsumerCoordinator {
     private static final long DEFAULT_MISSED_HEARTBEAT_FOR_REMOVAL_IN_SECONDS = 10L;
     private static final int MAX_DIFFERENCE_IN_CONSUMPTION_BEFORE_REBALANCE = 10;
     private final Map<String, WorkerStatistics> consumerStatisticsPerInstance = new ConcurrentHashMap<>();
-    private final Set<String> registeredInstanceIds = Collections.newSetFromMap(new ConcurrentHashMap<>());
     private final Set<ConsumerInstanceEntry> activeConsumersOnInstances = Collections.newSetFromMap(new ConcurrentHashMap<>());
-    private final Map<String, ConsumerProperties> consumerConfigurations = new ConcurrentHashMap<>();
     private final Queue<String> consumersToBeDistributed = new ConcurrentLinkedQueue<>();
     private final KVClient kvClient;
 
@@ -74,14 +72,26 @@ public class ConsumerCoordinator {
             throw new IllegalArgumentException("Could not parse consumer configuration", e);
         }
 
+        addConsumerConfiguration(consumerProperties);
+    }
+
+    public void addConsumerConfiguration(ConsumerProperties consumerProperties) {
         final String key = KeyPrefix.CONSUMER_CONFIGURATION + "-" + consumerProperties.name();
         try {
             kvClient.get(key)
                     .thenAccept(getResponse -> {
                         try {
-                            kvClient.put(key, new ObjectMapper().writeValueAsString(consumerProperties)).thenAccept(putResponse -> {
-                                if (getResponse.keyValues().isEmpty()) {
-                                    logger.info("Added consumer configuration '{}'", consumerProperties.name());
+                            final String storedConsumerConfiguration = getResponse.keyValues().get(key);
+                            final String newConsumerConfiguration = new ObjectMapper().writeValueAsString(consumerProperties);
+
+                            if (newConsumerConfiguration.equals(storedConsumerConfiguration)) {
+                                logger.warn("Consumer configuration '{}' was not added because the provided configuration is identical to what is stored", consumerProperties.name());
+                                return;
+                            }
+
+                            kvClient.put(key, newConsumerConfiguration).thenAccept(putResponse -> {
+                                if (storedConsumerConfiguration != null) {
+                                    logger.info("Added consumer configuration '{}'", consumerProperties);
                                 } else {
                                     logger.info("Consumer configuration '{}' was already present. The configuration has now been updated.", consumerProperties.name());
                                 }
@@ -93,7 +103,6 @@ public class ConsumerCoordinator {
         } catch (InterruptedException | ExecutionException e) {
             logger.warn("Could not add consumer configuration '{}'", consumerProperties.name(), e);
         }
-        logger.info("Added consumer configuration: {}", consumerProperties);
     }
 
     public void removeConsumerConfiguration(String consumerId) {
