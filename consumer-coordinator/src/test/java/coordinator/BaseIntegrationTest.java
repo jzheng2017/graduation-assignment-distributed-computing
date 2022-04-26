@@ -18,6 +18,7 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
 import org.testcontainers.containers.GenericContainer;
+import org.testcontainers.utility.DockerImageName;
 
 import javax.annotation.PostConstruct;
 
@@ -53,13 +54,13 @@ public abstract class BaseIntegrationTest {
 
     @BeforeAll
     static void beforeAll() {
-//        etcd = new GenericContainer(DockerImageName.parse("bitnami/etcd:latest")).withExposedPorts(DEFAULT_ETCD_PORT).withEnv("ALLOW_NONE_AUTHENTICATION", "yes");
-//        etcd.start();
+        etcd = new GenericContainer(DockerImageName.parse("bitnami/etcd:latest")).withExposedPorts(DEFAULT_ETCD_PORT).withEnv("ALLOW_NONE_AUTHENTICATION", "yes");
+        etcd.start();
     }
 
     @AfterAll
     static void afterAll() {
-//        etcd.close();
+        etcd.close();
     }
 
     @TestConfiguration
@@ -71,8 +72,8 @@ public abstract class BaseIntegrationTest {
         private EnvironmentConfiguration environmentConfiguration;
         @PostConstruct
         public void setup() {
-//            when(etcdProperties.getBaseUrl()).thenReturn("http://localhost:" + etcd.getMappedPort(DEFAULT_ETCD_PORT));
-            when(etcdProperties.getBaseUrl()).thenReturn("http://localhost:2379");
+            when(etcdProperties.getBaseUrl()).thenReturn("http://localhost:" + etcd.getMappedPort(DEFAULT_ETCD_PORT));
+//            when(etcdProperties.getBaseUrl()).thenReturn("http://localhost:2379");
             when(environmentConfiguration.getPartitions()).thenReturn(NUMBER_OF_PARTITIONS);
         }
     }
