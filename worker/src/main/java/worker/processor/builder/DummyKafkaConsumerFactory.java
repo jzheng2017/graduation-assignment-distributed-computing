@@ -1,23 +1,18 @@
-package impl.processor.builder;
+package worker.processor.builder;
 
-import impl.processor.MessageUppercaseProcessor;
-import impl.processor.MessagePrinterProcessor;
-import impl.processor.MessageReverserProcessor;
+import worker.processor.MessageUppercaseProcessor;
+import worker.processor.MessagePrinterProcessor;
+import worker.processor.MessageReverserProcessor;
 import kafka.configuration.KafkaProperties;
 import kafka.consumer.KafkaConsumer;
 import kafka.consumer.KafkaConsumerBuilderHelper;
 import kafka.messagebroker.KafkaMessageBrokerProxy;
-import messagequeue.consumer.ConsumerManager;
-import messagequeue.consumer.ConsumerManagerImpl;
 import messagequeue.consumer.ConsumerProperties;
-import messagequeue.consumer.builder.ConsumerBuilder;
 import messagequeue.consumer.builder.ConsumerFactory;
-import messagequeue.consumer.processor.ConsumerManagerProcessor;
 import messagequeue.consumer.taskmanager.TaskManager;
 import messagequeue.consumer.Consumer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.context.annotation.Import;
 import org.springframework.stereotype.Service;
 
 /**

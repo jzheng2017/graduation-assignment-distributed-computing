@@ -2,7 +2,6 @@ package coordinator.configuration;
 
 import coordinator.ConsumerCoordinator;
 import coordinator.partition.PartitionManager;
-import datastorage.KVClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.ApplicationArguments;
@@ -16,7 +15,7 @@ public class EnvironmentSetup implements ApplicationRunner {
     private EnvironmentConfiguration environmentConfiguration;
     private PartitionManager partitionManager;
 
-    public EnvironmentSetup(ConsumerCoordinator consumerCoordinator, EnvironmentConfiguration environmentConfiguration, PartitionManager partitionManager, KVClient kvClient) {
+    public EnvironmentSetup(ConsumerCoordinator consumerCoordinator, EnvironmentConfiguration environmentConfiguration, PartitionManager partitionManager) {
         this.consumerCoordinator = consumerCoordinator;
         this.environmentConfiguration = environmentConfiguration;
         this.partitionManager = partitionManager;

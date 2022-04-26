@@ -1,15 +1,15 @@
-package impl.processor;
+package worker.processor;
 
 import messagequeue.consumer.MessageProcessor;
 import messagequeue.messagebroker.MessageBrokerProxy;
 
 /**
- * An example processor which reversed the message and then publishes on a topic
+ * An example processor which basically just capitalizes the message and publishes to another topic
  */
-public class MessageReverserProcessor implements MessageProcessor {
+public class MessageUppercaseProcessor implements MessageProcessor {
     private MessageBrokerProxy messageBrokerProxy;
 
-    public MessageReverserProcessor(MessageBrokerProxy messageBrokerProxy) {
+    public MessageUppercaseProcessor(MessageBrokerProxy messageBrokerProxy) {
         this.messageBrokerProxy = messageBrokerProxy;
     }
 
@@ -20,6 +20,6 @@ public class MessageReverserProcessor implements MessageProcessor {
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-        messageBrokerProxy.sendMessage("reversed", new StringBuilder(message).reverse().toString());
+        this.messageBrokerProxy.sendMessage("output", message.toUpperCase());
     }
 }

@@ -1,4 +1,6 @@
-package messagequeue.consumer;
+package worker;
+
+import messagequeue.consumer.ConsumerTaskCount;
 
 import java.util.List;
 

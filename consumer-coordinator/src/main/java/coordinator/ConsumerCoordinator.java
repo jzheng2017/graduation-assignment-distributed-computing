@@ -1,7 +1,9 @@
 package coordinator;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import coordinator.dto.ConsumerProperties;
-import coordinator.dto.ConsumerStatistics;
+import coordinator.dto.WorkerStatistics;
 import coordinator.dto.ConsumerTaskCount;
 import datastorage.KVClient;
 import datastorage.configuration.KeyPrefix;
@@ -11,7 +13,6 @@ import org.springframework.boot.json.JsonParser;
 import org.springframework.boot.json.JsonParserFactory;
 import org.springframework.stereotype.Service;
 
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -22,14 +23,14 @@ import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.stream.Collectors;
+import java.util.concurrent.ExecutionException;
 
 @Service
 public class ConsumerCoordinator {
     private final Logger logger = LoggerFactory.getLogger(ConsumerCoordinator.class);
     private static final long DEFAULT_MISSED_HEARTBEAT_FOR_REMOVAL_IN_SECONDS = 10L;
     private static final int MAX_DIFFERENCE_IN_CONSUMPTION_BEFORE_REBALANCE = 10;
-    private final Map<String, ConsumerStatistics> consumerStatisticsPerInstance = new ConcurrentHashMap<>();
+    private final Map<String, WorkerStatistics> consumerStatisticsPerInstance = new ConcurrentHashMap<>();
     private final Set<String> registeredInstanceIds = Collections.newSetFromMap(new ConcurrentHashMap<>());
     private final Set<ConsumerInstanceEntry> activeConsumersOnInstances = Collections.newSetFromMap(new ConcurrentHashMap<>());
     private final Map<String, ConsumerProperties> consumerConfigurations = new ConcurrentHashMap<>();
@@ -38,19 +39,6 @@ public class ConsumerCoordinator {
 
     public ConsumerCoordinator( KVClient kvClient) {
         this.kvClient = kvClient;
-    }
-
-    public void updateConsumerStatisticOfInstance(ConsumerStatistics consumerStatistics) {
-        consumerStatisticsPerInstance.put(consumerStatistics.workerId(), consumerStatistics);
-    }
-
-    public void registerWorker(String workerId) {
-        final String key = KeyPrefix.WORKER_REGISTRATION + "-" + workerId;
-        if (kvClient.keyExists(key)) {
-            kvClient.put(key, Long.toString(Instant.now().getEpochSecond())).thenAcceptAsync(putResponse -> logger.info("Worker '{}' has been registered", workerId));
-        } else {
-            logger.warn("Can not register worker '{}' because it already has been registered", workerId);
-        }
     }
 
     public void unregisterWorker(String workerId) {
@@ -78,29 +66,33 @@ public class ConsumerCoordinator {
     }
 
     public void addConsumerConfiguration(String consumerConfiguration) {
-        JsonParser jsonParser = JsonParserFactory.getJsonParser();
-        Map<String, Object> propAndValues = jsonParser.parseMap(consumerConfiguration);
-        ConsumerProperties consumerProperties = new ConsumerProperties(
-                (String) propAndValues.get("name"),
-                (String) propAndValues.get("groupId"),
-                new HashSet<>((List<String>) propAndValues.get("subscriptions"))
-        );
+        ConsumerProperties consumerProperties;
+        try {
+            consumerProperties = new ObjectMapper().readValue(consumerConfiguration, ConsumerProperties.class);
+        } catch (JsonProcessingException e) {
+            logger.warn("Could not successfully parse the consumer configuration", e);
+            throw new IllegalArgumentException("Could not parse consumer configuration", e);
+        }
 
         final String key = KeyPrefix.CONSUMER_CONFIGURATION + "-" + consumerProperties.name();
-//        kvClient.get(key)
-//                .thenAccept(getResponse -> {
-//                    try {
-//                        kvClient.put(key, new ObjectMapper().writeValueAsString(consumerProperties)).thenAccept(putResponse -> {
-//                            if (getResponse.keyValues().isEmpty()) {
-//                                logger.info("Added consumer configuration '{}'", consumerProperties.name());
-//                            } else {
-//                                logger.info("Consumer configuration '{}' was already present. The configuration has now been updated.", consumerProperties.name());
-//                            }
-//                        });
-//                    } catch (JsonProcessingException e) {
-//                        logger.error("Consumer '{}' could not be added as something went wrong with serialization", consumerProperties.name());
-//                    }
-//                });
+        try {
+            kvClient.get(key)
+                    .thenAccept(getResponse -> {
+                        try {
+                            kvClient.put(key, new ObjectMapper().writeValueAsString(consumerProperties)).thenAccept(putResponse -> {
+                                if (getResponse.keyValues().isEmpty()) {
+                                    logger.info("Added consumer configuration '{}'", consumerProperties.name());
+                                } else {
+                                    logger.info("Consumer configuration '{}' was already present. The configuration has now been updated.", consumerProperties.name());
+                                }
+                            });
+                        } catch (JsonProcessingException e) {
+                            logger.error("Consumer '{}' could not be added as something went wrong with serialization", consumerProperties.name());
+                        }
+                    }).get();
+        } catch (InterruptedException | ExecutionException e) {
+            logger.warn("Could not add consumer configuration '{}'", consumerProperties.name(), e);
+        }
         logger.info("Added consumer configuration: {}", consumerProperties);
     }
 
@@ -111,14 +103,6 @@ public class ConsumerCoordinator {
         } else {
             logger.warn("Consumer configuration '{}' can not be removed as it is not present", consumerId);
         }
-    }
-
-    private Set<String> getAllConsumersOfRunningOnInstance(String instanceId) {
-        return activeConsumersOnInstances
-                .stream()
-                .filter(entry -> entry.instanceId().equals(instanceId))
-                .map(ConsumerInstanceEntry::consumerId)
-                .collect(Collectors.toSet());
     }
 
 //    @Scheduled(fixedDelay = 5000L)
@@ -223,8 +207,8 @@ public class ConsumerCoordinator {
 //        }
 //    }
 
-    private int getTotalConcurrentTasks(ConsumerStatistics consumerStatistics) {
-        return consumerStatistics
+    private int getTotalConcurrentTasks(WorkerStatistics workerStatistics) {
+        return workerStatistics
                 .concurrentTasksPerConsumer()
                 .stream()
                 .filter(consumer -> !consumer.internal())
@@ -240,20 +224,20 @@ public class ConsumerCoordinator {
     }
 
     private String getLeastBusyConsumerInstanceToPlaceConsumerOn(String consumerId) {
-        List<ConsumerStatistics> consumerStatistics = new ArrayList<>(consumerStatisticsPerInstance.values());
-        if (consumerStatistics.isEmpty()) {
+        List<WorkerStatistics> workerStatistics = new ArrayList<>(consumerStatisticsPerInstance.values());
+        if (workerStatistics.isEmpty()) {
             return null;
         }
 
-        consumerStatistics.sort(
+        workerStatistics.sort(
                 Comparator
                         .comparing(this::getTotalConcurrentTasks)
-                        .thenComparing(ConsumerStatistics::totalTasksInQueue)
-                        .thenComparing(ConsumerStatistics::totalTasksCompleted)
+                        .thenComparing(WorkerStatistics::totalTasksInQueue)
+                        .thenComparing(WorkerStatistics::totalTasksCompleted)
         );
 
 
-        for (ConsumerStatistics instance : consumerStatistics) {
+        for (WorkerStatistics instance : workerStatistics) {
             if (!activeConsumersOnInstances.contains(new ConsumerInstanceEntry(instance.workerId(), consumerId))) {
                 return instance.workerId();
             }

@@ -1,4 +1,4 @@
-package messagequeue.consumer;
+package worker;
 
 import datastorage.KVClient;
 import datastorage.configuration.KeyPrefix;
@@ -7,27 +7,27 @@ import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import worker.Worker;
 
 import java.time.Instant;
 
 @Service
-@ConditionalOnProperty(value = "heartbeat", havingValue = "on")
 public class Heartbeat {
     private final Logger logger = LoggerFactory.getLogger(Heartbeat.class);
     private KVClient kvClient;
-    private ConsumerManager consumerManager;
+    private Worker worker;
 
-    public Heartbeat(KVClient kvClient, ConsumerManager consumerManager) {
+    public Heartbeat(KVClient kvClient, Worker worker) {
         this.kvClient = kvClient;
-        this.consumerManager = consumerManager;
+        this.worker = worker;
     }
 
     @Scheduled(fixedDelay = 5000L)
     public void sendHeartbeat() {
         kvClient.put(
-                        KeyPrefix.WORKER_HEARTBEAT + "-" + consumerManager.getIdentifier(),
+                        KeyPrefix.WORKER_HEARTBEAT + "-" + worker.getIdentifier(),
                         Long.toString(Instant.now().getEpochSecond())
                 )
-                .thenAcceptAsync(response -> logger.trace("Sent heartbeat from '{}' at {}", consumerManager.getIdentifier(), Instant.now().getEpochSecond(), response));
+                .thenAcceptAsync(response -> logger.trace("Sent heartbeat from '{}' at {}", worker.getIdentifier(), Instant.now().getEpochSecond(), response));
     }
 }

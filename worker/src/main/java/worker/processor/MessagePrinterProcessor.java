@@ -1,4 +1,4 @@
-package impl.processor;
+package worker.processor;
 
 import messagequeue.consumer.MessageProcessor;
 import org.slf4j.Logger;

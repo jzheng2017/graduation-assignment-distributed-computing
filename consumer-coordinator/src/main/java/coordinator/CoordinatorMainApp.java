@@ -1,6 +1,8 @@
 package coordinator;
 
+import datastorage.EtcdKVClient;
 import datastorage.EtcdLockClient;
+import datastorage.KVClient;
 import datastorage.LockClient;
 import datastorage.configuration.EtcdProperties;
 import org.springframework.boot.SpringApplication;
@@ -11,8 +13,6 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @EnableScheduling
 public class CoordinatorMainApp {
     public static void main(String[] args) {
-        System.setProperty("consumer.statistics.publisher", "off");
-        System.setProperty("heartbeat", "off");
         SpringApplication.run(CoordinatorMainApp.class, args);
     }
 }

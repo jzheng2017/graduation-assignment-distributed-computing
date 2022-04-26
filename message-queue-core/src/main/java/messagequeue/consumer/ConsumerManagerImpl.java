@@ -32,11 +32,6 @@ public class ConsumerManagerImpl implements ConsumerManager {
         this.taskManager = taskManager;
     }
 
-    @Override
-    public String getIdentifier() {
-        return identifier;
-    }
-
     public void registerConsumer(Consumer consumer) {
         final String consumerId = consumer.getIdentifier();
         logger.info("Trying to register consumer '{}'", consumerId);

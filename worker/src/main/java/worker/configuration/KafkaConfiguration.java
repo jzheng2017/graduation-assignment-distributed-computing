@@ -1,7 +1,6 @@
-package impl.configuration;
+package worker.configuration;
 
 import datastorage.KVClient;
-import messagequeue.configuration.EnvironmentSetup;
 import messagequeue.consumer.ConsumerManager;
 import messagequeue.consumer.builder.ConsumerBuilder;
 import messagequeue.consumer.builder.ConsumerConfigurationParser;
@@ -16,10 +15,5 @@ public class KafkaConfiguration {
     @Bean
     public ConsumerBuilder consumerBuilder(ConsumerConfigurationParser consumerConfigurationParser, ConsumerFactory consumerFactory, SubscriptionManager subscriptionManager) {
         return new ConsumerBuilder(consumerConfigurationParser, consumerFactory, subscriptionManager);
-    }
-
-    @Bean
-    public EnvironmentSetup environmentSetup(ConsumerManager consumerManager, KVClient kvClient) {
-        return new EnvironmentSetup(consumerManager, kvClient);
     }
 }
