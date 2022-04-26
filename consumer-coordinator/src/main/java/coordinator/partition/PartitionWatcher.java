@@ -8,11 +8,13 @@ import datastorage.dto.WatchEvent;
 import datastorage.dto.WatchResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 
 @Service
+@Profile(value = {"dev", "kubernetes", "test-with-watchers"})
 public class PartitionWatcher {
     private Logger logger = LoggerFactory.getLogger(PartitionWatcher.class);
     private KVClient kvClient;
@@ -47,7 +49,7 @@ public class PartitionWatcher {
 
         @Override
         public void onCompleted() {
-            logger.info("Stopped watching the resource/key '{}'", KeyPrefix.PARTITION_COUNT);
+            logger.info("Stopped watching resource/key '{}'", KeyPrefix.PARTITION_COUNT);
         }
     }
 }

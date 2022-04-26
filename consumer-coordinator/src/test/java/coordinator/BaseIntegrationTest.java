@@ -1,9 +1,11 @@
-package coordinator.partition;
+package coordinator;
 
 import coordinator.configuration.EnvironmentConfiguration;
+import coordinator.partition.PartitionManager;
 import datastorage.KVClient;
 import datastorage.LockClient;
 import datastorage.configuration.EtcdProperties;
+import datastorage.configuration.KeyPrefix;
 import datastorage.dto.GetResponse;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -16,9 +18,10 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
 import org.testcontainers.containers.GenericContainer;
-import org.testcontainers.utility.DockerImageName;
 
 import javax.annotation.PostConstruct;
+
+import java.util.concurrent.ExecutionException;
 
 import static org.mockito.Mockito.when;
 
@@ -35,10 +38,17 @@ public abstract class BaseIntegrationTest {
     protected LockClient lockClient;
     @Autowired
     protected EnvironmentConfiguration environmentConfiguration;
+    @Autowired
+    protected PartitionManager partitionManager;
 
     @BeforeEach
-    void genericSetup() {
+    void genericSetup() throws ExecutionException, InterruptedException {
         when(environmentConfiguration.getPartitions()).thenReturn(NUMBER_OF_PARTITIONS);
+        String[] keyPrefixesToDelete = new String[]{KeyPrefix.PARTITION_ASSIGNMENT, KeyPrefix.WORKER_REGISTRATION, KeyPrefix.WORKER_HEARTBEAT, KeyPrefix.WORKER_STATISTICS};
+        for (String keyPrefix : keyPrefixesToDelete) { //cleanup the store
+            kvClient.deleteByPrefix(keyPrefix).get();
+        }
+        partitionManager.createPartitions(environmentConfiguration.getPartitions());
     }
 
     @BeforeAll

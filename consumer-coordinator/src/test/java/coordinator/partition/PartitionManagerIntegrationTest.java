@@ -1,35 +1,21 @@
 package coordinator.partition;
 
-import coordinator.configuration.EnvironmentConfiguration;
-import datastorage.KVClient;
-import datastorage.LockClient;
+import coordinator.BaseIntegrationTest;
 import datastorage.configuration.KeyPrefix;
-import datastorage.configuration.LockNames;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
 
 import java.time.Instant;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
-import static org.mockito.Mockito.when;
-
 
 public class PartitionManagerIntegrationTest extends BaseIntegrationTest {
-    @Autowired
-    private PartitionManager partitionManager;
     private final String workerId = "1";
 
     @BeforeEach
-    void setup() throws ExecutionException, InterruptedException {
-        String[] keyPrefixesToDelete = new String[]{KeyPrefix.PARTITION_ASSIGNMENT, KeyPrefix.WORKER_REGISTRATION, KeyPrefix.WORKER_HEARTBEAT, KeyPrefix.WORKER_STATISTICS};
-        for (String keyPrefix : keyPrefixesToDelete) { //cleanup the store
-            kvClient.deleteByPrefix(keyPrefix).get();
-        }
-        partitionManager.createPartitions(environmentConfiguration.getPartitions());
+    void setup() {
         kvClient.put(KeyPrefix.WORKER_REGISTRATION + "-" + workerId, String.valueOf(Instant.now().getEpochSecond()));
     }
 
