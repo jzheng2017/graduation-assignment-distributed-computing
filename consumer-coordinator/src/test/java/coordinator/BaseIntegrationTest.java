@@ -36,12 +36,9 @@ import static org.mockito.Mockito.when;
 @SpringBootTest
 @ActiveProfiles("test")
 @DirtiesContext
-@Testcontainers
 public abstract class BaseIntegrationTest {
     public static final int DEFAULT_ETCD_PORT = 2379;
     public static final int NUMBER_OF_PARTITIONS = 4;
-    @Container
-    public static final GenericContainer etcd = new GenericContainer(DockerImageName.parse("bitnami/etcd:latest")).withExposedPorts(DEFAULT_ETCD_PORT).withEnv("ALLOW_NONE_AUTHENTICATION", "yes");
     @Autowired
     protected KVClient kvClient;
     @Autowired
@@ -65,7 +62,7 @@ public abstract class BaseIntegrationTest {
     }
     @DynamicPropertySource
     static void postgresqlProperties(DynamicPropertyRegistry registry) {
-        registry.add("etcd.base.url",() -> "http://localhost:" + etcd.getMappedPort(DEFAULT_ETCD_PORT));
+//        registry.add("etcd.base.url",() -> "http://localhost:" + etcd.getMappedPort(DEFAULT_ETCD_PORT));
         registry.add("partitions",() -> NUMBER_OF_PARTITIONS);
     }
 

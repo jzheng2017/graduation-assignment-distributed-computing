@@ -24,6 +24,22 @@ spec:
         memory: '8Gi'
     tty: true
     tty: true
+  - name: etcd
+    image: bitnami/etcd:latest
+    resources:
+      requests:
+        memory: '2Gi'
+      limits:
+        memory: '2Gi'
+    env:
+      - name: "ALLOW_NONE_AUTHENTICATION"
+        value: "yes"
+    ports:
+      - name: etcd
+        containerPort: 2379
+        hostPort: 2379
+    tty: true
+    tty: true
 """
     }
   }
