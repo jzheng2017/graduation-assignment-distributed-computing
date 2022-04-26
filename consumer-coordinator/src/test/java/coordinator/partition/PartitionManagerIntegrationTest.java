@@ -1,6 +1,7 @@
 package coordinator.partition;
 
 import coordinator.BaseIntegrationTest;
+import coordinator.TestUtil;
 import datastorage.configuration.KeyPrefix;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -41,9 +42,8 @@ public class PartitionManagerIntegrationTest extends BaseIntegrationTest {
     void testThatAssigningAPartitionToANonExistingWorkerDoesNotWork() throws InterruptedException {
         final int partitionNumber = 0;
         partitionManager.assignPartition(partitionNumber, "I do not exist!");
-        Thread.sleep(100);
-        Map<Integer, String> partitionAssignments = partitionManager.getPartitionAssignments();
-        Assertions.assertFalse(partitionAssignments.containsKey(partitionNumber));
+
+        TestUtil.waitUntil(() -> !partitionManager.getPartitionAssignments().containsKey(partitionNumber), "", 500, 100);
     }
 
     @Test
@@ -89,7 +89,7 @@ public class PartitionManagerIntegrationTest extends BaseIntegrationTest {
         partitionManager.resetPartitionAssignmentsAndReassign();
 
         //the partition numbers in the map must be unique, so if the size of the map equals the number of partitions, then all partitions have been distributed
-        Assertions.assertEquals(numberOfPartitions, partitionManager.getPartitionAssignments().size());
+        TestUtil.waitUntil(() -> numberOfPartitions == partitionManager.getPartitionAssignments().size(), "Partitions were not assigned correctly", 1000, 100);
     }
 
     @Test

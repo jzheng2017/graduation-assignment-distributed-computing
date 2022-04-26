@@ -1,6 +1,7 @@
 package coordinator.worker;
 
 import coordinator.BaseIntegrationTest;
+import coordinator.TestUtil;
 import coordinator.partition.PartitionWatcher;
 import datastorage.configuration.KeyPrefix;
 import org.junit.jupiter.api.Assertions;
@@ -23,6 +24,7 @@ public class WorkerWatcherIntegrationTest extends BaseIntegrationTest {
         context.registerBean("workerWatcher", WorkerWatcher.class);
         workerWatcher = (WorkerWatcher) context.getBean("workerWatcher");
     }
+
     @Test
     void testThatAWorkerGetsAssignedAPartition() throws ExecutionException, InterruptedException {
         final String workerId = "blabla";
@@ -31,8 +33,11 @@ public class WorkerWatcherIntegrationTest extends BaseIntegrationTest {
 
         kvClient.put(KeyPrefix.WORKER_REGISTRATION + "-" + workerId, String.valueOf(Instant.now().getEpochSecond())).get();
 
-        Thread.sleep(500);
 
-        Assertions.assertTrue(partitionManager.getPartitionAssignments().values().stream().anyMatch(workerAssignedToPartition -> workerAssignedToPartition.equals(workerId)));
+        TestUtil.waitUntil(
+                () -> partitionManager.getPartitionAssignments().values().stream().anyMatch(workerAssignedToPartition -> workerAssignedToPartition.equals(workerId)),
+                "",
+                1000,
+                100);
     }
 }
