@@ -15,6 +15,9 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 
+/**
+ * This watcher is responsible for listening to workers that register themselves when starting up. After registration it will be assigned an available partition.
+ */
 @Service
 @Profile(value = {"dev", "kubernetes"})
 public class WorkerWatcher {
@@ -55,11 +58,12 @@ public class WorkerWatcher {
 
         @Override
         public void onError(Throwable throwable) {
-            logger.warn("Error watching key/resource '{}'", KeyPrefix.WORKER_REGISTRATION, throwable);
+            logger.error("An error occurred while watching resource/key '{}'", KeyPrefix.WORKER_REGISTRATION, throwable);
         }
 
         @Override
         public void onCompleted() {
+            watchClient.unwatch(KeyPrefix.WORKER_REGISTRATION);
             logger.info("Stopped watching key/resource '{}'", KeyPrefix.WORKER_REGISTRATION);
         }
     }

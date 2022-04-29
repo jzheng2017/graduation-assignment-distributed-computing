@@ -1,12 +1,12 @@
 version: "3"
 networks:
-  kafka-network:
+  app-network:
     driver: bridge
 services:
   zookeeper:
     image: 'bitnami/zookeeper:latest'
     networks:
-      - kafka-network
+      - app-network
     ports:
       - '2181:2181'
     environment:
@@ -14,7 +14,7 @@ services:
   kafka:
     image: 'bitnami/kafka:latest'
     networks:
-      - kafka-network
+      - app-network
     ports:
       - '9092:9092'
       - '9093:9093'
@@ -37,16 +37,16 @@ services:
       - 2379:2379
       - 2380:2380
     networks:
-      - kafka-network
-#  project:
-#    image: 'message-queue-kafka-project:latest'
+      - app-network
+#  worker:
+#    image: 'worker:latest'
 #    networks:
-#      - kafka-network
+#      - app-network
 #    ports:
 #      - '8081:8081'
 #  consumer-coordinator:
 #    image: 'consumer-coordinator:latest'
 #    networks:
-#      - kafka-network
+#      - app-network
 #    ports:
 #      - '8082:8082'

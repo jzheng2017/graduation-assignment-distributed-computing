@@ -7,8 +7,8 @@ eval $(minikube docker-env)
 cd consumer-coordinator
 docker build --no-cache -t consumer-coordinator .
 
-cd ../message-queue-kafka-project
-docker build --no-cache -t message-queue-kafka-project .
+cd ../worker
+docker build --no-cache -t worker .
 
 cd ..
 kubectl apply -f kubernetes/

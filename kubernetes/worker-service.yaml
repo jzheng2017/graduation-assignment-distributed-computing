@@ -6,14 +6,14 @@ metadata:
     kompose.version: 1.26.1 (a9d05d509)
   creationTimestamp: null
   labels:
-    io.kompose.service: project
-  name: project
+    io.kompose.service: worker
+  name: worker
 spec:
   ports:
     - name: "8081"
       port: 8081
       targetPort: 8081
   selector:
-    io.kompose.service: project
+    io.kompose.service: worker
 status:
   loadBalancer: {}

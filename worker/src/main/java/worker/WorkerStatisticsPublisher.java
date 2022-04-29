@@ -21,6 +21,7 @@ public class WorkerStatisticsPublisher {
     private ConsumerManager consumerManager;
     private KVClient kvClient;
     private Worker worker;
+
     public WorkerStatisticsPublisher(KVClient kvClient, ConsumerManager consumerManager, Worker worker) {
         this.kvClient = kvClient;
         this.consumerManager = consumerManager;
@@ -42,7 +43,9 @@ public class WorkerStatisticsPublisher {
 
         WorkerStatistics workerStatistics = new WorkerStatistics(
                 worker.getIdentifier(),
-                totalTasksInQueue, totalTasksCompleted,
+                worker.getAssignedPartition(),
+                totalTasksInQueue,
+                totalTasksCompleted,
                 totalTasksScheduled,
                 concurrentTasksPerConsumerList,
                 activeRunningConsumers,

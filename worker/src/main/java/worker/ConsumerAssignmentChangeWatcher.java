@@ -18,6 +18,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * This watcher is responsible for listening to changes to all consumer assignments that is related to the partition that has been assigned to the {@link Worker}
+ */
 @Service
 public class ConsumerAssignmentChangeWatcher {
     private Logger logger = LoggerFactory.getLogger(ConsumerAssignmentChangeWatcher.class);
@@ -26,20 +29,27 @@ public class ConsumerAssignmentChangeWatcher {
     private Worker worker;
     private String currentKey;
     private ConsumerManager consumerManager;
+
     public ConsumerAssignmentChangeWatcher(WatchClient watchClient, KVClient kvClient, Worker worker, ConsumerManager consumerManager) {
         this.watchClient = watchClient;
         this.kvClient = kvClient;
         this.worker = worker;
-        this.currentKey = KeyPrefix.PARTITION_CONSUMER_ASSIGNMENT + "-" + worker.getAssignedPartition();
+        this.currentKey = getCurrentKey();
         this.consumerManager = consumerManager;
-        watchForConsumerAssignmentChange();
+        if (worker.getAssignedPartition() >= 0) {
+            watchForConsumerAssignmentChange();
+        }
     }
 
     public void partitionChanged(int newPartitionNumber) {
         logger.info("Worker has been assigned to a new partition: {}. Watcher will be updated accordingly.", newPartitionNumber);
         watchClient.unwatch(currentKey);
-        currentKey = KeyPrefix.PARTITION_CONSUMER_ASSIGNMENT + "-" + worker.getAssignedPartition();
+        currentKey = getCurrentKey();
         watchClient.watch(currentKey, new ConsumerAssignmentChangeWatchListener());
+    }
+
+    private String getCurrentKey() {
+        return KeyPrefix.PARTITION_CONSUMER_ASSIGNMENT + "-" + worker.getAssignedPartition();
     }
 
     private void watchForConsumerAssignmentChange() {
@@ -63,7 +73,7 @@ public class ConsumerAssignmentChangeWatcher {
 
         @Override
         public void onError(Throwable throwable) {
-            logger.error("Watching key/resource '{}' has resulted in an error", currentKey, throwable);
+            logger.error("An error occurred while watching resource/key '{}'", currentKey, throwable);
         }
 
         @Override

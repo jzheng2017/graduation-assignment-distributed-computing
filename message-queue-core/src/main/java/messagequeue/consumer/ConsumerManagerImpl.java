@@ -45,13 +45,13 @@ public class ConsumerManagerImpl implements ConsumerManager {
         registerConsumer(consumer);
     }
 
-    public void registerConsumer(Consumer consumer) {
+    private void registerConsumer(Consumer consumer) {
         final String consumerId = consumer.getIdentifier();
         logger.info("Trying to register consumer '{}'", consumerId);
         if (!consumers.containsKey(consumerId)) {
             consumers.put(consumerId, consumer);
-            logger.info("Successfully registered consumer '{}'", consumerId);
             startConsumer(consumerId);
+            logger.info("Successfully registered consumer '{}'", consumerId);
         } else {
             logger.warn("Consumer '{}' has already been registered.", consumerId);
         }

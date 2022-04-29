@@ -2,13 +2,11 @@ package coordinator.worker;
 
 import coordinator.BaseIntegrationTest;
 import coordinator.TestUtil;
-import coordinator.partition.PartitionWatcher;
 import datastorage.configuration.KeyPrefix;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.test.context.ActiveProfiles;
 import org.springframework.web.context.support.GenericWebApplicationContext;
 
 import java.time.Instant;

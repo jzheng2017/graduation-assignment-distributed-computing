@@ -1,13 +1,17 @@
 package worker;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.util.UUID;
 
 @Service
 public class Worker {
-    private final static String identifier = UUID.randomUUID().toString();
-    private int assignedPartition;
+    private Logger logger = LoggerFactory.getLogger(Worker.class);
+    private final String identifier = UUID.randomUUID().toString();
+    private int assignedPartition = -1;
+
     /**
      * Every instance running in the cluster has a single ConsumerManager which we can identify by the identifier
      *
@@ -19,6 +23,7 @@ public class Worker {
 
     public void setAssignedPartition(int assignedPartition) {
         this.assignedPartition = assignedPartition;
+        logger.info("New partition assigned to worker: {}", assignedPartition);
     }
 
     public int getAssignedPartition() {

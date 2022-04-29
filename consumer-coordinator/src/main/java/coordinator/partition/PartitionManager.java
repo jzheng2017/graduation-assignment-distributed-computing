@@ -1,11 +1,10 @@
 package coordinator.partition;
 
 import coordinator.Util;
-import coordinator.configuration.EnvironmentSetup;
 import datastorage.KVClient;
 import datastorage.LockClient;
 import datastorage.configuration.KeyPrefix;
-import datastorage.configuration.LockNames;
+import datastorage.configuration.LockName;
 import datastorage.dto.GetResponse;
 
 import org.slf4j.Logger;
@@ -23,6 +22,9 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
+/**
+ * This class is responsible for managing partitions such as assigning partition to workers and computing best partition.
+ */
 @Service
 public class PartitionManager {
     private Logger logger = LoggerFactory.getLogger(PartitionManager.class);
@@ -46,7 +48,7 @@ public class PartitionManager {
     public void assignPartition(int partition, String workerId) {
         logger.info("Start partition assignment process of partition '{}' for worker '{}'", partition, workerId);
         lockClient.acquireLockAndExecute(
-                LockNames.PARTITION_LOCK,
+                LockName.PARTITION_LOCK,
                 () -> {
                     try {
                         return kvClient.get(KeyPrefix.PARTITION_COUNT).thenAcceptAsync(
@@ -97,7 +99,7 @@ public class PartitionManager {
         logger.info("Trying to remove partition assignment of partition '{}'", partition);
         final String partitionAssignmentKey = KeyPrefix.PARTITION_ASSIGNMENT + "-" + partition;
         lockClient.acquireLockAndExecute(
-                LockNames.PARTITION_LOCK,
+                LockName.PARTITION_LOCK,
                 () -> {
                     if (kvClient.keyExists(partitionAssignmentKey)) {
                         try {
@@ -116,7 +118,7 @@ public class PartitionManager {
 
     public int computeBestPartition() {
         return lockClient.acquireLockAndExecute(
-                LockNames.PARTITION_LOCK,
+                LockName.PARTITION_LOCK,
                 () -> {
                     logger.info("Computing best partition...");
                     int numberOfPartitions = getNumberOfPartitions();
@@ -218,7 +220,7 @@ public class PartitionManager {
 
     public void resetPartitionAssignmentsAndReassign() {
         lockClient.acquireLockAndExecute(
-                LockNames.PARTITION_LOCK,
+                LockName.PARTITION_LOCK,
                 () -> {
                     try {
                         return kvClient.deleteByPrefix(KeyPrefix.PARTITION_ASSIGNMENT).thenAcceptAsync(deleteResponse -> assignPartitionsToWorkers()).get();

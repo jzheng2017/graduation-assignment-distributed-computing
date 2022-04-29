@@ -13,6 +13,9 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 
+/**
+ * This watcher is responsible for listening to partition count change. If the number of partitions has been changed then it has to be reset and reassigned evenly over the available workers.
+ */
 @Service
 @Profile(value = {"dev", "kubernetes"})
 public class PartitionWatcher {
@@ -44,11 +47,12 @@ public class PartitionWatcher {
 
         @Override
         public void onError(Throwable throwable) {
-            logger.error("Watching the resource/key '{}' has thrown an error.", KeyPrefix.PARTITION_COUNT, throwable);
+            logger.error("An error occurred while watching resource/key '{}'", KeyPrefix.PARTITION_COUNT, throwable);
         }
 
         @Override
         public void onCompleted() {
+            watchClient.unwatch(KeyPrefix.PARTITION_COUNT);
             logger.info("Stopped watching resource/key '{}'", KeyPrefix.PARTITION_COUNT);
         }
     }

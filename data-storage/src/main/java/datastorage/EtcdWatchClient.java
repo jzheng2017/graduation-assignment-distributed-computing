@@ -63,6 +63,7 @@ public class EtcdWatchClient implements WatchClient {
                         watchListener::onError,
                         watchListener::onCompleted
                 );
+
                 watchers.put(keyOrPrefix, watcher);
                 logger.info("Registered listener to watch key '{}'", keyOrPrefix);
             } else {
@@ -91,7 +92,12 @@ public class EtcdWatchClient implements WatchClient {
                         event.getKeyValue().getKey().toString(),
                         event.getKeyValue().getValue().toString(),
                         event.getPrevKV().getKey().toString(),
-                        event.getPrevKV().getValue().toString()
+                        event.getPrevKV().getValue().toString(),
+                        switch (event.getEventType()) {
+                            case PUT -> WatchEvent.EventType.PUT;
+                            case DELETE -> WatchEvent.EventType.DELETE;
+                            case UNRECOGNIZED -> WatchEvent.EventType.UNKNOWN;
+                        }
                 )).toList();
     }
 }

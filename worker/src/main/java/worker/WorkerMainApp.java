@@ -13,7 +13,7 @@ public class WorkerMainApp {
         SpringApplication app = new SpringApplication(WorkerMainApp.class);
         app.setDefaultProperties(Collections.singletonMap("server.port", "8081"));
         app.run(args);
-//        SpringApplication.run(MessageQueueMainApp.class);
+//        SpringApplication.run(WorkerMainApp.class);
     }
 }
 
