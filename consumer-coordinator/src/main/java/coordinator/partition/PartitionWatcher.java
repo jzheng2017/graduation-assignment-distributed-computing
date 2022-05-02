@@ -9,6 +9,7 @@ import datastorage.dto.WatchResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Profile;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -23,7 +24,7 @@ public class PartitionWatcher {
     private KVClient kvClient;
     private WatchClient watchClient;
     private PartitionManager partitionManager;
-
+    private boolean watcherRunning = false;
     public PartitionWatcher(KVClient kvClient, WatchClient watchClient, PartitionManager partitionManager) {
         this.kvClient = kvClient;
         this.watchClient = watchClient;
@@ -33,6 +34,14 @@ public class PartitionWatcher {
 
     private void watchForPartitionCountChange() {
         watchClient.watch(KeyPrefix.PARTITION_COUNT, new PartitionCountChangedWatchListener());
+        watcherRunning = true;
+    }
+
+    @Scheduled(fixedDelay = 5000L)
+    private void checkHealthWatcher() {
+        if (!watcherRunning) {
+            watchForPartitionCountChange();
+        }
     }
 
     public class PartitionCountChangedWatchListener implements WatchListener {
@@ -54,6 +63,7 @@ public class PartitionWatcher {
         public void onCompleted() {
             watchClient.unwatch(KeyPrefix.PARTITION_COUNT);
             logger.info("Stopped watching resource/key '{}'", KeyPrefix.PARTITION_COUNT);
+            watcherRunning = true;
         }
     }
 }

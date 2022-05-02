@@ -15,6 +15,7 @@ import datastorage.dto.WatchEvent;
 import datastorage.dto.WatchResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -32,7 +33,7 @@ public class ConsumerDistributor {
     private Util util;
     private LockClient lockClient;
     private KVClient kvClient;
-
+    private boolean watcherRunning = false;
     public ConsumerDistributor(WatchClient watchClient, ConsumerCoordinator consumerCoordinator, Util util, LockClient lockClient, KVClient kvClient) {
         this.watchClient = watchClient;
         this.consumerCoordinator = consumerCoordinator;
@@ -44,6 +45,7 @@ public class ConsumerDistributor {
 
     private void watchForConsumerStatusChanges() {
         watchClient.watchByPrefix(KeyPrefix.CONSUMER_STATUS, new ConsumerStatusWatchListener());
+        watcherRunning = true;
     }
 
     private void assignConsumerToPartition(final int partition, final String consumerId) {
@@ -76,6 +78,13 @@ public class ConsumerDistributor {
         );
     }
 
+    @Scheduled(fixedDelay = 5000L)
+    private void checkHealthWatcher() {
+        if (!watcherRunning) {
+            watchForConsumerStatusChanges();
+        }
+    }
+
     private class ConsumerStatusWatchListener implements WatchListener {
 
         @Override
@@ -103,6 +112,7 @@ public class ConsumerDistributor {
         public void onCompleted() {
             watchClient.unwatch(KeyPrefix.CONSUMER_STATUS);
             logger.info("Stopped watching resource/key '{}'", KeyPrefix.CONSUMER_STATUS);
+            watcherRunning = false;
         }
     }
 }

@@ -48,7 +48,7 @@ public class PartitionManager {
     public void assignPartition(int partition, String workerId) {
         logger.info("Start partition assignment process of partition '{}' for worker '{}'", partition, workerId);
         lockClient.acquireLockAndExecute(
-                LockName.PARTITION_LOCK,
+                LockName.PARTITION_ASSIGNMENT_LOCK,
                 () -> {
                     try {
                         return kvClient.get(KeyPrefix.PARTITION_COUNT).thenAcceptAsync(
@@ -99,7 +99,7 @@ public class PartitionManager {
         logger.info("Trying to remove partition assignment of partition '{}'", partition);
         final String partitionAssignmentKey = KeyPrefix.PARTITION_ASSIGNMENT + "-" + partition;
         lockClient.acquireLockAndExecute(
-                LockName.PARTITION_LOCK,
+                LockName.PARTITION_ASSIGNMENT_LOCK,
                 () -> {
                     if (kvClient.keyExists(partitionAssignmentKey)) {
                         try {
@@ -118,7 +118,7 @@ public class PartitionManager {
 
     public int computeBestPartition() {
         return lockClient.acquireLockAndExecute(
-                LockName.PARTITION_LOCK,
+                LockName.PARTITION_ASSIGNMENT_LOCK,
                 () -> {
                     logger.info("Computing best partition...");
                     int numberOfPartitions = getNumberOfPartitions();
@@ -185,7 +185,8 @@ public class PartitionManager {
      */
     public int getNumberOfPartitions() {
         try {
-            return Integer.parseInt(kvClient.get(KeyPrefix.PARTITION_COUNT).get().keyValues().get(KeyPrefix.PARTITION_COUNT));
+            final String partitionCount = kvClient.get(KeyPrefix.PARTITION_COUNT).get().keyValues().get(KeyPrefix.PARTITION_COUNT);
+            return Integer.parseInt(partitionCount);
         } catch (InterruptedException | ExecutionException e) {
             logger.warn("Could not retrieve the number of partitions. Defaulting to partition count that was known on startup.", e);
             throw new IllegalStateException("Could not get the number of partitions.", e);
@@ -198,7 +199,7 @@ public class PartitionManager {
      * @param workerId the id of the worker
      * @return the partition number
      */
-    private Optional<Integer> getPartitionOfWorker(String workerId) {
+    public Optional<Integer> getPartitionOfWorker(String workerId) {
         try {
             Map<String, String> partitionAssignments = kvClient.getByPrefix(KeyPrefix.PARTITION_ASSIGNMENT).get().keyValues();
             for (Map.Entry<String, String> partitionAssignment : partitionAssignments.entrySet()) {
@@ -220,7 +221,7 @@ public class PartitionManager {
 
     public void resetPartitionAssignmentsAndReassign() {
         lockClient.acquireLockAndExecute(
-                LockName.PARTITION_LOCK,
+                LockName.PARTITION_ASSIGNMENT_LOCK,
                 () -> {
                     try {
                         return kvClient.deleteByPrefix(KeyPrefix.PARTITION_ASSIGNMENT).thenAcceptAsync(deleteResponse -> assignPartitionsToWorkers()).get();

@@ -10,10 +10,9 @@ import java.util.Collections;
 @EnableScheduling
 public class WorkerMainApp {
     public static void main(String[] args) throws InterruptedException {
-        SpringApplication app = new SpringApplication(WorkerMainApp.class);
-        app.setDefaultProperties(Collections.singletonMap("server.port", "8081"));
-        app.run(args);
-//        SpringApplication.run(WorkerMainApp.class);
+//        SpringApplication app = new SpringApplication(WorkerMainApp.class);
+//        app.setDefaultProperties(Collections.singletonMap("server.port", "8081"));
+//        app.run(args);
+        SpringApplication.run(WorkerMainApp.class);
     }
 }
-

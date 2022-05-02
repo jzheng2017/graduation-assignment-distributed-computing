@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import coordinator.dto.ConsumerProperties;
 import coordinator.dto.WorkerStatistics;
 import coordinator.dto.ConsumerTaskCount;
+import coordinator.partition.PartitionManager;
 import coordinator.worker.WorkerStatisticsDeserializer;
 import datastorage.KVClient;
 import datastorage.LockClient;
@@ -19,6 +20,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -29,7 +31,6 @@ import java.util.stream.Collectors;
 @Service
 public class ConsumerCoordinator {
     private final Logger logger = LoggerFactory.getLogger(ConsumerCoordinator.class);
-    private static final long DEFAULT_MISSED_HEARTBEAT_FOR_REMOVAL_IN_SECONDS = 10L;
     private static final int MAX_DIFFERENCE_IN_CONSUMPTION_BEFORE_REBALANCE = 10;
     private final Map<String, WorkerStatistics> consumerStatisticsPerInstance = new ConcurrentHashMap<>();
     private final Set<ConsumerInstanceEntry> activeConsumersOnInstances = Collections.newSetFromMap(new ConcurrentHashMap<>());
@@ -38,22 +39,36 @@ public class ConsumerCoordinator {
     private final LockClient lockClient;
     private final WorkerStatisticsDeserializer workerStatisticsDeserializer;
     private final Util util;
+    private final PartitionManager partitionManager;
 
-    public ConsumerCoordinator(KVClient kvClient, LockClient lockClient, WorkerStatisticsDeserializer workerStatisticsDeserializer, Util util) {
+    public ConsumerCoordinator(KVClient kvClient, LockClient lockClient, WorkerStatisticsDeserializer workerStatisticsDeserializer, Util util, PartitionManager partitionManager) {
         this.kvClient = kvClient;
         this.lockClient = lockClient;
         this.workerStatisticsDeserializer = workerStatisticsDeserializer;
         this.util = util;
+        this.partitionManager = partitionManager;
     }
 
     public void unregisterWorker(String workerId) {
         final String registrationKey = KeyPrefix.WORKER_REGISTRATION + "-" + workerId;
         final String statisticsKey = KeyPrefix.WORKER_STATISTICS + "-" + workerId;
-        final String partitionAssignmentKey = KeyPrefix.PARTITION_ASSIGNMENT + "-" + workerId;
+        String partitionAssignmentKey = null;
+        Optional<Integer> partition = partitionManager.getPartitionOfWorker(workerId);
+        if (partition.isPresent()) {
+            partitionAssignmentKey =  KeyPrefix.PARTITION_ASSIGNMENT + "-" + partition.get();
+        }
+        final String workerHeartbeatKey = KeyPrefix.WORKER_HEARTBEAT + "-" + workerId;
         if (kvClient.keyExists(registrationKey)) {
-            kvClient.delete(registrationKey).thenAcceptAsync(deleteResponse -> logger.info("Worker '{}' has been unregistered", workerId));
-            kvClient.delete(statisticsKey).thenAcceptAsync(deleteResponse -> logger.info("Consumer statistics of worker '{}' removed", workerId));
-            kvClient.delete(partitionAssignmentKey).thenAcceptAsync(deleteResponse -> logger.info("Removed worker '{}' partition assignment", workerId));
+            try {
+                kvClient.delete(registrationKey).thenAcceptAsync(deleteResponse -> logger.info("Worker '{}' has been unregistered", workerId)).get();
+                kvClient.delete(statisticsKey).thenAcceptAsync(deleteResponse -> logger.info("Consumer statistics of worker '{}' removed", workerId)).get();
+                if (partitionAssignmentKey != null) {
+                    kvClient.delete(partitionAssignmentKey).thenAcceptAsync(deleteResponse -> logger.info("Removed worker '{}' partition assignment", workerId)).get();
+                }
+                kvClient.delete(workerHeartbeatKey).thenAcceptAsync(deleteResponse -> logger.info("Removed worker '{}' heartbeat", workerId)).get();
+            } catch (InterruptedException | ExecutionException e) {
+                logger.error("Could not unregister worker '{}'", workerId, e);
+            }
         } else {
             logger.warn("Can not unregister worker '{}' because it is not registered", workerId);
         }
@@ -215,32 +230,7 @@ public class ConsumerCoordinator {
 //        }
 
 //    }
-//    @Scheduled(fixedDelay = 5000L)
-//    public void checkHealth() {
-//        kvClient.get(KeyPrefix.CONSUMER_STATISTICS).thenAccept(
-//                getResponse -> {
-//                    Map<String, String> consumerStatistics = getResponse.keyValues();
-//                    for (Map.Entry<String, String> consumerStatistic : consumerStatistics.entrySet()) {
-//                        final long timeSinceLastHeartbeatInSeconds = Instant.now().getEpochSecond() - Long.parseLong(consumerStatistic.getValue());
-//                        final boolean noHeartbeatSignalReceived = timeSinceLastHeartbeatInSeconds >= DEFAULT_MISSED_HEARTBEAT_FOR_REMOVAL_IN_SECONDS;
-//                        if (noHeartbeatSignalReceived) {
-//                            logger.warn("Worker '{}' has not been responding for {} seconds. It will be unregistered.", consumerStatistic.workerId(), timeSinceLastHeartbeatInSeconds);
-//                            unregisterWorker(consumerStatistic.workerId());
-//                        }
-//                    }
-//                }
-//        );
-//        for (ConsumerStatistics consumerStatistic : consumerStatisticsPerInstance.values()) {
-//            final long timeSinceLastHeartbeatInSeconds = Instant.now().getEpochSecond() - consumerStatistic.timestamp();
-//            final boolean noHeartbeatSignalReceived = timeSinceLastHeartbeatInSeconds >= DEFAULT_MISSED_HEARTBEAT_FOR_REMOVAL_IN_SECONDS;
-//
-//            if (noHeartbeatSignalReceived) {
-//                logger.warn("Instance '{}' has not been responding for {} seconds. It will be unregistered.", consumerStatistic.workerId(), timeSinceLastHeartbeatInSeconds);
-//                unregisterWorker(consumerStatistic.workerId());
-//            }
-//        }
 
-//    }
 //    @Scheduled(fixedDelay = 5000L)
 //    public void requeueConsumersThatAreDisproportionatelyConsuming() {
 //        List<ConsumerStatistics> consumerStatistics = new ArrayList<>(consumerStatisticsPerInstance.values());

@@ -1,10 +1,8 @@
 package datastorage;
 
-import datastorage.configuration.EtcdProperties;
 import datastorage.dto.WatchEvent;
 import datastorage.dto.WatchResponse;
 import io.etcd.jetcd.ByteSequence;
-import io.etcd.jetcd.Client;
 import io.etcd.jetcd.Watch;
 import io.etcd.jetcd.options.WatchOption;
 import org.slf4j.Logger;
@@ -30,12 +28,8 @@ public class EtcdWatchClient implements WatchClient {
     }
 
     @Autowired
-    public EtcdWatchClient(EtcdProperties etcdProperties) {
-        Client client = Client
-                .builder()
-                .endpoints(etcdProperties.getBaseUrl())
-                .build();
-        this.watchClient = client.getWatchClient();
+    public EtcdWatchClient(EtcdClientFactory etcdClientFactory) {
+        this.watchClient = etcdClientFactory.getWatchClient();
     }
 
     @PreDestroy

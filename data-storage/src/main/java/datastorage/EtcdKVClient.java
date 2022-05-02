@@ -1,15 +1,12 @@
 package datastorage;
 
-import datastorage.configuration.EtcdProperties;
 import datastorage.dto.DeleteResponse;
 import datastorage.dto.GetResponse;
 import datastorage.dto.PutResponse;
 import io.etcd.jetcd.ByteSequence;
-import io.etcd.jetcd.Client;
 import io.etcd.jetcd.KV;
 import io.etcd.jetcd.options.DeleteOption;
 import io.etcd.jetcd.options.GetOption;
-import io.netty.util.concurrent.CompleteFuture;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,13 +26,10 @@ public class EtcdKVClient implements KVClient {
     EtcdKVClient(KV kvClient) {
         this.kvClient = kvClient;
     }
+
     @Autowired
-    public EtcdKVClient(EtcdProperties etcdProperties) {
-        this.kvClient = Client
-                .builder()
-                .endpoints(etcdProperties.getBaseUrl())
-                .build()
-                .getKVClient();
+    public EtcdKVClient(EtcdClientFactory etcdClientFactory) {
+        this.kvClient = etcdClientFactory.getKvClient();
     }
 
     @PreDestroy

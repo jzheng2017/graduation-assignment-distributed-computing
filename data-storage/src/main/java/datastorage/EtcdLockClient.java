@@ -14,6 +14,8 @@ import javax.annotation.PreDestroy;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.function.Supplier;
 
 @Service
@@ -22,6 +24,7 @@ public class EtcdLockClient implements LockClient {
     private static final long DEFAULT_LOCK_DURATION_SECONDS = 60L;
     private Lock lockClient;
     private final Map<String, LockDetail> lockOwnerships = new ConcurrentHashMap<>();
+    private RetryUtil retryUtil;
 
     //only for unit test purposes
     EtcdLockClient(Lock lock) {
@@ -29,12 +32,8 @@ public class EtcdLockClient implements LockClient {
     }
 
     @Autowired
-    public EtcdLockClient(EtcdProperties etcdProperties) {
-        Client client = Client
-                .builder()
-                .endpoints(etcdProperties.getBaseUrl())
-                .build();
-        this.lockClient = client.getLockClient();
+    public EtcdLockClient(EtcdClientFactory etcdClientFactory) {
+        this.lockClient = etcdClientFactory.getLockClient();
     }
 
     @PreDestroy

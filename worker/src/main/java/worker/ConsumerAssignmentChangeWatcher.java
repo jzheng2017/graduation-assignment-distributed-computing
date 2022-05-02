@@ -11,6 +11,7 @@ import datastorage.dto.WatchResponse;
 import messagequeue.consumer.ConsumerManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -29,6 +30,7 @@ public class ConsumerAssignmentChangeWatcher {
     private Worker worker;
     private String currentKey;
     private ConsumerManager consumerManager;
+    private boolean watcherRunning = false;
 
     public ConsumerAssignmentChangeWatcher(WatchClient watchClient, KVClient kvClient, Worker worker, ConsumerManager consumerManager) {
         this.watchClient = watchClient;
@@ -36,16 +38,15 @@ public class ConsumerAssignmentChangeWatcher {
         this.worker = worker;
         this.currentKey = getCurrentKey();
         this.consumerManager = consumerManager;
-        if (worker.getAssignedPartition() >= 0) {
-            watchForConsumerAssignmentChange();
-        }
+        watchForConsumerAssignmentChange();
     }
 
     public void partitionChanged(int newPartitionNumber) {
         logger.info("Worker has been assigned to a new partition: {}. Watcher will be updated accordingly.", newPartitionNumber);
         watchClient.unwatch(currentKey);
         currentKey = getCurrentKey();
-        watchClient.watch(currentKey, new ConsumerAssignmentChangeWatchListener());
+        watchForConsumerAssignmentChange();
+        watcherRunning = true;
     }
 
     private String getCurrentKey() {
@@ -53,7 +54,16 @@ public class ConsumerAssignmentChangeWatcher {
     }
 
     private void watchForConsumerAssignmentChange() {
-        watchClient.watch(currentKey, new ConsumerAssignmentChangeWatchListener());
+        if (worker.getAssignedPartition() >= 0) {
+            watchClient.watch(currentKey, new ConsumerAssignmentChangeWatchListener());
+        }
+    }
+
+    @Scheduled(fixedDelay = 5000L)
+    private void checkHealthWatcher() {
+        if (!watcherRunning) {
+            watchForConsumerAssignmentChange();
+        }
     }
 
     private class ConsumerAssignmentChangeWatchListener implements WatchListener {
@@ -79,6 +89,7 @@ public class ConsumerAssignmentChangeWatcher {
         @Override
         public void onCompleted() {
             logger.warn("Stopped watching for key/resource '{}'", currentKey);
+            watcherRunning = false;
         }
 
         private Map<String, List<String>> computeAddedAndRemovedConsumers(List<String> newConsumerList) {

@@ -5,5 +5,6 @@ package datastorage.configuration;
  */
 public class LockName {
     public static final String PARTITION_LOCK = "lock-partition";
+    public static final String PARTITION_ASSIGNMENT_LOCK = "lock-partition-assignment";
     public static final String PARTITION_CONSUMER_ASSIGNMENT_LOCK = "lock-partition-consumer-assignment";
 }
