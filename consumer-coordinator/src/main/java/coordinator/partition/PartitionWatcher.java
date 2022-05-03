@@ -37,7 +37,7 @@ public class PartitionWatcher {
         watcherRunning = true;
     }
 
-    @Scheduled(fixedDelay = 5000L)
+    @Scheduled(fixedDelay = 1000L)
     private void checkHealthWatcher() {
         if (!watcherRunning) {
             watchForPartitionCountChange();

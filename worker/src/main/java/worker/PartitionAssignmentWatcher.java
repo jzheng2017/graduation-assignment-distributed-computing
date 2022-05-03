@@ -11,6 +11,7 @@ import datastorage.dto.WatchResponse;
 import messagequeue.consumer.ConsumerManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.annotation.Profile;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
@@ -22,6 +23,7 @@ import java.util.concurrent.ExecutionException;
  * This watcher is responsible for listening to a new partition assignment for this worker
  */
 @Service
+@Profile(value = {"dev", "kubernetes"})
 public class PartitionAssignmentWatcher {
     private Logger logger = LoggerFactory.getLogger(PartitionAssignmentWatcher.class);
     private WatchClient watchClient;
@@ -47,7 +49,7 @@ public class PartitionAssignmentWatcher {
         watcherRunning = true;
     }
 
-    @Scheduled(fixedDelay = 5000L)
+    @Scheduled(fixedDelay = 1000L)
     private void checkHealthWatcher() {
         if (!watcherRunning) {
             watchForPartitionAssignments();
@@ -58,31 +60,25 @@ public class PartitionAssignmentWatcher {
 
         @Override
         public void onNext(WatchResponse watchResponse) {
-            Optional<WatchEvent> latestEvent = watchResponse.events().stream().filter(event -> {
-                int partition = Integer.parseInt(util.getSubstringAfterPrefix(KeyPrefix.PARTITION_ASSIGNMENT + "-", event.currentKey()));
-                String workerId = event.currentValue();
-                return partition != worker.getAssignedPartition() && workerId.equals(worker.getIdentifier());
-            }).findFirst();
+            Optional<WatchEvent> latestEvent = watchResponse
+                    .events()
+                    .stream()
+                    .filter(
+                            event -> {
+                                int partition = Integer.parseInt(util.getSubstringAfterPrefix(KeyPrefix.PARTITION_ASSIGNMENT + "-", event.currentKey()));
+                                String workerId = event.currentValue();
+                                final boolean isPutEvent = event.eventType() == WatchEvent.EventType.PUT && partition != worker.getAssignedPartition() && workerId.equals(worker.getIdentifier());
+                                final boolean isDeleteEvent = event.eventType() == WatchEvent.EventType.DELETE && partition == worker.getAssignedPartition();
+                                return isPutEvent || isDeleteEvent;
+                            }
+                    )
+                    .findFirst();
 
             latestEvent.ifPresent(event -> {
-                final int partition = Integer.parseInt(util.getSubstringAfterPrefix(KeyPrefix.PARTITION_ASSIGNMENT + "-", event.currentKey()));
-                worker.setAssignedPartition(partition);
-                consumerAssignmentChangeWatcher.partitionChanged(partition);
-                final String key = KeyPrefix.PARTITION_CONSUMER_ASSIGNMENT + "-" + worker.getAssignedPartition();
-
-                try {
-                    if (kvClient.keyExists(KeyPrefix.PARTITION_CONSUMER_ASSIGNMENT + "-" + worker.getAssignedPartition())) {
-                        List<String> consumers = new ObjectMapper().readValue(
-                                kvClient.get(key)
-                                        .get()
-                                        .keyValues()
-                                        .get(key),
-                                List.class);
-                        consumers.forEach(consumerManager::registerConsumer);
-                        logger.info("Successfully registered all consumers of new partition");
-                    }
-                } catch (JsonProcessingException | InterruptedException | ExecutionException e) {
-                    logger.error("Could not successfully start the consumers", e);
+                if (event.eventType() == WatchEvent.EventType.PUT) {
+                    handleUpdateEvent(event);
+                } else if (event.eventType() == WatchEvent.EventType.DELETE) {
+                    handleDeleteEvent();
                 }
             });
         }
@@ -97,6 +93,34 @@ public class PartitionAssignmentWatcher {
             watchClient.unwatch(KeyPrefix.PARTITION_ASSIGNMENT);
             logger.info("Stopped watching resource/key '{}'", KeyPrefix.PARTITION_ASSIGNMENT);
             watcherRunning = false;
+        }
+
+        private void handleUpdateEvent(WatchEvent event) {
+            final int partition = Integer.parseInt(util.getSubstringAfterPrefix(KeyPrefix.PARTITION_ASSIGNMENT + "-", event.currentKey()));
+            worker.setAssignedPartition(partition);
+            consumerAssignmentChangeWatcher.partitionChanged(partition);
+            final String key = KeyPrefix.PARTITION_CONSUMER_ASSIGNMENT + "-" + worker.getAssignedPartition();
+
+            try {
+                if (kvClient.keyExists(KeyPrefix.PARTITION_CONSUMER_ASSIGNMENT + "-" + worker.getAssignedPartition())) {
+                    List<String> consumers = new ObjectMapper().readValue(
+                            kvClient.get(key)
+                                    .get()
+                                    .keyValues()
+                                    .get(key),
+                            List.class);
+                    consumers.forEach(consumerManager::registerConsumer);
+                    logger.info("Successfully registered all consumers of new partition");
+                }
+            } catch (JsonProcessingException | InterruptedException | ExecutionException e) {
+                logger.error("Could not successfully start the consumers", e);
+            }
+        }
+
+        private void handleDeleteEvent() {
+            worker.setAssignedPartition(-1);
+            consumerAssignmentChangeWatcher.partitionChanged(-1);
+            consumerManager.unregisterAllConsumers();
         }
     }
 }

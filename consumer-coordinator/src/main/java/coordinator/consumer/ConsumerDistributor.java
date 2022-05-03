@@ -15,6 +15,7 @@ import datastorage.dto.WatchEvent;
 import datastorage.dto.WatchResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.annotation.Profile;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
@@ -26,6 +27,7 @@ import java.util.concurrent.ExecutionException;
  * This class is responsible for watching new consumers and assign them to a partition if they haven't been assigned already.
  */
 @Service
+@Profile(value = {"dev", "kubernetes"})
 public class ConsumerDistributor {
     private Logger logger = LoggerFactory.getLogger(ConsumerDistributor.class);
     private WatchClient watchClient;
@@ -78,7 +80,7 @@ public class ConsumerDistributor {
         );
     }
 
-    @Scheduled(fixedDelay = 5000L)
+    @Scheduled(fixedDelay = 1000L)
     private void checkHealthWatcher() {
         if (!watcherRunning) {
             watchForConsumerStatusChanges();
@@ -94,11 +96,15 @@ public class ConsumerDistributor {
                     .stream()
                     .filter(
                             event -> event.eventType() == WatchEvent.EventType.PUT &&
-                                    event.currentValue().equalsIgnoreCase(ConsumerStatus.UNASSIGNED.toString()))
+                                    event.currentValue().equalsIgnoreCase(ConsumerStatus.UNASSIGNED.toString())
+                    )
                     .toList();
             for (WatchEvent event : events) {
                 final String consumerId = util.getSubstringAfterPrefix(KeyPrefix.CONSUMER_STATUS + "-", event.currentKey());
                 int partition = consumerCoordinator.computeBestPartitionForConsumer(consumerId);
+                if (partition < 0) {
+                    continue;
+                }
                 assignConsumerToPartition(partition, consumerId);
             }
         }

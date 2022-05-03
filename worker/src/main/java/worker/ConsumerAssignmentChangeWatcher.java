@@ -11,6 +11,7 @@ import datastorage.dto.WatchResponse;
 import messagequeue.consumer.ConsumerManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.annotation.Profile;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
@@ -23,18 +24,17 @@ import java.util.Map;
  * This watcher is responsible for listening to changes to all consumer assignments that is related to the partition that has been assigned to the {@link Worker}
  */
 @Service
+@Profile(value = {"dev", "kubernetes"})
 public class ConsumerAssignmentChangeWatcher {
     private Logger logger = LoggerFactory.getLogger(ConsumerAssignmentChangeWatcher.class);
     private WatchClient watchClient;
-    private KVClient kvClient;
     private Worker worker;
     private String currentKey;
     private ConsumerManager consumerManager;
     private boolean watcherRunning = false;
 
-    public ConsumerAssignmentChangeWatcher(WatchClient watchClient, KVClient kvClient, Worker worker, ConsumerManager consumerManager) {
+    public ConsumerAssignmentChangeWatcher(WatchClient watchClient, Worker worker, ConsumerManager consumerManager) {
         this.watchClient = watchClient;
-        this.kvClient = kvClient;
         this.worker = worker;
         this.currentKey = getCurrentKey();
         this.consumerManager = consumerManager;
@@ -46,7 +46,6 @@ public class ConsumerAssignmentChangeWatcher {
         watchClient.unwatch(currentKey);
         currentKey = getCurrentKey();
         watchForConsumerAssignmentChange();
-        watcherRunning = true;
     }
 
     private String getCurrentKey() {
@@ -56,10 +55,11 @@ public class ConsumerAssignmentChangeWatcher {
     private void watchForConsumerAssignmentChange() {
         if (worker.getAssignedPartition() >= 0) {
             watchClient.watch(currentKey, new ConsumerAssignmentChangeWatchListener());
+            watcherRunning = true;
         }
     }
 
-    @Scheduled(fixedDelay = 5000L)
+    @Scheduled(fixedDelay = 1000L)
     private void checkHealthWatcher() {
         if (!watcherRunning) {
             watchForConsumerAssignmentChange();

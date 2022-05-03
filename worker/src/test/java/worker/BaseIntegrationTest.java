@@ -1,10 +1,7 @@
-package coordinator;
+package worker;
 
-import coordinator.configuration.EnvironmentConfiguration;
-import coordinator.partition.PartitionManager;
 import datastorage.KVClient;
 import datastorage.LockClient;
-import datastorage.configuration.EtcdProperties;
 import datastorage.configuration.KeyPrefix;
 import datastorage.dto.GetResponse;
 import org.junit.jupiter.api.BeforeEach;
@@ -25,16 +22,11 @@ import java.util.concurrent.TimeoutException;
 @ActiveProfiles("test")
 @DirtiesContext
 public abstract class BaseIntegrationTest {
-    public static final int DEFAULT_ETCD_PORT = 2379;
     public static final int NUMBER_OF_PARTITIONS = 4;
     @Autowired
     protected KVClient kvClient;
     @Autowired
     protected LockClient lockClient;
-    @Autowired
-    protected EnvironmentConfiguration environmentConfiguration;
-    @Autowired
-    protected PartitionManager partitionManager;
 
     @BeforeEach
     void genericSetup() throws ExecutionException, InterruptedException {
@@ -53,7 +45,6 @@ public abstract class BaseIntegrationTest {
                 //allow it
             }
         }
-        partitionManager.createPartitions(environmentConfiguration.getPartitions());
     }
     @DynamicPropertySource
     static void dynamicProperties(DynamicPropertyRegistry registry) {

@@ -55,7 +55,7 @@ public class ConsumerCoordinator {
         String partitionAssignmentKey = null;
         Optional<Integer> partition = partitionManager.getPartitionOfWorker(workerId);
         if (partition.isPresent()) {
-            partitionAssignmentKey =  KeyPrefix.PARTITION_ASSIGNMENT + "-" + partition.get();
+            partitionAssignmentKey = KeyPrefix.PARTITION_ASSIGNMENT + "-" + partition.get();
         }
         final String workerHeartbeatKey = KeyPrefix.WORKER_HEARTBEAT + "-" + workerId;
         if (kvClient.keyExists(registrationKey)) {
@@ -156,12 +156,17 @@ public class ConsumerCoordinator {
                                 final String serializedConsumeAssignments = util.serialize(consumerAssignments);
 
                                 if (serializedConsumeAssignments != null) {
-                                    kvClient.put(KeyPrefix.PARTITION_CONSUMER_ASSIGNMENT + "-" + partition, serializedConsumeAssignments);
+                                    try {
+                                        kvClient.put(KeyPrefix.PARTITION_CONSUMER_ASSIGNMENT + "-" + partition, serializedConsumeAssignments).get();
+                                    } catch (InterruptedException | ExecutionException e) {
+                                        logger.warn("Could not update partition consumer assignment of partition {}", partition);
+                                    }
                                 } else {
                                     logger.warn("Could not remove consumer from consumer assignments due to failure in serialization");
                                 }
                             });
                 }).get();
+                kvClient.delete(KeyPrefix.CONSUMER_STATUS + "-" + consumerId).get();
             } catch (InterruptedException | ExecutionException e) {
                 logger.warn("Could not remove assignments of consumer '{}'", consumerId, e);
             }
@@ -178,6 +183,7 @@ public class ConsumerCoordinator {
         }
 
         if (workerStatistics.isEmpty()) {
+            logger.warn("Could not compute a partition for consumer as there are no available workers..");
             return -1;
         }
 
@@ -198,6 +204,24 @@ public class ConsumerCoordinator {
             logger.info("Updated status of consumer '{}' to '{}'", consumerId, consumerStatus);
         } catch (InterruptedException | ExecutionException e) {
             logger.error("Could not update status of consumer '{}'", consumerId);
+        }
+    }
+
+    public ConsumerStatus getConsumerStatus(String consumerId) {
+        final String key = KeyPrefix.CONSUMER_STATUS + "-" + consumerId;
+        try {
+            final String consumerStatus = kvClient.get(key).get().keyValues().get(key);
+            if (consumerStatus == null) {
+                return null;
+            }
+            return switch (consumerStatus) {
+                case "assigned", "ASSIGNED" -> ConsumerStatus.ASSIGNED;
+                case "unassigned", "UNASSIGNED" -> ConsumerStatus.UNASSIGNED;
+                default -> null;
+            };
+        } catch (ExecutionException | InterruptedException e) {
+            logger.warn("Could not get status of consumer '{}'", consumerId, e);
+            return null;
         }
     }
 
