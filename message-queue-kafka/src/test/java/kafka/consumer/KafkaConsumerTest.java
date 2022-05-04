@@ -1,5 +1,7 @@
 package kafka.consumer;
 
+import datastorage.KVClient;
+import datastorage.LockClient;
 import messagequeue.consumer.MessageProcessor;
 import messagequeue.consumer.taskmanager.TaskManager;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -29,6 +31,10 @@ class KafkaConsumerTest {
     private TaskManager mockedTaskManager;
     @Mock
     private MessageProcessor mockedMessageProcessor;
+    @Mock
+    private KVClient kvClient;
+    @Mock
+    private LockClient lockClient;
     private ConsumerRecords<String, String> consumerRecords;
 
     @BeforeEach
@@ -37,17 +43,17 @@ class KafkaConsumerTest {
         TopicPartition topicPartition = new TopicPartition("test", 0);
         consumerRecords = new ConsumerRecords<>(Map.of(topicPartition, List.of(new ConsumerRecord<>("test", 0, 0L, "key", "value"))));
         ConsumerRecords<String, String> emptyConsumerRecords = new ConsumerRecords<>(Map.of());
-        kafkaConsumer = new kafka.consumer.KafkaConsumer(mockedKafkaConsumer, "kafka", mockedTaskManager, mockedMessageProcessor);
+        kafkaConsumer = new kafka.consumer.KafkaConsumer(mockedKafkaConsumer, "kafka", mockedTaskManager, mockedMessageProcessor, kvClient, lockClient);
         when(mockedKafkaConsumer.poll(any())).thenReturn(consumerRecords).thenReturn(emptyConsumerRecords);
     }
 
 
     @Test
     void testThatPollReturnsCorrectMessages() {
-        List<String> polledMessages = kafkaConsumer.poll();
+        Map<String, List<String>> polledMessages = kafkaConsumer.poll();
 
         Assertions.assertEquals(1, polledMessages.size());
-        Assertions.assertTrue(polledMessages.contains("value"));
+        Assertions.assertTrue(polledMessages.values().stream().anyMatch(list -> list.contains("value")));
     }
 
     @Test

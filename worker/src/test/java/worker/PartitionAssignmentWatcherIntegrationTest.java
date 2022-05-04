@@ -2,6 +2,7 @@ package worker;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import datastorage.WatchClient;
 import datastorage.configuration.KeyPrefix;
 import messagequeue.consumer.ConsumerManager;
 import org.junit.jupiter.api.AfterEach;
@@ -20,6 +21,8 @@ public class PartitionAssignmentWatcherIntegrationTest extends BaseIntegrationTe
     private Worker worker;
     @Autowired
     private ConsumerManager consumerManager;
+    @Autowired
+    private WatchClient watchClient;
     private PartitionAssignmentWatcher partitionAssignmentWatcher;
     private ConsumerAssignmentChangeWatcher consumerAssignmentChangeWatcher;
     private int partition = 1;
@@ -44,6 +47,7 @@ public class PartitionAssignmentWatcherIntegrationTest extends BaseIntegrationTe
     @AfterEach
     void tearDown() {
         consumerManager.shutdown();
+        watchClient.reset();
     }
 
     @Test

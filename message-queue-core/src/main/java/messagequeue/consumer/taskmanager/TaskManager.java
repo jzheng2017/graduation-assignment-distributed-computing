@@ -6,6 +6,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Import;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -16,6 +17,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 /**
  * A task manager that schedules tasks which have to be executed
@@ -24,8 +26,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class TaskManager {
     private Logger logger = LoggerFactory.getLogger(TaskManager.class);
     private ThreadPoolExecutor threadPoolExecutor;
-    private final Map<String, AtomicInteger> numberOfConcurrentTasksPerConsumer = new ConcurrentHashMap<>();
-    private final Map<String, AtomicInteger> numberOfTasksProcessedPerConsumer = new ConcurrentHashMap<>();
+    private final Map<String, List<TaskPackage>> activeTaskPackagesPerConsumer = new ConcurrentHashMap<>();
+
     public TaskManager(TaskManagerProperties taskManagerProperties) {
         final int corePoolSize = taskManagerProperties.getThreadPoolSize();
         final int maxPoolSize = taskManagerProperties.getThreadPoolSize();
@@ -41,33 +43,18 @@ public class TaskManager {
         logger.info("ThreadPoolExecutor created with core pool size {}, max pool size {} and {} as queue implementation", corePoolSize, maxPoolSize, threadPoolExecutor.getQueue().getClass().getName());
     }
 
-    public void executeTasks(List<Task> tasks) throws InterruptedException {
+    public void executeTasks(List<TaskPackage> taskPackages) throws InterruptedException {
+        for (TaskPackage taskPackage : taskPackages) {
+            if (!activeTaskPackagesPerConsumer.containsKey(taskPackage.getConsumerId())) {
+                activeTaskPackagesPerConsumer.put(taskPackage.getConsumerId(), new ArrayList<>());
+            }
+
+            activeTaskPackagesPerConsumer.get(taskPackage.getConsumerId()).add(taskPackage);
+        }
         threadPoolExecutor.invokeAll(
-                tasks.stream()
-                        .map(task -> (Callable<Void>) () -> {
-                            AtomicInteger concurrentTasksOfConsumer;
-                            AtomicInteger totalTasksProcessedByConsumer;
-                            synchronized (numberOfConcurrentTasksPerConsumer) {
-                                concurrentTasksOfConsumer = numberOfConcurrentTasksPerConsumer.get(task.consumerId());
-                                if (concurrentTasksOfConsumer == null) {
-                                    concurrentTasksOfConsumer = new AtomicInteger();
-                                    numberOfConcurrentTasksPerConsumer.put(task.consumerId(), concurrentTasksOfConsumer);
-                                }
-                            }
-
-                            synchronized (numberOfTasksProcessedPerConsumer) {
-                                totalTasksProcessedByConsumer = numberOfTasksProcessedPerConsumer.get(task.consumerId());
-                                if (totalTasksProcessedByConsumer == null) {
-                                    totalTasksProcessedByConsumer = new AtomicInteger();
-                                    numberOfTasksProcessedPerConsumer.put(task.consumerId(), totalTasksProcessedByConsumer);
-                                }
-                            }
-
-                            concurrentTasksOfConsumer.incrementAndGet();
-                            task.task().run();
-                            concurrentTasksOfConsumer.decrementAndGet();
-                            totalTasksProcessedByConsumer.incrementAndGet();
-
+                taskPackages.stream()
+                        .map(taskPackage -> (Callable<Void>) () -> {
+                            taskPackage.run();
                             return null;
                         })
                         .toList()
@@ -75,23 +62,14 @@ public class TaskManager {
     }
 
     public int getTotalNumberOfConcurrentTasksForConsumer(String consumerId) {
-        AtomicInteger concurrentTasks = numberOfConcurrentTasksPerConsumer.get(consumerId);
-
-        if (concurrentTasks != null) {
-            return concurrentTasks.get();
-        }
-
-        return 0;
+        return activeTaskPackagesPerConsumer.get(consumerId).size();
     }
 
     public Map<String, Integer> getTotalNumberOfConcurrentTasksForAllConsumers() {
-        Map<String, Integer> totalConcurrentTasksAllConsumers = new HashMap<>();
-
-        for (Map.Entry<String, AtomicInteger> consumerEntry : numberOfConcurrentTasksPerConsumer.entrySet()) {
-            totalConcurrentTasksAllConsumers.put(consumerEntry.getKey(), consumerEntry.getValue().get());
-        }
-
-        return totalConcurrentTasksAllConsumers;
+        return activeTaskPackagesPerConsumer
+                .entrySet()
+                .stream()
+                .collect(Collectors.toMap(Map.Entry::getKey, entry -> entry.getValue().size()));
     }
 
     public int getTotalNumberOfTasksInQueue() {

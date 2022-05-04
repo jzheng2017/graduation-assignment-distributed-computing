@@ -1,5 +1,7 @@
 package kafka.consumer;
 
+import datastorage.KVClient;
+import datastorage.LockClient;
 import messagequeue.consumer.BaseConsumer;
 import messagequeue.consumer.MessageProcessor;
 import messagequeue.consumer.taskmanager.TaskManager;
@@ -11,7 +13,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * A Kafka implementation of the {@link messagequeue.consumer.Consumer} interface
@@ -21,31 +25,42 @@ public class KafkaConsumer extends BaseConsumer {
     protected Consumer<String, String> consumer;
 
     //constructor only for unit test purposes
-    protected KafkaConsumer(org.apache.kafka.clients.consumer.KafkaConsumer<String, String> consumer, String name, TaskManager taskManager, MessageProcessor messageProcessor) {
-        super(name, true, taskManager, messageProcessor);
+    protected KafkaConsumer(org.apache.kafka.clients.consumer.KafkaConsumer<String, String> consumer, String name, TaskManager taskManager, MessageProcessor messageProcessor, KVClient kvClient, LockClient lockClient) {
+        super(name, true, taskManager, messageProcessor, kvClient, lockClient);
         this.consumer = consumer;
     }
 
     @Autowired
-    public KafkaConsumer(String name, boolean isInternal, TaskManager taskManager, Consumer<String, String> consumer, MessageProcessor messageProcessor) {
-        super(name, isInternal, taskManager, messageProcessor);
+    public KafkaConsumer(String name, boolean isInternal, TaskManager taskManager, Consumer<String, String> consumer, MessageProcessor messageProcessor, KVClient kvClient, LockClient lockClient) {
+        super(name, isInternal, taskManager, messageProcessor, kvClient, lockClient);
         this.consumer = consumer;
+        setConsumerOffsets();
+    }
+
+    private void setConsumerOffsets() {
+        //TODO: set consumer offset that are known at startup
     }
 
     @Override
-    public List<String> poll() {
+    public Map<String, List<String>> poll() {
         ConsumerRecords<String, String> records = consumer.poll(Duration.ofMillis(100));
         final int batchSize = records.count();
 
         if (batchSize > 0) {
             logger.info("Consumer '{}' found {} new message(s)", name, batchSize);
-            List<String> messages = new ArrayList<>();
-            records.forEach(record -> messages.add(record.value()));
+            Map<String, List<String>> messagesPerTopic = new HashMap<>();
+            records.forEach(record -> {
+                if (!messagesPerTopic.containsKey(record.topic())) {
+                    messagesPerTopic.put(record.topic(), new ArrayList<>());
+                }
 
-            return messages;
+                messagesPerTopic.get(record.topic()).add(record.value());
+            });
+
+            return messagesPerTopic;
         }
 
-        return new ArrayList<>();
+        return new HashMap<>();
     }
 
     @Override

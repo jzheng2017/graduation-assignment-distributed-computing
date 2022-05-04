@@ -34,13 +34,13 @@ public class ConsumerDistributorIntegrationTest extends BaseIntegrationTest {
     @BeforeEach
     void setup() throws ExecutionException, InterruptedException, JsonProcessingException {
         context.registerBean("consumerDistributor", ConsumerDistributor.class);
-        consumerDistributor = (ConsumerDistributor)context.getBean("consumerDistributor");
+        consumerDistributor = (ConsumerDistributor) context.getBean("consumerDistributor");
         kvClient.put(KeyPrefix.WORKER_REGISTRATION + "-" + workerId, String.valueOf(Instant.now().getEpochSecond())).get();
         kvClient.put(KeyPrefix.WORKER_REGISTRATION + "-" + workerId2, String.valueOf(Instant.now().getEpochSecond())).get();
         kvClient.put(KeyPrefix.PARTITION_ASSIGNMENT + "-0", workerId).get();
         kvClient.put(KeyPrefix.PARTITION_ASSIGNMENT + "-1", workerId2).get();
-        kvClient.put(KeyPrefix.WORKER_STATISTICS + "-1", new ObjectMapper().writeValueAsString(new WorkerStatistics("1", 0, 0,0, 0, new ArrayList<>(), new ArrayList<>(), Instant.now().getEpochSecond())));
-        kvClient.put(KeyPrefix.WORKER_STATISTICS + "-1", new ObjectMapper().writeValueAsString(new WorkerStatistics("2", 0, 0,0, 0, new ArrayList<>(), new ArrayList<>(), Instant.now().getEpochSecond())));
+        kvClient.put(KeyPrefix.WORKER_STATISTICS + "-1", new ObjectMapper().writeValueAsString(new WorkerStatistics("1", 0, 0, 0, 0, new ArrayList<>(), new ArrayList<>(), Instant.now().getEpochSecond())));
+        kvClient.put(KeyPrefix.WORKER_STATISTICS + "-1", new ObjectMapper().writeValueAsString(new WorkerStatistics("2", 0, 0, 0, 0, new ArrayList<>(), new ArrayList<>(), Instant.now().getEpochSecond())));
     }
 
     @Test
@@ -56,6 +56,6 @@ public class ConsumerDistributorIntegrationTest extends BaseIntegrationTest {
     void testThatAConsumerThatGetsRemovedIsAlsoUnassigned() {
         testThatANewlyAddedConsumerGetsPlacedOnAPartition();
         consumerCoordinator.removeConsumerConfiguration(consumerId);
-        TestUtil.waitUntil(() -> consumerCoordinator.getConsumerStatus(consumerId) == null, "Consumer was not successfully removed", 1000, 100);
+        TestUtil.waitUntil(() -> consumerCoordinator.getConsumerStatus(consumerId).equals(ConsumerStatus.UNASSIGNED), "Consumer was not successfully unassigned", 1000, 100);
     }
 }

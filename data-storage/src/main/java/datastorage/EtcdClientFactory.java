@@ -20,7 +20,7 @@ public class EtcdClientFactory {
     private RetryUtil retryUtil;
 
     public EtcdClientFactory(EtcdProperties etcdProperties, RetryUtil retryUtil) {
-    this.etcdProperties = etcdProperties;
+        this.etcdProperties = etcdProperties;
         this.retryUtil = retryUtil;
     }
 

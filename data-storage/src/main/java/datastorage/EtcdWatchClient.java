@@ -79,6 +79,15 @@ public class EtcdWatchClient implements WatchClient {
         }
     }
 
+    @Override
+    public void reset() {
+        synchronized (watchers) {
+            watchers.values().forEach(Watch.Watcher::close);
+            watchers.clear();
+            logger.info("WatchClient has been reset. All watchers have been stopped and unregistered");
+        }
+    }
+
     private List<WatchEvent> mapWatchEvents(List<io.etcd.jetcd.watch.WatchEvent> events) {
         return events
                 .stream()

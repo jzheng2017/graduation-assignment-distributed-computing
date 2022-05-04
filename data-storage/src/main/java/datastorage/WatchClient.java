@@ -23,4 +23,9 @@ public interface WatchClient {
      * @param key key to stop listening for
      */
     void unwatch(String key);
+
+    /**
+     * Reset the {@link WatchClient} by stopping all watches and unregister them
+     */
+    void reset();
 }

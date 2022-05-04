@@ -3,7 +3,9 @@ package messagequeue.consumer;
 import messagequeue.consumer.taskmanager.TaskManager;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class FakeBaseConsumer extends BaseConsumer{
@@ -17,8 +19,18 @@ public class FakeBaseConsumer extends BaseConsumer{
     }
 
     @Override
-    public List<String> poll() {
-        return new ArrayList<>();
+    public void commitOffset(String topic, int offset) {
+
+    }
+
+    @Override
+    public int getCommitOffset(String topic) {
+        return 0;
+    }
+
+    @Override
+    public Map<String, List<String>> poll() {
+        return new HashMap<>();
     }
 
     @Override

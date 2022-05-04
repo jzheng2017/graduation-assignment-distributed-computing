@@ -35,7 +35,6 @@ public class ConsumerRebalancer {
             return;
         }
 
-        logger.info("Calculating whether a consumer rebalance is needed..");
         WorkerStatistics busiestInstance = workerStatistics.get(0);
         WorkerStatistics leastBusyInstance = workerStatistics.get(0);
         int busiestInstanceConcurrentTaskCount = Integer.MIN_VALUE;
@@ -73,8 +72,6 @@ public class ConsumerRebalancer {
             }
 
             consumerCoordinator.removeConsumerAssignment(busiestConsumer.consumerId());
-        } else {
-            logger.info("Consumer rebalance is not needed, The workload is evenly distributed.");
         }
     }
 }

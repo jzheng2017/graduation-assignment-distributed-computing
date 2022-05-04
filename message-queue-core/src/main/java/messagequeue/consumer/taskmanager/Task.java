@@ -1,5 +1,5 @@
 package messagequeue.consumer.taskmanager;
 
-public record Task(String consumerId, Runnable task) {
+public record Task(Runnable task) {
 
 }

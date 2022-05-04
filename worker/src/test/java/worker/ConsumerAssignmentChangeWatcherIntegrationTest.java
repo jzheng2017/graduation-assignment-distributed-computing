@@ -2,6 +2,7 @@ package worker;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import datastorage.WatchClient;
 import datastorage.configuration.KeyPrefix;
 import messagequeue.consumer.ConsumerManager;
 import org.junit.jupiter.api.AfterEach;
@@ -20,6 +21,8 @@ public class ConsumerAssignmentChangeWatcherIntegrationTest extends BaseIntegrat
     private Worker worker;
     @Autowired
     private ConsumerManager consumerManager;
+    @Autowired
+    private WatchClient watchClient;
     private ConsumerAssignmentChangeWatcher consumerAssignmentChangeWatcher;
     private int partition = 1;
     private String consumerId = "uppercase";
@@ -42,6 +45,7 @@ public class ConsumerAssignmentChangeWatcherIntegrationTest extends BaseIntegrat
     @AfterEach
     void tearDown() {
         consumerManager.shutdown();
+        watchClient.reset();
     }
 
     @Test
@@ -57,7 +61,7 @@ public class ConsumerAssignmentChangeWatcherIntegrationTest extends BaseIntegrat
         kvClient.put(KeyPrefix.PARTITION_CONSUMER_ASSIGNMENT + "-" + partition, new ObjectMapper().writeValueAsString(List.of(consumerId))).get();
         TestUtil.waitUntil(() -> consumerManager.getAllConsumers().contains(consumerId), "Consumer was not added", 1000, 100);
 
-        kvClient.put(KeyPrefix.PARTITION_CONSUMER_ASSIGNMENT + "-" + partition, new ObjectMapper().writeValueAsString(List.of()));
+        kvClient.put(KeyPrefix.PARTITION_CONSUMER_ASSIGNMENT + "-" + partition, new ObjectMapper().writeValueAsString(List.of())).get();
         TestUtil.waitUntil(() -> consumerManager.getAllConsumers().isEmpty(), "Consumer was removed", 1000, 100);
     }
 }

@@ -1,11 +1,18 @@
 package messagequeue.consumer;
 
+import datastorage.KVClient;
+import datastorage.LockClient;
+import datastorage.configuration.KeyPrefix;
+import datastorage.configuration.LockName;
 import messagequeue.consumer.taskmanager.Task;
 import messagequeue.consumer.taskmanager.TaskManager;
+import messagequeue.consumer.taskmanager.TaskPackage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -19,6 +26,8 @@ public abstract class BaseConsumer implements Consumer {
     private final MessageProcessor messageProcessor;
     private final TaskManager taskManager;
     private final boolean isInternal;
+    private KVClient kvClient;
+    private LockClient lockClient;
 
     //only for unit test purposes
     protected BaseConsumer(AtomicBoolean scheduledForRemoval, AtomicBoolean isRunning, TaskManager taskManager) {
@@ -30,10 +39,12 @@ public abstract class BaseConsumer implements Consumer {
         this.isInternal = true;
     }
 
-    protected BaseConsumer(String name, boolean isInternal, TaskManager taskManager, MessageProcessor messageProcessor) {
+    protected BaseConsumer(String name, boolean isInternal, TaskManager taskManager, MessageProcessor messageProcessor, KVClient kvClient, LockClient lockClient) {
         this.name = name;
         this.messageProcessor = messageProcessor;
         this.taskManager = taskManager;
+        this.kvClient = kvClient;
+        this.lockClient = lockClient;
         this.scheduledForRemoval = new AtomicBoolean();
         this.isRunning = new AtomicBoolean();
         this.isInternal = isInternal;
@@ -57,13 +68,13 @@ public abstract class BaseConsumer implements Consumer {
     @Override
     public void consume() {
         while (!scheduledForRemoval.get()) {
-            List<Task> tasksToBeExecuted = poll().stream().map(this::createTask).toList();
+            List<TaskPackage> taskPackages = poll().entrySet().stream().map(entry -> createTaskPackage(entry.getKey(), entry.getValue())).toList();
 
-            if (tasksToBeExecuted.size() > 0) {
+            if (!taskPackages.isEmpty()) {
                 try {
-                    logger.info("Consumer '{}' dispatched {} messages to the TaskManager for processing", name, tasksToBeExecuted.size());
-                    taskManager.executeTasks(tasksToBeExecuted);
-                    logger.info("{} tasks successfully processed by consumer '{}'", tasksToBeExecuted.size(), name);
+                    logger.info("Consumer '{}' dispatched {} task packages to the TaskManager for processing", name, taskPackages.size());
+                    taskManager.executeTasks(taskPackages);
+                    logger.info("{} tasks successfully processed by consumer '{}'", taskPackages.size(), name);
                     acknowledge();
                 } catch (InterruptedException e) {
                     logger.warn("Execution of the tasks has been interrupted. Unfinished tasks have been cancelled", e); //TODO: Tasks that are finished should be committed
@@ -75,6 +86,32 @@ public abstract class BaseConsumer implements Consumer {
         logger.info("Closed consumer '{}' and stopped running", name);
     }
 
+    @Override
+    public void commitOffset(String topic, int offset) {
+        try {
+            kvClient.put(KeyPrefix.CONSUMER_TOPIC_OFFSET + "-" + getIdentifier() + "-" + topic, Integer.toString(offset)).get();
+        } catch (InterruptedException | ExecutionException e) {
+            logger.warn("Committing offset for topic '{}' of consumer '{}' was not successful", topic, getIdentifier());
+        }
+    }
+
+    @Override
+    public int getCommitOffset(String topic) {
+        final String key = KeyPrefix.CONSUMER_TOPIC_OFFSET + "-" + getIdentifier() + "-" + topic;
+        try {
+            final String commitOffset = kvClient.get(key).get().keyValues().get(key);
+
+            if (commitOffset == null) {
+                commitOffset(topic, 0);
+                return 0;
+            }
+
+            return Integer.parseInt(commitOffset);
+        } catch (InterruptedException | ExecutionException e) {
+            logger.error("Could not get commit offset of consumer '{}' of topic '{}'", getIdentifier(), topic);
+            throw new IllegalArgumentException("Could not get commit offset");
+        }
+    }
 
     @Override
     public String getIdentifier() {
@@ -91,7 +128,26 @@ public abstract class BaseConsumer implements Consumer {
         return isInternal;
     }
 
-    private Task createTask(String message) {
-        return new Task(name, () -> messageProcessor.process(message));
+    private TaskPackage createTaskPackage(String topic, List<String> messages) {
+        List<Task> tasks = new ArrayList<>();
+
+        for (String message : messages) {
+            tasks.add(createTask(topic, message));
+        }
+
+        return new TaskPackage(getIdentifier(), topic, tasks);
+    }
+
+    private Task createTask(String topic, String message) {
+        return new Task(() -> {
+            messageProcessor.process(message);
+            lockClient.acquireLockAndExecute(
+                    LockName.CONSUMER_OFFSET_LOCK + "-" + getIdentifier() + "-" + topic,
+                    () -> {
+                        commitOffset(topic, getCommitOffset(topic) + 1);
+                        return null;
+                    }
+            );
+        });
     }
 }

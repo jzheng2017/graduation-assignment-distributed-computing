@@ -1,5 +1,7 @@
 package worker.processor.builder;
 
+import datastorage.KVClient;
+import datastorage.LockClient;
 import worker.processor.MessageUppercaseProcessor;
 import worker.processor.MessagePrinterProcessor;
 import worker.processor.MessageReverserProcessor;
@@ -25,12 +27,16 @@ public class DummyKafkaConsumerFactory implements ConsumerFactory {
     private KafkaProperties kafkaProperties;
     private TaskManager taskManager;
     private KafkaConsumerBuilderHelper kafkaConsumerBuilderHelper;
+    private KVClient kvClient;
+    private LockClient lockClient;
 
-    public DummyKafkaConsumerFactory(KafkaMessageBrokerProxy kafkaMessageBrokerProxy, KafkaProperties kafkaProperties, TaskManager taskManager, KafkaConsumerBuilderHelper kafkaConsumerBuilderHelper) {
+    public DummyKafkaConsumerFactory(KafkaMessageBrokerProxy kafkaMessageBrokerProxy, KafkaProperties kafkaProperties, TaskManager taskManager, KafkaConsumerBuilderHelper kafkaConsumerBuilderHelper, KVClient kvClient, LockClient lockClient) {
         this.kafkaMessageBrokerProxy = kafkaMessageBrokerProxy;
         this.kafkaProperties = kafkaProperties;
         this.taskManager = taskManager;
         this.kafkaConsumerBuilderHelper = kafkaConsumerBuilderHelper;
+        this.kvClient = kvClient;
+        this.lockClient = lockClient;
     }
 
     @Override
@@ -45,9 +51,9 @@ public class DummyKafkaConsumerFactory implements ConsumerFactory {
                 false);
 
         return switch (consumerProperties.name()) {
-            case "uppercase" -> new KafkaConsumer(consumerProperties.name(), false, taskManager, consumer, new MessageUppercaseProcessor(kafkaMessageBrokerProxy));
-            case "reverser" -> new KafkaConsumer(consumerProperties.name(), false, taskManager, consumer, new MessageReverserProcessor(kafkaMessageBrokerProxy));
-            case "printer" -> new KafkaConsumer(consumerProperties.name(), false, taskManager, consumer, new MessagePrinterProcessor());
+            case "uppercase" -> new KafkaConsumer(consumerProperties.name(), false, taskManager, consumer, new MessageUppercaseProcessor(kafkaMessageBrokerProxy), kvClient, lockClient);
+            case "reverser" -> new KafkaConsumer(consumerProperties.name(), false, taskManager, consumer, new MessageReverserProcessor(kafkaMessageBrokerProxy), kvClient, lockClient);
+            case "printer" -> new KafkaConsumer(consumerProperties.name(), false, taskManager, consumer, new MessagePrinterProcessor(), kvClient, lockClient);
             default -> null;
         };
     }

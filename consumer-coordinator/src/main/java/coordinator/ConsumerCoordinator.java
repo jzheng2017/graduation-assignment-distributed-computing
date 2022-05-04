@@ -83,15 +83,14 @@ public class ConsumerCoordinator {
     public void removeConsumerConfiguration(String consumerId) {
         final String key = KeyPrefix.CONSUMER_CONFIGURATION + "-" + consumerId;
         if (kvClient.keyExists(key)) {
-            kvClient.delete(key).thenAcceptAsync(deleteResponse -> {
-                try {
-                    kvClient.delete(KeyPrefix.CONSUMER_STATUS + "-" + consumerId).get();
+            try {
+                kvClient.delete(key).thenAcceptAsync(deleteResponse -> {
                     removeConsumerAssignment(consumerId);
-                } catch (InterruptedException | ExecutionException e) {
-                    logger.warn("Could not successfully delete status of consumer '{}'", consumerId, e);
-                }
-                logger.info("Consumer configuration '{}' has been removed", consumerId);
-            });
+                    logger.info("Consumer configuration '{}' has been removed", consumerId);
+                }).get();
+            } catch (InterruptedException | ExecutionException e) {
+                logger.warn("Could not properly remove consumer configuration");
+            }
         } else {
             logger.warn("Consumer configuration '{}' can not be removed as it is not present", consumerId);
         }
@@ -131,6 +130,7 @@ public class ConsumerCoordinator {
                             });
                 }).get();
                 kvClient.put(KeyPrefix.CONSUMER_STATUS + "-" + consumerId, ConsumerStatus.UNASSIGNED.toString()).get();
+                logger.info("Updated status of consumer '{}' to {}", consumerId, ConsumerStatus.UNASSIGNED);
             } catch (InterruptedException | ExecutionException e) {
                 logger.warn("Could not remove assignments of consumer '{}'", consumerId, e);
             }
