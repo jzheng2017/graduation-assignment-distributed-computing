@@ -12,6 +12,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+/**
+ * This class is an implementation of the {@link SubscriptionManager} interface and allows to subscribe consumers to topics.
+ */
 @Service
 public class KafkaSubscriptionManager implements SubscriptionManager {
     private Logger logger = LoggerFactory.getLogger(KafkaSubscriptionManager.class);

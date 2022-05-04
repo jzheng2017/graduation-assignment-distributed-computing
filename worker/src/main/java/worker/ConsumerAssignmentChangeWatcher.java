@@ -2,7 +2,6 @@ package worker;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import datastorage.KVClient;
 import datastorage.WatchClient;
 import datastorage.WatchListener;
 import datastorage.configuration.KeyPrefix;

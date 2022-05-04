@@ -8,6 +8,9 @@ import org.springframework.stereotype.Service;
 
 import java.util.concurrent.ExecutionException;
 
+/**
+ * A configuration store that allows one to retrieve consumer configurations
+ */
 @Service
 public class ConsumerConfigurationStore {
     private Logger logger = LoggerFactory.getLogger(ConsumerConfigurationStore.class);

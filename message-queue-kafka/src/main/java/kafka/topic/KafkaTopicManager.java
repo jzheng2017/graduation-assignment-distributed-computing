@@ -20,6 +20,9 @@ import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.ExecutionException;
 
+/**
+ * This class is an implementation of the {@link TopicManager} interface. It allows one to create and manage Kafka topics.
+ */
 @Service
 public class KafkaTopicManager implements TopicManager {
     private final Logger logger = LoggerFactory.getLogger(KafkaTopicManager.class);

@@ -6,6 +6,9 @@ import datastorage.dto.PutResponse;
 
 import java.util.concurrent.CompletableFuture;
 
+/**
+ * A client interface for creating and managing key values
+ */
 public interface KVClient {
     /**
      * Create or update the value that is bound to the key

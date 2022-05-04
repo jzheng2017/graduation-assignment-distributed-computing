@@ -11,6 +11,9 @@ import worker.Worker;
 
 import java.time.Instant;
 
+/**
+ * This class is responsible for sending a periodic heartbeat. This is necessary so that the coordinator knows that the worker is still alive.
+ */
 @Service
 public class Heartbeat {
     private final Logger logger = LoggerFactory.getLogger(Heartbeat.class);

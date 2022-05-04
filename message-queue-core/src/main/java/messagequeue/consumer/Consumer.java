@@ -44,7 +44,7 @@ public interface Consumer {
     boolean isRunning();
 
     /**
-     * Returns whether the consumer is for internal use which is needed to for the consumer coordination to be running correctly
+     * Returns whether the consumer is for internal use
      * @return true if internal, false otherwise
      */
     boolean isInternal();

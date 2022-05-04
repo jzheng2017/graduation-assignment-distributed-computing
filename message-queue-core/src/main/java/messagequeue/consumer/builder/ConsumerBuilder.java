@@ -8,6 +8,9 @@ import org.springframework.stereotype.Service;
 
 import java.util.Map;
 
+/**
+ * A builder class for building consumers
+ */
 public class ConsumerBuilder {
     private ConsumerConfigurationParser consumerConfigurationParser;
     private ConsumerFactory consumerFactory;

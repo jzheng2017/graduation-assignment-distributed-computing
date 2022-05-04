@@ -2,6 +2,8 @@ package coordinator;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import coordinator.dto.ConsumerTaskCount;
+import coordinator.dto.WorkerStatistics;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -33,5 +35,14 @@ public class Util {
             logger.warn("Could not successfully serialize", e);
             return null;
         }
+    }
+
+    public int getTotalConcurrentTasks(WorkerStatistics workerStatistics) {
+        return workerStatistics
+                .concurrentTasksPerConsumer()
+                .stream()
+                .filter(consumer -> !consumer.internal())
+                .mapToInt(ConsumerTaskCount::count)
+                .sum();
     }
 }

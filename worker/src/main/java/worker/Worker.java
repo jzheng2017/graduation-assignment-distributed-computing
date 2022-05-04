@@ -6,6 +6,9 @@ import org.springframework.stereotype.Service;
 
 import java.util.UUID;
 
+/**
+ * All information regarding the worker is tracked here, such as its identifier, which partition it has been assigned to.
+ */
 @Service
 public class Worker {
     private Logger logger = LoggerFactory.getLogger(Worker.class);
