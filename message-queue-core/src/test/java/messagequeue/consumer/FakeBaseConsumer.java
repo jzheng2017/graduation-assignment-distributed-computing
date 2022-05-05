@@ -14,18 +14,8 @@ public class FakeBaseConsumer extends BaseConsumer{
     }
 
     @Override
-    public void acknowledge() {
+    public void acknowledge(List<TaskPackageResult> taskPackageResults) {
 
-    }
-
-    @Override
-    public void commitOffset(String topic, int offset) {
-
-    }
-
-    @Override
-    public int getCommitOffset(String topic) {
-        return 0;
     }
 
     @Override

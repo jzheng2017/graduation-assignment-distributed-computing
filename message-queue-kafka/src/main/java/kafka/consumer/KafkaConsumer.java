@@ -2,11 +2,16 @@ package kafka.consumer;
 
 import datastorage.KVClient;
 import datastorage.LockClient;
+import messagequeue.Util;
 import messagequeue.consumer.BaseConsumer;
 import messagequeue.consumer.MessageProcessor;
+import messagequeue.consumer.TaskPackageResult;
+import messagequeue.consumer.TopicOffset;
 import messagequeue.consumer.taskmanager.TaskManager;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
+import org.apache.kafka.clients.consumer.OffsetAndMetadata;
+import org.apache.kafka.common.TopicPartition;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,6 +21,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * A Kafka implementation of the {@link messagequeue.consumer.Consumer} interface
@@ -25,20 +31,20 @@ public class KafkaConsumer extends BaseConsumer {
     protected Consumer<String, String> consumer;
 
     //constructor only for unit test purposes
-    protected KafkaConsumer(org.apache.kafka.clients.consumer.KafkaConsumer<String, String> consumer, String name, TaskManager taskManager, MessageProcessor messageProcessor, KVClient kvClient, LockClient lockClient) {
-        super(name, true, taskManager, messageProcessor, kvClient, lockClient);
+    protected KafkaConsumer(org.apache.kafka.clients.consumer.KafkaConsumer<String, String> consumer, String name, TaskManager taskManager, MessageProcessor messageProcessor, KVClient kvClient, LockClient lockClient, Util util) {
+        super(name, true, taskManager, messageProcessor, kvClient, lockClient, util);
         this.consumer = consumer;
     }
 
     @Autowired
-    public KafkaConsumer(String name, boolean isInternal, TaskManager taskManager, Consumer<String, String> consumer, MessageProcessor messageProcessor, KVClient kvClient, LockClient lockClient) {
-        super(name, isInternal, taskManager, messageProcessor, kvClient, lockClient);
+    public KafkaConsumer(String name, boolean isInternal, TaskManager taskManager, Consumer<String, String> consumer, MessageProcessor messageProcessor, KVClient kvClient, LockClient lockClient, Util util) {
+        super(name, isInternal, taskManager, messageProcessor, kvClient, lockClient, util);
         this.consumer = consumer;
-        setConsumerOffsets();
     }
 
-    private void setConsumerOffsets() {
-        //TODO: set consumer offset that are known at startup
+    public KafkaConsumer(String name, boolean isInternal, TaskManager taskManager, Consumer<String, String> consumer, MessageProcessor messageProcessor, KVClient kvClient, LockClient lockClient, Util util, List<TopicOffset> topicOffsets) {
+        super(name, isInternal, taskManager, messageProcessor, kvClient, lockClient, util, topicOffsets);
+        this.consumer = consumer;
     }
 
     @Override
@@ -69,9 +75,23 @@ public class KafkaConsumer extends BaseConsumer {
     }
 
     @Override
-    public void acknowledge() {
-        consumer.commitAsync();
-        logger.info("Message offset committed by consumer '{}'", name);
+    public void acknowledge(List<TaskPackageResult> taskPackageResults) {
+        boolean allTaskPackagesSuccessfullyCompleted = taskPackageResults.stream().allMatch(TaskPackageResult::successful);
+        if (allTaskPackagesSuccessfullyCompleted) {
+            consumer.commitSync();
+        } else {
+            Map<TopicPartition, OffsetAndMetadata> offsets = taskPackageResults
+                    .stream()
+                    .collect(
+                            Collectors
+                                    .toMap(
+                                            entry -> new TopicPartition(entry.topic(), 0),
+                                            entry -> new OffsetAndMetadata(getTopicOffset(entry.topic() + entry.totalProcessed()))
+                                    )
+                    );
+            consumer.commitSync(offsets);
+        }
+        logger.info("All task packages by consumer '{}' has finished. The topic offsets have been committed to Kafka.", name);
     }
 
     public Consumer<String, String> getConsumer() {

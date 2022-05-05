@@ -62,17 +62,19 @@ public class ConsumerCoordinator {
                                 logger.warn("Consumer configuration '{}' was not added because the provided configuration is identical to what is stored", consumerProperties.name());
                                 return;
                             }
-                            updateConsumerStatus(consumerProperties.name(), ConsumerStatus.UNASSIGNED);
 
                             kvClient.put(key, newConsumerConfiguration).thenAccept(putResponse -> {
                                 if (storedConsumerConfiguration == null) {
+                                    updateConsumerStatus(consumerProperties.name(), ConsumerStatus.UNASSIGNED);
                                     logger.info("Added consumer configuration '{}'", consumerProperties);
                                 } else {
                                     logger.info("Consumer configuration '{}' was already present. The configuration has now been updated.", consumerProperties.name());
                                 }
-                            });
+                            }).get();
                         } catch (JsonProcessingException e) {
-                            logger.error("Consumer '{}' could not be added as something went wrong with serialization", consumerProperties.name());
+                            logger.warn("Consumer '{}' could not be added as something went wrong with serialization", consumerProperties.name());
+                        } catch (ExecutionException | InterruptedException e) {
+                            logger.warn("Consumer '{}' could not be stored successfully");
                         }
                     }).get();
         } catch (InterruptedException | ExecutionException e) {

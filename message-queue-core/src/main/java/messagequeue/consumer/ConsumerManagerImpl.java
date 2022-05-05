@@ -167,11 +167,6 @@ public class ConsumerManagerImpl implements ConsumerManager {
     }
 
     @Override
-    public long getTotalNumberOfTasksScheduled() {
-        return taskManager.getTotalNumberOfTasksScheduled();
-    }
-
-    @Override
     public Map<String, Integer> getTotalRunningTasksForAllConsumers() {
         return taskManager.getTotalNumberOfConcurrentTasksForAllConsumers();
     }

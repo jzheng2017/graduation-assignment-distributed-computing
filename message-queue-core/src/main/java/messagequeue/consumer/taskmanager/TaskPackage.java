@@ -14,6 +14,7 @@ public class TaskPackage implements Runnable {
     private AtomicInteger position = new AtomicInteger();
     private volatile boolean cancelled = false;
     private volatile boolean finished = false;
+    private int totalProcessed = 0;
 
     public TaskPackage(String consumerId, String topicName, List<Task> tasks) {
         this.consumerId = consumerId;
@@ -26,8 +27,16 @@ public class TaskPackage implements Runnable {
         Task task;
         while ((task = getNextTask().orElse(null)) != null) {
             task.task().run();
+            totalProcessed++;
         }
         finished = true;
+    }
+
+    /**
+     * @return the number of tasks remaining that still has to be processed
+     */
+    public int getRemainingTaskCount() {
+        return tasks.size() - position.get();
     }
 
     public void cancel() {
@@ -56,5 +65,9 @@ public class TaskPackage implements Runnable {
         } else {
             return Optional.empty();
         }
+    }
+
+    public int getTotalProcessed() {
+        return totalProcessed;
     }
 }

@@ -51,12 +51,13 @@ public class WorkerHealthChecker {
     private void unregisterWorker(String workerId) {
         final String registrationKey = KeyPrefix.WORKER_REGISTRATION + "-" + workerId;
         final String statisticsKey = KeyPrefix.WORKER_STATISTICS + "-" + workerId;
+        final String workerHeartbeatKey = KeyPrefix.WORKER_HEARTBEAT + "-" + workerId;
+
         String partitionAssignmentKey = null;
         Optional<Integer> partition = partitionManager.getPartitionOfWorker(workerId);
         if (partition.isPresent()) {
             partitionAssignmentKey = KeyPrefix.PARTITION_ASSIGNMENT + "-" + partition.get();
         }
-        final String workerHeartbeatKey = KeyPrefix.WORKER_HEARTBEAT + "-" + workerId;
         if (kvClient.keyExists(registrationKey)) {
             try {
                 kvClient.delete(registrationKey).thenAcceptAsync(deleteResponse -> logger.info("Worker '{}' has been unregistered", workerId)).get();

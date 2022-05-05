@@ -37,7 +37,6 @@ public class WorkerStatisticsPublisher {
         Map<String, Integer> concurrentTasksPerConsumer = consumerManager.getTotalRunningTasksForAllConsumers();
         long totalTasksCompleted = consumerManager.getTotalNumberOfCompletedTasks();
         int totalTasksInQueue = consumerManager.getTotalNumberOfTasksInQueue();
-        long totalTasksScheduled = consumerManager.getTotalNumberOfTasksScheduled();
         List<String> activeRunningConsumers = consumerManager.getAllConsumers();
         List<ConsumerTaskCount> concurrentTasksPerConsumerList = concurrentTasksPerConsumer
                 .entrySet()
@@ -54,7 +53,6 @@ public class WorkerStatisticsPublisher {
                 worker.getAssignedPartition(),
                 totalTasksInQueue,
                 totalTasksCompleted,
-                totalTasksScheduled,
                 concurrentTasksPerConsumerList,
                 activeRunningConsumers,
                 Instant.now().getEpochSecond());

@@ -59,7 +59,5 @@ public interface ConsumerManager {
 
     long getTotalNumberOfCompletedTasks();
 
-    long getTotalNumberOfTasksScheduled();
-
     void unregisterAllConsumers();
 }

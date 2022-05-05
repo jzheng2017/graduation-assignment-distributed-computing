@@ -2,6 +2,7 @@ package kafka.consumer;
 
 import datastorage.KVClient;
 import datastorage.LockClient;
+import messagequeue.Util;
 import messagequeue.consumer.MessageProcessor;
 import messagequeue.consumer.taskmanager.TaskManager;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -19,6 +20,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -35,6 +37,8 @@ class KafkaConsumerTest {
     private KVClient kvClient;
     @Mock
     private LockClient lockClient;
+    @Mock
+    private Util util;
     private ConsumerRecords<String, String> consumerRecords;
 
     @BeforeEach
@@ -43,7 +47,7 @@ class KafkaConsumerTest {
         TopicPartition topicPartition = new TopicPartition("test", 0);
         consumerRecords = new ConsumerRecords<>(Map.of(topicPartition, List.of(new ConsumerRecord<>("test", 0, 0L, "key", "value"))));
         ConsumerRecords<String, String> emptyConsumerRecords = new ConsumerRecords<>(Map.of());
-        kafkaConsumer = new kafka.consumer.KafkaConsumer(mockedKafkaConsumer, "kafka", mockedTaskManager, mockedMessageProcessor, kvClient, lockClient);
+        kafkaConsumer = new kafka.consumer.KafkaConsumer(mockedKafkaConsumer, "kafka", mockedTaskManager, mockedMessageProcessor, kvClient, lockClient, util);
         when(mockedKafkaConsumer.poll(any())).thenReturn(consumerRecords).thenReturn(emptyConsumerRecords);
     }
 
@@ -69,7 +73,7 @@ class KafkaConsumerTest {
     void testThatKafkaConsumerDispatchesTasks() throws InterruptedException {
         kafkaConsumer.start();
         Thread.sleep(10); //give kafka consumer time to start and poll
-        verify(mockedTaskManager, atLeastOnce()).executeTasks(any());
+        verify(mockedTaskManager, atLeastOnce()).executeTasks(anyString(), any());
     }
 
     @Test

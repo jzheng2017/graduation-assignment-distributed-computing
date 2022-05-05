@@ -1,4 +1,4 @@
-package worker;
+package messagequeue;
 
 import org.springframework.stereotype.Service;
 

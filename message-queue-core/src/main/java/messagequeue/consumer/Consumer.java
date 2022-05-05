@@ -20,22 +20,10 @@ public interface Consumer {
     /**
      * Acknowledge that the consumed messages have been successfully processed
      */
-    void acknowledge();
+    void acknowledge(List<TaskPackageResult> taskPackageResults);
 
-    /**
-     * Set the commit offset of where the consumer should start reading from the topic
-     *
-     * @param topic  the topic it should commit the offset to
-     * @param offset the commit offset
-     */
-    void commitOffset(String topic, int offset);
-
-    /**
-     * Get the commit offset of a particular topic the consumer is on
-     *
-     * @return the offset
-     */
-    int getCommitOffset(String topic);
+    long getTopicOffset(String topic);
+    List<TopicOffset> listTopicOffsets();
 
     /**
      * Starts the consumer by setting the relevant flags

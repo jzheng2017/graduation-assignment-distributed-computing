@@ -8,6 +8,7 @@ import datastorage.WatchListener;
 import datastorage.configuration.KeyPrefix;
 import datastorage.dto.WatchEvent;
 import datastorage.dto.WatchResponse;
+import messagequeue.Util;
 import messagequeue.consumer.ConsumerManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

@@ -1,13 +1,18 @@
 package kafka.subscription;
 
 import kafka.consumer.KafkaConsumer;
+import messagequeue.consumer.TopicOffset;
 import messagequeue.messagebroker.subscription.Subscription;
 import messagequeue.messagebroker.subscription.SubscriptionManager;
 import org.apache.kafka.clients.consumer.Consumer;
+import org.apache.kafka.clients.consumer.ConsumerRebalanceListener;
+import org.apache.kafka.common.TopicPartition;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -24,7 +29,21 @@ public class KafkaSubscriptionManager implements SubscriptionManager {
         final Consumer<String, String> consumer = getConsumer(consumerContext);
         Set<String> subscriptions = getSubscriptions(consumerContext).stream().map(Subscription::topicName).collect(Collectors.toSet());
         subscriptions.addAll(topicList); //if there are duplicate subscriptions, then it's fine as they get left out and only leaving one in. the user doesn't need to know that as it won't have any effect on the subscription process.
-        consumer.subscribe(subscriptions);
+        consumer.subscribe(subscriptions, new ConsumerRebalanceListener() {
+            @Override
+            public void onPartitionsRevoked(Collection<TopicPartition> collection) {
+                //do nothing
+            }
+
+            @Override
+            public void onPartitionsAssigned(Collection<TopicPartition> collection) {
+                collection.forEach(topicPartition -> consumer.seek(
+                                topicPartition,
+                                ((messagequeue.consumer.Consumer) consumerContext.get("consumer")).getTopicOffset(topicPartition.topic())
+                        )
+                );
+            }
+        });
         logger.info("Updated subscription list of consumer {}", consumerContext.get("name"));
         logger.info("New subscription list: {}", subscriptions);
     }
@@ -57,7 +76,7 @@ public class KafkaSubscriptionManager implements SubscriptionManager {
 
     private Consumer<String, String> getConsumer(Map<String, Object> consumerContext) {
         if (consumerContext.containsKey("consumer")) {
-            return ((KafkaConsumer)consumerContext.get("consumer")).getConsumer();
+            return ((KafkaConsumer) consumerContext.get("consumer")).getConsumer();
         }
 
         throw new IllegalStateException("No consumer was provided");
