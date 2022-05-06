@@ -1,13 +1,11 @@
 package worker;
 
 import datastorage.KVClient;
-import datastorage.configuration.KeyPrefix;
+import commons.KeyPrefix;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
-import worker.Worker;
 
 import java.time.Instant;
 

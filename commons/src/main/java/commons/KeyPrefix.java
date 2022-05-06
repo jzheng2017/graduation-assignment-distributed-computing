@@ -1,4 +1,4 @@
-package datastorage.configuration;
+package commons;
 
 /**
  * All key prefixes used are defined here

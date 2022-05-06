@@ -1,11 +1,8 @@
 package messagequeue.consumer.builder;
 
 import messagequeue.consumer.Consumer;
-import messagequeue.consumer.ConsumerProperties;
+import commons.ConsumerProperties;
 import messagequeue.messagebroker.subscription.SubscriptionManager;
-import org.apache.kafka.common.TopicPartition;
-import org.springframework.context.annotation.Import;
-import org.springframework.stereotype.Service;
 
 import java.util.Map;
 

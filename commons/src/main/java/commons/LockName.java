@@ -1,4 +1,4 @@
-package datastorage.configuration;
+package commons;
 
 /**
  * All lock names that are used will be defined here

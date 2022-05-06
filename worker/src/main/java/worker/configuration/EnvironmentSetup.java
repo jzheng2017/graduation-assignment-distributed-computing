@@ -2,15 +2,15 @@ package worker.configuration;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import commons.Util;
 import datastorage.KVClient;
-import datastorage.configuration.KeyPrefix;
+import commons.KeyPrefix;
 import messagequeue.consumer.ConsumerManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.stereotype.Component;
-import messagequeue.Util;
 import worker.Worker;
 
 import java.time.Instant;

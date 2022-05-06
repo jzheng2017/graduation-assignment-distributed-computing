@@ -1,11 +1,11 @@
 package coordinator.worker;
 
-import coordinator.Util;
+import commons.Util;
 import coordinator.partition.PartitionManager;
 import datastorage.KVClient;
 import datastorage.WatchClient;
 import datastorage.WatchListener;
-import datastorage.configuration.KeyPrefix;
+import commons.KeyPrefix;
 import datastorage.dto.WatchEvent;
 import datastorage.dto.WatchResponse;
 import org.slf4j.Logger;

@@ -125,6 +125,11 @@ public class ConsumerManagerImpl implements ConsumerManager {
     }
 
     @Override
+    public void refreshConsumer(String consumerId) {
+
+    }
+
+    @Override
     public void shutdown() {
         logger.info("Shutting down ConsumerManager");
         unregisterAllConsumers();

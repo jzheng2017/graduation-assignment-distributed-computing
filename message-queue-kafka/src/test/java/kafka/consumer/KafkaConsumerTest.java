@@ -1,8 +1,8 @@
 package kafka.consumer;
 
+import commons.Util;
 import datastorage.KVClient;
 import datastorage.LockClient;
-import messagequeue.Util;
 import messagequeue.consumer.MessageProcessor;
 import messagequeue.consumer.taskmanager.TaskManager;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -12,7 +12,6 @@ import org.apache.kafka.common.TopicPartition;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 

@@ -2,13 +2,13 @@ package worker;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import commons.Util;
 import datastorage.KVClient;
 import datastorage.WatchClient;
 import datastorage.WatchListener;
-import datastorage.configuration.KeyPrefix;
+import commons.KeyPrefix;
 import datastorage.dto.WatchEvent;
 import datastorage.dto.WatchResponse;
-import messagequeue.Util;
 import messagequeue.consumer.ConsumerManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

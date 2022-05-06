@@ -66,5 +66,6 @@
         <module>application-configurations</module>
         <module>jacoco-reports</module>
         <module>data-storage</module>
+        <module>commons</module>
     </modules>
 </project>

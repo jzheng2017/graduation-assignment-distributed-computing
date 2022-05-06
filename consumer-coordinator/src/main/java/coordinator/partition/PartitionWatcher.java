@@ -3,7 +3,7 @@ package coordinator.partition;
 import datastorage.KVClient;
 import datastorage.WatchClient;
 import datastorage.WatchListener;
-import datastorage.configuration.KeyPrefix;
+import commons.KeyPrefix;
 import datastorage.dto.WatchEvent;
 import datastorage.dto.WatchResponse;
 import org.slf4j.Logger;
@@ -63,7 +63,7 @@ public class PartitionWatcher {
         public void onCompleted() {
             watchClient.unwatch(KeyPrefix.PARTITION_COUNT);
             logger.info("Stopped watching resource/key '{}'", KeyPrefix.PARTITION_COUNT);
-            watcherRunning = true;
+            watcherRunning = false;
         }
     }
 }

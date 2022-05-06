@@ -1,10 +1,9 @@
 package messagequeue.consumer;
 
+import commons.Util;
 import datastorage.KVClient;
 import datastorage.LockClient;
-import datastorage.configuration.KeyPrefix;
-import datastorage.configuration.LockName;
-import messagequeue.Util;
+import commons.KeyPrefix;
 import messagequeue.consumer.taskmanager.Task;
 import messagequeue.consumer.taskmanager.TaskManager;
 import messagequeue.consumer.taskmanager.TaskPackage;

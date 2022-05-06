@@ -6,7 +6,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 
 import java.util.Collections;
 
-@SpringBootApplication(scanBasePackages = {"messagequeue", "kafka", "worker", "datastorage"})
+@SpringBootApplication(scanBasePackages = {"messagequeue", "kafka", "worker", "datastorage", "commons"})
 @EnableScheduling
 public class WorkerMainApp {
     public static void main(String[] args) throws InterruptedException {

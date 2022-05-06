@@ -1,4 +1,4 @@
-package messagequeue.consumer;
+package commons;
 
 import java.util.Set;
 

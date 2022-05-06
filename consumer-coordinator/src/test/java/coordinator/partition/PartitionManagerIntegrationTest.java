@@ -2,7 +2,7 @@ package coordinator.partition;
 
 import coordinator.BaseIntegrationTest;
 import coordinator.TestUtil;
-import datastorage.configuration.KeyPrefix;
+import commons.KeyPrefix;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

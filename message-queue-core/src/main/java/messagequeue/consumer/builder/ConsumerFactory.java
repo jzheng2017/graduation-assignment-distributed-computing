@@ -1,6 +1,6 @@
 package messagequeue.consumer.builder;
 
-import messagequeue.consumer.ConsumerProperties;
+import commons.ConsumerProperties;
 import messagequeue.consumer.Consumer;
 
 /**

@@ -1,6 +1,6 @@
 package coordinator;
 
-import coordinator.dto.ConsumerProperties;
+import commons.ConsumerProperties;
 import org.springframework.http.ResponseEntity;
 import org.springframework.lang.NonNull;
 import org.springframework.web.bind.annotation.DeleteMapping;

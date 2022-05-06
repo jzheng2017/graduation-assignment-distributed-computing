@@ -1,8 +1,8 @@
 package worker.processor.builder;
 
+import commons.Util;
 import datastorage.KVClient;
 import datastorage.LockClient;
-import messagequeue.Util;
 import worker.processor.MessageUppercaseProcessor;
 import worker.processor.MessagePrinterProcessor;
 import worker.processor.MessageReverserProcessor;
@@ -10,7 +10,7 @@ import kafka.configuration.KafkaProperties;
 import kafka.consumer.KafkaConsumer;
 import kafka.consumer.KafkaConsumerBuilderHelper;
 import kafka.messagebroker.KafkaMessageBrokerProxy;
-import messagequeue.consumer.ConsumerProperties;
+import commons.ConsumerProperties;
 import messagequeue.consumer.builder.ConsumerFactory;
 import messagequeue.consumer.taskmanager.TaskManager;
 import messagequeue.consumer.Consumer;

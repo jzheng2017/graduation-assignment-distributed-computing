@@ -25,6 +25,12 @@ public interface ConsumerManager {
     void stopConsumer(String consumerId);
 
     /**
+     * Refresh the consumer by reading the consumer configuration again and update if anything has changed.
+     * @param consumerId id of the consumer
+     */
+    void refreshConsumer(String consumerId);
+
+    /**
      * Shut down the ConsumerManager where all registered consumers will be stopped
      */
     void shutdown();

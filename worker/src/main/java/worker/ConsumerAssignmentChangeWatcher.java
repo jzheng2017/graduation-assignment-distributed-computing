@@ -4,7 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import datastorage.WatchClient;
 import datastorage.WatchListener;
-import datastorage.configuration.KeyPrefix;
+import commons.KeyPrefix;
 import datastorage.dto.WatchEvent;
 import datastorage.dto.WatchResponse;
 import messagequeue.consumer.ConsumerManager;

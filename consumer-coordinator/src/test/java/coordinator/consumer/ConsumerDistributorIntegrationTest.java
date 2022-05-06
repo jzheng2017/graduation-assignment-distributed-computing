@@ -2,15 +2,13 @@ package coordinator.consumer;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import commons.ConsumerProperties;
 import coordinator.BaseIntegrationTest;
 import coordinator.ConsumerCoordinator;
 import coordinator.ConsumerStatus;
 import coordinator.TestUtil;
-import coordinator.dto.ConsumerProperties;
-import coordinator.dto.WorkerStatistics;
-import coordinator.worker.WorkerWatcher;
-import datastorage.configuration.KeyPrefix;
-import org.junit.jupiter.api.Assertions;
+import commons.WorkerStatistics;
+import commons.KeyPrefix;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -39,8 +37,8 @@ public class ConsumerDistributorIntegrationTest extends BaseIntegrationTest {
         kvClient.put(KeyPrefix.WORKER_REGISTRATION + "-" + workerId2, String.valueOf(Instant.now().getEpochSecond())).get();
         kvClient.put(KeyPrefix.PARTITION_ASSIGNMENT + "-0", workerId).get();
         kvClient.put(KeyPrefix.PARTITION_ASSIGNMENT + "-1", workerId2).get();
-        kvClient.put(KeyPrefix.WORKER_STATISTICS + "-1", new ObjectMapper().writeValueAsString(new WorkerStatistics("1", 0, 0, 0, 0, new ArrayList<>(), new ArrayList<>(), Instant.now().getEpochSecond())));
-        kvClient.put(KeyPrefix.WORKER_STATISTICS + "-1", new ObjectMapper().writeValueAsString(new WorkerStatistics("2", 0, 0, 0, 0, new ArrayList<>(), new ArrayList<>(), Instant.now().getEpochSecond())));
+        kvClient.put(KeyPrefix.WORKER_STATISTICS + "-1", new ObjectMapper().writeValueAsString(new WorkerStatistics("1", 0, 0, 0,  new ArrayList<>(), new ArrayList<>(), Instant.now().getEpochSecond())));
+        kvClient.put(KeyPrefix.WORKER_STATISTICS + "-1", new ObjectMapper().writeValueAsString(new WorkerStatistics("2", 0, 0, 0,  new ArrayList<>(), new ArrayList<>(), Instant.now().getEpochSecond())));
     }
 
     @Test

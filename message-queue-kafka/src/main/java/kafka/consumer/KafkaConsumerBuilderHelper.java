@@ -1,7 +1,7 @@
 package kafka.consumer;
 
 import kafka.configuration.KafkaProperties;
-import messagequeue.consumer.ConsumerProperties;
+import commons.ConsumerProperties;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.springframework.stereotype.Service;

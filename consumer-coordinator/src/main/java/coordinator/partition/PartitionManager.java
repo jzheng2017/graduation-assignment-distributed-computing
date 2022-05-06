@@ -1,10 +1,10 @@
 package coordinator.partition;
 
-import coordinator.Util;
+import commons.Util;
 import datastorage.KVClient;
 import datastorage.LockClient;
-import datastorage.configuration.KeyPrefix;
-import datastorage.configuration.LockName;
+import commons.KeyPrefix;
+import commons.LockName;
 import datastorage.dto.GetResponse;
 
 import org.slf4j.Logger;
