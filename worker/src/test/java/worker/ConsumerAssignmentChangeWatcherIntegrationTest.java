@@ -34,6 +34,7 @@ public class ConsumerAssignmentChangeWatcherIntegrationTest extends BaseIntegrat
 
     @BeforeEach
     void setup() throws ExecutionException, InterruptedException {
+        genericApplicationContext.registerBean("consumerConfigurationWatcher", ConsumerConfigurationWatcher.class);
         genericApplicationContext.registerBean("partitionAssignmentWatcher", PartitionAssignmentWatcher.class);
         genericApplicationContext.registerBean("consumerAssignmentChangeWatcher", ConsumerAssignmentChangeWatcher.class);
         consumerAssignmentChangeWatcher = genericApplicationContext.getBean(ConsumerAssignmentChangeWatcher.class);
