@@ -74,7 +74,7 @@ class KafkaConsumerTest {
     }
 
     @Test
-    void testThatKafkaConsumerClosesConsumerWhenStopped() throws InterruptedException {
+    void testThatKafkaConsumerClosesConsumerWhenStopped() {
         kafkaConsumer.start();
         TestUtil.waitUntil(() -> kafkaConsumer.isRunning(), "Kafka consumer couldn't start", 1000, 100); //give kafka consumer time to start properly
         kafkaConsumer.stop();
@@ -89,7 +89,7 @@ class KafkaConsumerTest {
     }
 
     @Test
-    void testThatKafkaConsumerDispatchesTasks() throws InterruptedException {
+    void testThatKafkaConsumerDispatchesTasks() {
         kafkaConsumer.start();
 
         TestUtil.waitUntil(() -> {
@@ -103,10 +103,9 @@ class KafkaConsumerTest {
     }
 
     @Test
-    void testThatKafkaConsumerCommitsOffsetAfterProcessingProperly() throws InterruptedException {
+    void testThatKafkaConsumerCommitsOffsetAfterProcessingProperly() {
         kafkaConsumer.start();
         TestUtil.waitUntil(() -> kafkaConsumer.isRunning(), "Kafka consumer couldn't start", 1000, 100); //give kafka consumer time to start properly
-        kafkaConsumer.stop();
         TestUtil.waitUntil(() -> {
             try {
                 verify(mockedKafkaConsumer, atLeastOnce()).commitSync(any(Map.class));
@@ -115,5 +114,6 @@ class KafkaConsumerTest {
                 return false;
             }
         }, "Kafka consumer didn't commit", 1000, 100);
+
     }
 }
