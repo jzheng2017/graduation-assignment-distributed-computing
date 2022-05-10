@@ -3,6 +3,9 @@ package kafka.consumer;
 import commons.Util;
 import datastorage.KVClient;
 import datastorage.LockClient;
+import datastorage.dto.GetResponse;
+import datastorage.dto.PutResponse;
+import kafka.TestUtil;
 import messagequeue.consumer.MessageProcessor;
 import messagequeue.consumer.taskmanager.TaskManager;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -15,11 +18,16 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
+import java.time.Duration;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -38,6 +46,8 @@ class KafkaConsumerTest {
     private LockClient lockClient;
     @Mock
     private Util util;
+    private GetResponse getResponse;
+    private PutResponse putResponse;
     private ConsumerRecords<String, String> consumerRecords;
 
     @BeforeEach
@@ -48,6 +58,10 @@ class KafkaConsumerTest {
         ConsumerRecords<String, String> emptyConsumerRecords = new ConsumerRecords<>(Map.of());
         kafkaConsumer = new kafka.consumer.KafkaConsumer(mockedKafkaConsumer, "kafka", mockedTaskManager, mockedMessageProcessor, kvClient, lockClient, util);
         when(mockedKafkaConsumer.poll(any())).thenReturn(consumerRecords).thenReturn(emptyConsumerRecords);
+        getResponse = new GetResponse(new HashMap<>());
+        putResponse = new PutResponse("");
+        when(kvClient.put(anyString(), anyString())).thenReturn(CompletableFuture.completedFuture(putResponse));
+        when(kvClient.get(anyString())).thenReturn(CompletableFuture.completedFuture(getResponse));
     }
 
 
@@ -62,23 +76,44 @@ class KafkaConsumerTest {
     @Test
     void testThatKafkaConsumerClosesConsumerWhenStopped() throws InterruptedException {
         kafkaConsumer.start();
-        Thread.sleep(10); //give kafka consumer time to stop properly
+        TestUtil.waitUntil(() -> kafkaConsumer.isRunning(), "Kafka consumer couldn't start", 1000, 100); //give kafka consumer time to start properly
         kafkaConsumer.stop();
-        Thread.sleep(10); //give kafka consumer time to stop properly
-        verify(mockedKafkaConsumer).close();
+        TestUtil.waitUntil(() -> {
+            try {
+                verify(mockedKafkaConsumer).close();
+                return true;
+            } catch (Throwable ex) {
+                return false;
+            }
+        }, "Kafka consumer couldn't stop", 1000, 100);
     }
 
     @Test
     void testThatKafkaConsumerDispatchesTasks() throws InterruptedException {
         kafkaConsumer.start();
-        Thread.sleep(10); //give kafka consumer time to start and poll
-        verify(mockedTaskManager, atLeastOnce()).executeTasks(anyString(), any());
+
+        TestUtil.waitUntil(() -> {
+            try {
+                verify(mockedTaskManager, atLeastOnce()).executeTasks(anyString(), any());
+                return true;
+            } catch (Throwable ex) {
+                return false;
+            }
+        }, "Kafka consumer didn't dispatch tasks", 1000, 100);
     }
 
     @Test
     void testThatKafkaConsumerCommitsOffsetAfterProcessingProperly() throws InterruptedException {
         kafkaConsumer.start();
-        Thread.sleep(10);
-        verify(mockedKafkaConsumer, atLeastOnce()).commitAsync();
+        TestUtil.waitUntil(() -> kafkaConsumer.isRunning(), "Kafka consumer couldn't start", 1000, 100); //give kafka consumer time to start properly
+        kafkaConsumer.stop();
+        TestUtil.waitUntil(() -> {
+            try {
+                verify(mockedKafkaConsumer, atLeastOnce()).commitSync(any(Map.class));
+                return true;
+            } catch (Throwable ex) {
+                return false;
+            }
+        }, "Kafka consumer didn't commit", 1000, 100);
     }
 }
