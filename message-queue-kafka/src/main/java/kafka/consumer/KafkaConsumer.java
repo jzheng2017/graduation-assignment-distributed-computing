@@ -32,18 +32,18 @@ public class KafkaConsumer extends BaseConsumer {
 
     //constructor only for unit test purposes
     protected KafkaConsumer(org.apache.kafka.clients.consumer.KafkaConsumer<String, String> consumer, String name, TaskManager taskManager, MessageProcessor messageProcessor, KVClient kvClient, LockClient lockClient, Util util) {
-        super(name, true, taskManager, messageProcessor, kvClient, lockClient, util);
+        super(name, true, taskManager, messageProcessor, kvClient, util);
         this.consumer = consumer;
     }
 
     @Autowired
-    public KafkaConsumer(String name, boolean isInternal, TaskManager taskManager, Consumer<String, String> consumer, MessageProcessor messageProcessor, KVClient kvClient, LockClient lockClient, Util util) {
-        super(name, isInternal, taskManager, messageProcessor, kvClient, lockClient, util);
+    public KafkaConsumer(String name, boolean isInternal, TaskManager taskManager, Consumer<String, String> consumer, MessageProcessor messageProcessor, KVClient kvClient, Util util) {
+        super(name, isInternal, taskManager, messageProcessor, kvClient, util);
         this.consumer = consumer;
     }
 
-    public KafkaConsumer(String name, boolean isInternal, TaskManager taskManager, Consumer<String, String> consumer, MessageProcessor messageProcessor, KVClient kvClient, LockClient lockClient, Util util, List<TopicOffset> topicOffsets) {
-        super(name, isInternal, taskManager, messageProcessor, kvClient, lockClient, util, topicOffsets);
+    public KafkaConsumer(String name, boolean isInternal, TaskManager taskManager, Consumer<String, String> consumer, MessageProcessor messageProcessor, KVClient kvClient, Util util, List<TopicOffset> topicOffsets) {
+        super(name, isInternal, taskManager, messageProcessor, kvClient, util, topicOffsets);
         this.consumer = consumer;
     }
 

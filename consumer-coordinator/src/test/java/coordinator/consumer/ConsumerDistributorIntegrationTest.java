@@ -19,7 +19,7 @@ import java.util.ArrayList;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 
-public class ConsumerDistributorIntegrationTest extends BaseIntegrationTest {
+class ConsumerDistributorIntegrationTest extends BaseIntegrationTest {
     @Autowired
     private GenericWebApplicationContext context;
     @Autowired

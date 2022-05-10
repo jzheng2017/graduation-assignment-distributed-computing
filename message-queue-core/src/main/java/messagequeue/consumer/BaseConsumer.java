@@ -3,7 +3,6 @@ package messagequeue.consumer;
 import commons.KeyPrefix;
 import commons.Util;
 import datastorage.KVClient;
-import datastorage.LockClient;
 import messagequeue.consumer.taskmanager.Task;
 import messagequeue.consumer.taskmanager.TaskManager;
 import messagequeue.consumer.taskmanager.TaskPackage;
@@ -27,7 +26,6 @@ public abstract class BaseConsumer implements Consumer {
     private final TaskManager taskManager;
     private final boolean isInternal;
     private KVClient kvClient;
-    private LockClient lockClient;
     private Util util;
 
     //only for unit test purposes
@@ -40,12 +38,11 @@ public abstract class BaseConsumer implements Consumer {
         this.isInternal = true;
     }
 
-    protected BaseConsumer(String name, boolean isInternal, TaskManager taskManager, MessageProcessor messageProcessor, KVClient kvClient, LockClient lockClient, Util util) {
+    protected BaseConsumer(String name, boolean isInternal, TaskManager taskManager, MessageProcessor messageProcessor, KVClient kvClient, Util util) {
         this.name = name;
         this.messageProcessor = messageProcessor;
         this.taskManager = taskManager;
         this.kvClient = kvClient;
-        this.lockClient = lockClient;
         this.util = util;
         this.scheduledForRemoval = new AtomicBoolean();
         this.isRunning = new AtomicBoolean();
@@ -53,8 +50,8 @@ public abstract class BaseConsumer implements Consumer {
         logger.info("Creating consumer {}..", name);
     }
 
-    protected BaseConsumer(String name, boolean isInternal, TaskManager taskManager, MessageProcessor messageProcessor, KVClient kvClient, LockClient lockClient, Util util, List<TopicOffset> topicOffsets) {
-        this(name, isInternal, taskManager, messageProcessor, kvClient, lockClient, util);
+    protected BaseConsumer(String name, boolean isInternal, TaskManager taskManager, MessageProcessor messageProcessor, KVClient kvClient, Util util, List<TopicOffset> topicOffsets) {
+        this(name, isInternal, taskManager, messageProcessor, kvClient, util);
         setTopicOffsets(topicOffsets);
     }
 
@@ -117,6 +114,7 @@ public abstract class BaseConsumer implements Consumer {
                     )
                     .toList();
         } catch (InterruptedException | ExecutionException e) {
+            Thread.currentThread().interrupt();
             logger.warn("Could not retrieve topic offsets of consumer '{}'", name);
             return new ArrayList<>();
         }
@@ -145,6 +143,7 @@ public abstract class BaseConsumer implements Consumer {
 
             return Long.parseLong(commitOffset);
         } catch (InterruptedException | ExecutionException e) {
+            Thread.currentThread().interrupt();
             logger.error("Could not get commit offset of consumer '{}' of topic '{}'", name, topic);
             throw new IllegalArgumentException("Could not get commit offset");
         }
@@ -177,6 +176,7 @@ public abstract class BaseConsumer implements Consumer {
             kvClient.put(KeyPrefix.CONSUMER_TOPIC_OFFSET + "-" + name + "-" + topic, Long.toString(offset)).get();
             logger.trace("Topic offset set to {} for topic '{}' of consumer '{}'", offset, topic, name);
         } catch (InterruptedException | ExecutionException e) {
+            Thread.currentThread().interrupt();
             logger.warn("Committing offset for topic '{}' of consumer '{}' was not successful", topic, name);
         }
     }

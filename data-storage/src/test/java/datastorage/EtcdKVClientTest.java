@@ -28,7 +28,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
-public class EtcdKVClientTest {
+class EtcdKVClientTest {
     @InjectMocks
     private EtcdKVClient etcdKVClient;
     @Mock

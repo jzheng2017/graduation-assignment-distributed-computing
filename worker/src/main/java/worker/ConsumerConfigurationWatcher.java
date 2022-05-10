@@ -18,7 +18,7 @@ import java.util.stream.Collectors;
 @Service
 @Profile(value = {"dev", "kubernetes"})
 public class ConsumerConfigurationWatcher {
-    private Logger logger = LoggerFactory.getLogger(ConsumerAssignmentChangeWatcher.class);
+    private Logger logger = LoggerFactory.getLogger(ConsumerConfigurationWatcher.class);
     private WatchClient watchClient;
     private ConsumerConfigurationParser consumerConfigurationParser;
     private ConsumerManager consumerManager;

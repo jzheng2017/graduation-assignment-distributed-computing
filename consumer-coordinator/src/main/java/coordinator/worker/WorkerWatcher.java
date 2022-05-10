@@ -23,13 +23,11 @@ import java.util.List;
 @Profile(value = {"dev", "kubernetes"})
 public class WorkerWatcher {
     private Logger logger = LoggerFactory.getLogger(WorkerWatcher.class);
-    private KVClient kvClient;
     private WatchClient watchClient;
     private Util util;
     private PartitionManager partitionManager;
     private boolean watcherRunning = false;
-    public WorkerWatcher(KVClient kvClient, WatchClient watchClient, Util util, PartitionManager partitionManager) {
-        this.kvClient = kvClient;
+    public WorkerWatcher(WatchClient watchClient, Util util, PartitionManager partitionManager) {
         this.watchClient = watchClient;
         this.util = util;
         this.partitionManager = partitionManager;

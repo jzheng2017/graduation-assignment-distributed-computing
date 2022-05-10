@@ -20,7 +20,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-public class EtcdWatchClientTest {
+class EtcdWatchClientTest {
     private EtcdWatchClient etcdWatchClient;
     @Mock
     private Watch watch;

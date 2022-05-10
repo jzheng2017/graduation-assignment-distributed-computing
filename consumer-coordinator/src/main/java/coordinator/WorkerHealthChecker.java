@@ -21,12 +21,10 @@ public class WorkerHealthChecker {
     private static final long DEFAULT_MISSED_HEARTBEAT_FOR_REMOVAL_IN_SECONDS = 10L;
     private Logger logger = LoggerFactory.getLogger(WorkerHealthChecker.class);
     private KVClient kvClient;
-    private ConsumerCoordinator consumerCoordinator;
     private Util util;
     private PartitionManager partitionManager;
-    public WorkerHealthChecker(KVClient kvClient, ConsumerCoordinator consumerCoordinator, Util util, PartitionManager partitionManager) {
+    public WorkerHealthChecker(KVClient kvClient, Util util, PartitionManager partitionManager) {
         this.kvClient = kvClient;
-        this.consumerCoordinator = consumerCoordinator;
         this.util = util;
         this.partitionManager = partitionManager;
     }

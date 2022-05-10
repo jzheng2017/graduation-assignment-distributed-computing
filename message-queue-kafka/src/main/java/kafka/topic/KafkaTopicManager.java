@@ -11,6 +11,7 @@ import org.apache.kafka.clients.admin.CreateTopicsResult;
 import org.apache.kafka.clients.admin.DeleteTopicsResult;
 import org.apache.kafka.clients.admin.ListTopicsResult;
 import org.apache.kafka.clients.admin.NewTopic;
+import org.apache.kafka.clients.admin.TopicListing;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.TopicPartition;
 import org.slf4j.Logger;
@@ -96,7 +97,7 @@ public class KafkaTopicManager implements TopicManager {
     public List<String> getTopics() {
         try {
             ListTopicsResult listTopicsResult = admin.listTopics();
-            return listTopicsResult.listings().get().stream().map(topic -> topic.name()).toList();
+            return listTopicsResult.listings().get().stream().map(TopicListing::name).toList();
         } catch (InterruptedException | ExecutionException e) {
             Thread.currentThread().interrupt();
             throw new FailedTopicActionException("Getting all topics failed", e);

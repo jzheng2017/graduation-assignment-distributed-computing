@@ -14,7 +14,7 @@ import org.springframework.context.support.GenericApplicationContext;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
-public class PartitionAssignmentWatcherIntegrationTest extends BaseIntegrationTest {
+class PartitionAssignmentWatcherIntegrationTest extends BaseIntegrationTest {
     @Autowired
     private GenericApplicationContext genericApplicationContext;
     @Autowired

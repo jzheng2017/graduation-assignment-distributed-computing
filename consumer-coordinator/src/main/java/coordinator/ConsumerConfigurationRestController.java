@@ -18,14 +18,14 @@ public class ConsumerConfigurationRestController {
     }
 
     @PostMapping("/add-consumer")
-    public ResponseEntity addConsumer(@RequestBody ConsumerProperties consumerConfiguration) {
+    public ResponseEntity<String> addConsumer(@RequestBody ConsumerProperties consumerConfiguration) {
         consumerCoordinator.addConsumerConfiguration(consumerConfiguration);
 
         return ResponseEntity.ok().build();
     }
 
     @DeleteMapping("/remove-consumer/{consumerId}")
-    public ResponseEntity removeConsumer(@NonNull @PathVariable("consumerId") String consumerId) {
+    public ResponseEntity<String> removeConsumer(@NonNull @PathVariable("consumerId") String consumerId) {
         consumerCoordinator.removeConsumerConfiguration(consumerId);
 
         return ResponseEntity.ok().build();

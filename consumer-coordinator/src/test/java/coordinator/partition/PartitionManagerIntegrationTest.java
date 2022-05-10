@@ -12,7 +12,7 @@ import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
 
-public class PartitionManagerIntegrationTest extends BaseIntegrationTest {
+class PartitionManagerIntegrationTest extends BaseIntegrationTest {
     private final String workerId = "1";
 
     @BeforeEach

@@ -17,10 +17,8 @@ import java.util.function.Supplier;
 @Service
 public class EtcdLockClient implements LockClient {
     private Logger logger = LoggerFactory.getLogger(EtcdLockClient.class);
-    private static final long DEFAULT_LOCK_DURATION_SECONDS = 60L;
     private Lock lockClient;
     private final Map<String, LockDetail> lockOwnerships = new ConcurrentHashMap<>();
-    private RetryUtil retryUtil;
 
     //only for unit test purposes
     EtcdLockClient(Lock lock) {
@@ -45,6 +43,7 @@ public class EtcdLockClient implements LockClient {
             logger.info("Lock '{}' acquired", name);
             lockOwnerships.put(name, new LockDetail(lockResponse.getKey().toString(), Thread.currentThread().getId()));
         } catch (InterruptedException | ExecutionException e) {
+            Thread.currentThread().interrupt();
             logger.warn("Lock '{}' could not be successfully acquired.", name, e);
         }
     }
@@ -60,6 +59,7 @@ public class EtcdLockClient implements LockClient {
                     logger.info("Lock '{}' released", name);
                     lockOwnerships.remove(name);
                 } catch (InterruptedException | ExecutionException e) {
+                    Thread.currentThread().interrupt();
                     logger.warn("Lock '{}' could not be successfully released.", name, e);
                 }
             } else {

@@ -3,6 +3,7 @@ package coordinator.worker;
 import commons.KeyPrefix;
 import commons.WorkerStatistics;
 import datastorage.KVClient;
+import java.util.Collections;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -46,7 +47,7 @@ public class WorkerStatisticsReader {
         } catch (ExecutionException | InterruptedException e) {
             Thread.currentThread().interrupt();
             logger.warn("Could not retrieve the worker statistics correctly", e);
-            return null;
+            return Collections.emptyList();
         }
     }
 }

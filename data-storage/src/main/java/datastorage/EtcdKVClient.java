@@ -106,6 +106,7 @@ public class EtcdKVClient implements KVClient {
         try {
             return get(key).thenApplyAsync(getResponse -> !getResponse.keyValues().isEmpty()).get();
         } catch (InterruptedException | ExecutionException e) {
+            Thread.currentThread().interrupt();
             logger.warn("Could not successfully check for key '{}' existence", key);
             return false;
         }

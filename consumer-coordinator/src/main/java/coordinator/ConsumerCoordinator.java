@@ -29,14 +29,12 @@ public class ConsumerCoordinator {
     private final LockClient lockClient;
     private final WorkerStatisticsDeserializer workerStatisticsDeserializer;
     private final Util util;
-    private final PartitionManager partitionManager;
 
-    public ConsumerCoordinator(KVClient kvClient, LockClient lockClient, WorkerStatisticsDeserializer workerStatisticsDeserializer, Util util, PartitionManager partitionManager) {
+    public ConsumerCoordinator(KVClient kvClient, LockClient lockClient, WorkerStatisticsDeserializer workerStatisticsDeserializer, Util util) {
         this.kvClient = kvClient;
         this.lockClient = lockClient;
         this.workerStatisticsDeserializer = workerStatisticsDeserializer;
         this.util = util;
-        this.partitionManager = partitionManager;
     }
 
     public void addConsumerConfiguration(String consumerConfiguration) {
@@ -45,8 +43,7 @@ public class ConsumerCoordinator {
             consumerProperties = new ObjectMapper().readValue(consumerConfiguration, ConsumerProperties.class);
             addConsumerConfiguration(consumerProperties);
         } catch (JsonProcessingException e) {
-            logger.warn("Could not successfully parse the consumer configuration", e);
-            throw new IllegalArgumentException("Could not parse consumer configuration", e);
+            throw new IllegalArgumentException("Could not successfully parse the consumer configuration", e);
         }
     }
 
@@ -76,7 +73,7 @@ public class ConsumerCoordinator {
                             logger.warn("Consumer '{}' could not be added as something went wrong with serialization", consumerProperties.name());
                         } catch (InterruptedException | ExecutionException e) {
                             Thread.currentThread().interrupt();
-                            logger.warn("Consumer '{}' could not be stored successfully");
+                            logger.warn("Consumer '{}' could not be stored successfully", consumerProperties.name());
                         }
                     }).get();
         } catch (InterruptedException | ExecutionException e) {
@@ -166,8 +163,10 @@ public class ConsumerCoordinator {
                         .thenComparing(WorkerStatistics::totalTasksInQueue)
                         .thenComparing(WorkerStatistics::totalTasksCompleted)
         );
+        final int partition = workerStatistics.get(0).partition();
+        logger.info("Best partition computed for consumer '{}', namely partition: {}", consumerId, partition);
 
-        return workerStatistics.get(0).partition();
+        return partition;
     }
 
     public void updateConsumerStatus(String consumerId, ConsumerStatus consumerStatus) {

@@ -14,7 +14,7 @@ import org.springframework.context.support.GenericApplicationContext;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
-public class ConsumerAssignmentChangeWatcherIntegrationTest extends BaseIntegrationTest {
+class ConsumerAssignmentChangeWatcherIntegrationTest extends BaseIntegrationTest {
     @Autowired
     private GenericApplicationContext genericApplicationContext;
     @Autowired

@@ -50,36 +50,6 @@ public class ConsumerDistributor {
         watcherRunning = true;
     }
 
-    private void assignConsumerToPartition(final int partition, final String consumerId) {
-        lockClient.acquireLockAndExecute(
-                LockName.PARTITION_CONSUMER_ASSIGNMENT_LOCK,
-                () -> {
-                    final String partitionConsumerAssignmentKey = KeyPrefix.PARTITION_CONSUMER_ASSIGNMENT + "-" + partition;
-
-                    try {
-                        List<String> consumers = new ArrayList<>();
-
-                        if (kvClient.keyExists(partitionConsumerAssignmentKey)) {
-                            consumers = new ObjectMapper().readValue(kvClient.get(partitionConsumerAssignmentKey).get().keyValues().get(partitionConsumerAssignmentKey), List.class);
-                        }
-
-                        if (!consumers.contains(consumerId)) {
-                            consumers.add(consumerId);
-                            kvClient.put(partitionConsumerAssignmentKey, new ObjectMapper().writeValueAsString(consumers))
-                                    .thenAcceptAsync(ignore -> consumerCoordinator.updateConsumerStatus(consumerId, ConsumerStatus.ASSIGNED)).get();
-                            logger.info("Assigned consumer '{}' to partition '{}'", consumerId, partition);
-                        } else {
-                            logger.warn("Consumer '{}' has already been assigned to partition '{}'", consumerId, partition);
-                        }
-                    } catch (InterruptedException | ExecutionException | JsonProcessingException e) {
-                        logger.warn("Could not successfully assign consumer '{}' to partition '{}'", consumerId, partition, e);
-                    }
-
-                    return null;
-                }
-        );
-    }
-
     @Scheduled(fixedDelay = 1000L)
     private void checkHealthWatcher() {
         if (!watcherRunning) {
@@ -119,6 +89,38 @@ public class ConsumerDistributor {
             watchClient.unwatch(KeyPrefix.CONSUMER_STATUS);
             logger.info("Stopped watching resource/key '{}'", KeyPrefix.CONSUMER_STATUS);
             watcherRunning = false;
+        }
+
+
+        private void assignConsumerToPartition(final int partition, final String consumerId) {
+            lockClient.acquireLockAndExecute(
+                    LockName.PARTITION_CONSUMER_ASSIGNMENT_LOCK,
+                    () -> {
+                        final String partitionConsumerAssignmentKey = KeyPrefix.PARTITION_CONSUMER_ASSIGNMENT + "-" + partition;
+
+                        try {
+                            List<String> consumers = new ArrayList<>();
+
+                            if (kvClient.keyExists(partitionConsumerAssignmentKey)) {
+                                consumers = new ObjectMapper().readValue(kvClient.get(partitionConsumerAssignmentKey).get().keyValues().get(partitionConsumerAssignmentKey), List.class);
+                            }
+
+                            if (!consumers.contains(consumerId)) {
+                                consumers.add(consumerId);
+                                kvClient.put(partitionConsumerAssignmentKey, new ObjectMapper().writeValueAsString(consumers))
+                                        .thenAcceptAsync(ignore -> consumerCoordinator.updateConsumerStatus(consumerId, ConsumerStatus.ASSIGNED)).get();
+                                logger.info("Assigned consumer '{}' to partition '{}'", consumerId, partition);
+                            } else {
+                                logger.warn("Consumer '{}' has already been assigned to partition '{}'", consumerId, partition);
+                            }
+                        } catch (InterruptedException | ExecutionException | JsonProcessingException e) {
+                            Thread.currentThread().interrupt();
+                            logger.warn("Could not successfully assign consumer '{}' to partition '{}'", consumerId, partition, e);
+                        }
+
+                        return null;
+                    }
+            );
         }
     }
 }

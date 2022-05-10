@@ -12,7 +12,7 @@ import org.springframework.web.context.support.GenericWebApplicationContext;
 import java.time.Instant;
 import java.util.concurrent.ExecutionException;
 
-public class PartitionWatcherIntegrationTest extends BaseIntegrationTest {
+class PartitionWatcherIntegrationTest extends BaseIntegrationTest {
     @Autowired
     private GenericWebApplicationContext context;
     private PartitionWatcher partitionWatcher;

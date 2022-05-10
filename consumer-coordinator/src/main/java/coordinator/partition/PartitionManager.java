@@ -30,7 +30,6 @@ public class PartitionManager {
     private KVClient kvClient;
     private LockClient lockClient;
     private Util util;
-    private Set<Integer> assignedPartitions = Collections.newSetFromMap(new ConcurrentHashMap<>());
 
     public PartitionManager(KVClient kvClient, LockClient lockClient, Util util) {
         this.kvClient = kvClient;
@@ -193,7 +192,6 @@ public class PartitionManager {
             return Integer.parseInt(partitionCount);
         } catch (InterruptedException | ExecutionException e) {
             Thread.currentThread().interrupt();
-            logger.warn("Could not retrieve the number of partitions. Defaulting to partition count that was known on startup.", e);
             throw new IllegalStateException("Could not get the number of partitions.", e);
         }
     }

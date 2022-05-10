@@ -21,12 +21,10 @@ import java.util.List;
 @Profile(value = {"dev", "kubernetes"})
 public class PartitionWatcher {
     private Logger logger = LoggerFactory.getLogger(PartitionWatcher.class);
-    private KVClient kvClient;
     private WatchClient watchClient;
     private PartitionManager partitionManager;
     private boolean watcherRunning = false;
-    public PartitionWatcher(KVClient kvClient, WatchClient watchClient, PartitionManager partitionManager) {
-        this.kvClient = kvClient;
+    public PartitionWatcher(WatchClient watchClient, PartitionManager partitionManager) {
         this.watchClient = watchClient;
         this.partitionManager = partitionManager;
         watchForPartitionCountChange();

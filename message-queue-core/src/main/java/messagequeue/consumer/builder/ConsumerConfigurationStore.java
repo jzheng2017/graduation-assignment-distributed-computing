@@ -25,6 +25,7 @@ public class ConsumerConfigurationStore {
         try {
             return kvClient.get(key).thenApply(getResponse -> getResponse.keyValues().get(key)).get();
         } catch (InterruptedException | ExecutionException e) {
+            Thread.currentThread().interrupt();
             logger.error("Could not retrieve consumer configuration of '{}'", consumerId, e);
             return null;
         }

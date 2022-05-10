@@ -12,7 +12,7 @@ import org.springframework.web.context.support.GenericWebApplicationContext;
 import java.time.Instant;
 import java.util.concurrent.ExecutionException;
 
-public class WorkerWatcherIntegrationTest extends BaseIntegrationTest {
+class WorkerWatcherIntegrationTest extends BaseIntegrationTest {
     @Autowired
     private GenericWebApplicationContext context;
     private WorkerWatcher workerWatcher;
