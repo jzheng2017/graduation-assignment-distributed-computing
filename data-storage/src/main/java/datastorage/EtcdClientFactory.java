@@ -57,6 +57,7 @@ public class EtcdClientFactory {
                     try {
                         client.getClusterClient().listMember().get(1, TimeUnit.SECONDS);
                     } catch (InterruptedException | ExecutionException | TimeoutException e) {
+                        Thread.currentThread().interrupt();
                         throw new RuntimeException(e);
                     }
                     return null;

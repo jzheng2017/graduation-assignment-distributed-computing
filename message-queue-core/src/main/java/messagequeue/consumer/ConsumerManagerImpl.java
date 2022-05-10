@@ -1,8 +1,11 @@
 package messagequeue.consumer;
 
+import commons.ConsumerProperties;
 import messagequeue.consumer.builder.ConsumerBuilder;
+import messagequeue.consumer.builder.ConsumerConfigurationParser;
 import messagequeue.consumer.builder.ConsumerConfigurationStore;
 import messagequeue.consumer.taskmanager.TaskManager;
+import messagequeue.messagebroker.subscription.SubscriptionManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,18 +28,22 @@ public class ConsumerManagerImpl implements ConsumerManager {
     private final TaskManager taskManager;
     private ConsumerConfigurationStore consumerConfigurationStore;
     private ConsumerBuilder consumerBuilder;
+    private ConsumerConfigurationParser consumerConfigurationParser;
+    private SubscriptionManager subscriptionManager;
 
     //for unit test purposes only
-    protected ConsumerManagerImpl(Logger logger, TaskManager taskManager, ConsumerConfigurationStore consumerConfigurationStore, ConsumerBuilder consumerBuilder) {
-        this(taskManager, consumerConfigurationStore, consumerBuilder);
+    protected ConsumerManagerImpl(Logger logger, TaskManager taskManager, ConsumerConfigurationStore consumerConfigurationStore, ConsumerBuilder consumerBuilder, ConsumerConfigurationParser consumerConfigurationParser, SubscriptionManager subscriptionManager) {
+        this(taskManager, consumerConfigurationStore, consumerBuilder, consumerConfigurationParser, subscriptionManager);
         this.logger = logger;
     }
 
     @Autowired
-    public ConsumerManagerImpl(TaskManager taskManager, ConsumerConfigurationStore consumerConfigurationStore, ConsumerBuilder consumerBuilder) {
+    public ConsumerManagerImpl(TaskManager taskManager, ConsumerConfigurationStore consumerConfigurationStore, ConsumerBuilder consumerBuilder, ConsumerConfigurationParser consumerConfigurationParser, SubscriptionManager subscriptionManager) {
         this.taskManager = taskManager;
         this.consumerConfigurationStore = consumerConfigurationStore;
         this.consumerBuilder = consumerBuilder;
+        this.consumerConfigurationParser = consumerConfigurationParser;
+        this.subscriptionManager = subscriptionManager;
     }
 
     public void registerConsumer(String consumerId) {
@@ -91,6 +98,7 @@ public class ConsumerManagerImpl implements ConsumerManager {
                         Thread.sleep(WAIT_FOR_REMOVAL_INTERVAL_IN_MS);
                     } catch (InterruptedException e) {
                         logger.warn("Sleeping thread interrupted", e);
+                        Thread.currentThread().interrupt();
                     }
                 }
 
@@ -126,7 +134,20 @@ public class ConsumerManagerImpl implements ConsumerManager {
 
     @Override
     public void refreshConsumer(String consumerId) {
+        Consumer consumer = consumers.get(consumerId);
+        if (consumer == null) {
+            logger.warn("Consumer '{}' can not be updated because it can not be found", consumerId);
+            return;
+        }
 
+        if (consumer.isRunning()) {
+            final String consumerConfiguration = consumerConfigurationStore.getConsumerConfiguration(consumerId);
+            ConsumerProperties consumerProperties = consumerConfigurationParser.parse(consumerConfiguration);
+            subscriptionManager.subscribe(consumerProperties.subscriptions(), Map.of("consumer", consumer));
+            logger.info("Consumer '{}' updated", consumerId);
+        } else {
+            logger.warn("Consumer '{}' can not be updated because it is not running anymore", consumerId);
+        }
     }
 
     @Override

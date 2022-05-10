@@ -2,11 +2,11 @@ package worker;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import commons.KeyPrefix;
 import commons.Util;
 import datastorage.KVClient;
 import datastorage.WatchClient;
 import datastorage.WatchListener;
-import commons.KeyPrefix;
 import datastorage.dto.WatchEvent;
 import datastorage.dto.WatchResponse;
 import messagequeue.consumer.ConsumerManager;
@@ -33,15 +33,17 @@ public class PartitionAssignmentWatcher {
     private Worker worker;
     private Util util;
     private ConsumerAssignmentChangeWatcher consumerAssignmentChangeWatcher;
+    private ConsumerConfigurationWatcher consumerConfigurationWatcher;
     private boolean watcherRunning = false;
 
-    public PartitionAssignmentWatcher(WatchClient watchClient, KVClient kvClient, ConsumerManager consumerManager, Worker worker, Util util, ConsumerAssignmentChangeWatcher consumerAssignmentChangeWatcher) {
+    public PartitionAssignmentWatcher(WatchClient watchClient, KVClient kvClient, ConsumerManager consumerManager, Worker worker, Util util, ConsumerAssignmentChangeWatcher consumerAssignmentChangeWatcher, ConsumerConfigurationWatcher consumerConfigurationWatcher) {
         this.watchClient = watchClient;
         this.kvClient = kvClient;
         this.consumerManager = consumerManager;
         this.worker = worker;
         this.util = util;
         this.consumerAssignmentChangeWatcher = consumerAssignmentChangeWatcher;
+        this.consumerConfigurationWatcher = consumerConfigurationWatcher;
         watchForPartitionAssignments();
     }
 
@@ -110,10 +112,14 @@ public class PartitionAssignmentWatcher {
                                     .keyValues()
                                     .get(key),
                             List.class);
-                    consumers.forEach(consumerManager::registerConsumer);
+                    consumers.forEach(consumerId -> {
+                        consumerManager.registerConsumer(consumerId);
+                        consumerConfigurationWatcher.startWatchingConsumerConfiguration(consumerId);
+                    });
                     logger.info("Successfully registered all consumers of new partition");
                 }
             } catch (JsonProcessingException | InterruptedException | ExecutionException e) {
+                Thread.currentThread().interrupt();
                 logger.error("Could not successfully start the consumers", e);
             }
         }

@@ -18,7 +18,7 @@ public class MessageUppercaseProcessor implements MessageProcessor {
         try {
             Thread.sleep(3000);
         } catch (InterruptedException e) {
-            e.printStackTrace();
+            Thread.currentThread().interrupt();
         }
         this.messageBrokerProxy.sendMessage("output", message.toUpperCase());
     }

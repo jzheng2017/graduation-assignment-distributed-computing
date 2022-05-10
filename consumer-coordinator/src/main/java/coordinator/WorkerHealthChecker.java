@@ -1,9 +1,9 @@
 package coordinator;
 
+import commons.KeyPrefix;
 import commons.Util;
 import coordinator.partition.PartitionManager;
 import datastorage.KVClient;
-import commons.KeyPrefix;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Profile;
@@ -68,6 +68,7 @@ public class WorkerHealthChecker {
                 }
                 kvClient.delete(workerHeartbeatKey).thenAcceptAsync(deleteResponse -> logger.info("Removed worker '{}' heartbeat", workerId)).get();
             } catch (InterruptedException | ExecutionException e) {
+                Thread.currentThread().interrupt();
                 logger.error("Could not unregister worker '{}'", workerId, e);
             }
         } else {

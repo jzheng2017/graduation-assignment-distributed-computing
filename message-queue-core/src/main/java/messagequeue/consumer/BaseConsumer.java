@@ -1,9 +1,9 @@
 package messagequeue.consumer;
 
+import commons.KeyPrefix;
 import commons.Util;
 import datastorage.KVClient;
 import datastorage.LockClient;
-import commons.KeyPrefix;
 import messagequeue.consumer.taskmanager.Task;
 import messagequeue.consumer.taskmanager.TaskManager;
 import messagequeue.consumer.taskmanager.TaskPackage;
@@ -89,7 +89,7 @@ public abstract class BaseConsumer implements Consumer {
                     taskManager.executeTasks(name, taskPackages);
                     logger.info("{} task package(s) successfully processed by consumer '{}'", taskPackages.size(), name);
                 } catch (InterruptedException e) {
-                    logger.warn("Execution of the tasks has been interrupted. Unfinished tasks have been cancelled", e); //TODO: Tasks that are finished should be committed
+                    Thread.currentThread().interrupt();
                 }
                 acknowledge(taskPackages.stream().map(taskPackage -> new TaskPackageResult(taskPackage.getTopicName(), taskPackage.isFinished() && !taskPackage.isCancelled(), taskPackage.getTotalProcessed())).toList());
             }

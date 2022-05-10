@@ -1,8 +1,6 @@
 package datastorage;
 
-import datastorage.configuration.EtcdProperties;
 import io.etcd.jetcd.ByteSequence;
-import io.etcd.jetcd.Client;
 import io.etcd.jetcd.Lock;
 import io.etcd.jetcd.lock.LockResponse;
 import org.slf4j.Logger;
@@ -14,8 +12,6 @@ import javax.annotation.PreDestroy;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.function.Supplier;
 
 @Service

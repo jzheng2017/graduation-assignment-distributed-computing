@@ -1,10 +1,10 @@
 package coordinator;
 
+import commons.KeyPrefix;
 import coordinator.configuration.EnvironmentConfiguration;
 import coordinator.partition.PartitionManager;
 import datastorage.KVClient;
 import datastorage.LockClient;
-import commons.KeyPrefix;
 import datastorage.dto.GetResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;

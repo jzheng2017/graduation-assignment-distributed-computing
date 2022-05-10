@@ -1,8 +1,8 @@
 package worker;
 
+import commons.KeyPrefix;
 import datastorage.WatchClient;
 import datastorage.WatchListener;
-import commons.KeyPrefix;
 import datastorage.dto.WatchEvent;
 import datastorage.dto.WatchResponse;
 import messagequeue.consumer.ConsumerManager;
@@ -31,10 +31,12 @@ public class ConsumerConfigurationWatcher {
 
     public void startWatchingConsumerConfiguration(String consumerId) {
         watchClient.watch(KeyPrefix.CONSUMER_CONFIGURATION + "-" + consumerId, new ConsumerConfigurationChangeWatchListener());
+        logger.info("Started watching consumer configuration '{}'", consumerId);
     }
 
     public void stopWatchingConsumerConfiguration(String consumerId) {
         watchClient.unwatch(KeyPrefix.CONSUMER_CONFIGURATION + "-" + consumerId);
+        logger.info("Stopped watching consumer configuration '{}'", consumerId);
     }
 
     private class ConsumerConfigurationChangeWatchListener implements WatchListener {
@@ -46,6 +48,7 @@ public class ConsumerConfigurationWatcher {
                     .stream()
                     .filter(watchEvent -> watchEvent.eventType() == WatchEvent.EventType.PUT && !watchEvent.currentValue().equals(watchEvent.prevValue()))
                     .map(watchEvent -> consumerConfigurationParser.parse(watchEvent.currentValue()).name())
+                    .filter(consumerId -> consumerManager.getAllConsumers().contains(consumerId))
                     .collect(Collectors.toSet());
 
             updatedConsumerConfigurations.forEach(consumerId -> consumerManager.refreshConsumer(consumerId));

@@ -1,7 +1,5 @@
 package worker.configuration;
 
-import datastorage.KVClient;
-import messagequeue.consumer.ConsumerManager;
 import messagequeue.consumer.builder.ConsumerBuilder;
 import messagequeue.consumer.builder.ConsumerConfigurationParser;
 import messagequeue.consumer.builder.ConsumerFactory;

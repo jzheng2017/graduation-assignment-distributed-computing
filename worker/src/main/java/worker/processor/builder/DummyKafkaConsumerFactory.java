@@ -1,22 +1,22 @@
 package worker.processor.builder;
 
+import commons.ConsumerProperties;
 import commons.Util;
 import datastorage.KVClient;
 import datastorage.LockClient;
-import worker.processor.MessageUppercaseProcessor;
-import worker.processor.MessagePrinterProcessor;
-import worker.processor.MessageReverserProcessor;
 import kafka.configuration.KafkaProperties;
 import kafka.consumer.KafkaConsumer;
 import kafka.consumer.KafkaConsumerBuilderHelper;
 import kafka.messagebroker.KafkaMessageBrokerProxy;
-import commons.ConsumerProperties;
+import messagequeue.consumer.Consumer;
 import messagequeue.consumer.builder.ConsumerFactory;
 import messagequeue.consumer.taskmanager.TaskManager;
-import messagequeue.consumer.Consumer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import worker.processor.MessagePrinterProcessor;
+import worker.processor.MessageReverserProcessor;
+import worker.processor.MessageUppercaseProcessor;
 
 /**
  * Dummy {@link Consumer} factory that serves hardcoded dummy consumers. Will later be replaced by a real implementation that can construct based on consumer properties.

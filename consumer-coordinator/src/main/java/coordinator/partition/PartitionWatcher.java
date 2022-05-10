@@ -1,9 +1,9 @@
 package coordinator.partition;
 
+import commons.KeyPrefix;
 import datastorage.KVClient;
 import datastorage.WatchClient;
 import datastorage.WatchListener;
-import commons.KeyPrefix;
 import datastorage.dto.WatchEvent;
 import datastorage.dto.WatchResponse;
 import org.slf4j.Logger;

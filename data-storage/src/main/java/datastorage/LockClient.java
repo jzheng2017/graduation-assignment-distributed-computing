@@ -1,8 +1,5 @@
 package datastorage;
 
-import datastorage.dto.LockResponse;
-
-import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
 
 /**

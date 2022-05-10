@@ -2,8 +2,8 @@ package worker;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import datastorage.WatchClient;
 import commons.KeyPrefix;
+import datastorage.WatchClient;
 import messagequeue.consumer.ConsumerManager;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;

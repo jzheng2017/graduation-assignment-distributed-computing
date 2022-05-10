@@ -27,7 +27,6 @@ import java.util.Set;
 import java.util.concurrent.ExecutionException;
 
 import static org.mockito.ArgumentMatchers.anyCollection;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 class KafkaTopicManagerTest {

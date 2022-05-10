@@ -14,7 +14,7 @@ public class MessagePrinterProcessor implements MessageProcessor {
         try {
             Thread.sleep(3000);
         } catch (InterruptedException e) {
-            e.printStackTrace();
+            Thread.currentThread().interrupt();
         }
         logger.info(message);
     }

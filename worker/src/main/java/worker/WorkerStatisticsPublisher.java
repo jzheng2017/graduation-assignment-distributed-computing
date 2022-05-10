@@ -1,11 +1,11 @@
 package worker;
 
-import commons.ConsumerTaskCount;
-import commons.WorkerStatistics;
-import datastorage.KVClient;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import commons.ConsumerTaskCount;
 import commons.KeyPrefix;
+import commons.WorkerStatistics;
+import datastorage.KVClient;
 import messagequeue.consumer.ConsumerManager;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;

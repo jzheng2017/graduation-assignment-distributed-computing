@@ -2,15 +2,15 @@ package coordinator.consumer;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import commons.KeyPrefix;
+import commons.LockName;
+import commons.Util;
 import coordinator.ConsumerCoordinator;
 import coordinator.ConsumerStatus;
-import commons.Util;
 import datastorage.KVClient;
 import datastorage.LockClient;
 import datastorage.WatchClient;
 import datastorage.WatchListener;
-import commons.KeyPrefix;
-import commons.LockName;
 import datastorage.dto.WatchEvent;
 import datastorage.dto.WatchResponse;
 import org.slf4j.Logger;

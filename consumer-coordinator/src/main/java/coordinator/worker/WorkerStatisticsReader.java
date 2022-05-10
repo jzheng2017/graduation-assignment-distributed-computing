@@ -1,8 +1,8 @@
 package coordinator.worker;
 
+import commons.KeyPrefix;
 import commons.WorkerStatistics;
 import datastorage.KVClient;
-import commons.KeyPrefix;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -27,7 +27,8 @@ public class WorkerStatisticsReader {
             String workerStatisticsSerialized = kvClient.get(key).thenApply(getResponse -> getResponse.keyValues().get(key)).get();
             return workerStatisticsDeserializer.deserialize(workerStatisticsSerialized);
         } catch (InterruptedException | ExecutionException e) {
-            logger.warn("Could not retrieve the worker statistics for worker '{}'", workerId, e);
+            Thread.currentThread().interrupt();
+            logger.warn("Could not retrieve the worker statistics for worker '{}' correctly", workerId, e);
             return null;
         }
     }
@@ -43,7 +44,8 @@ public class WorkerStatisticsReader {
                     .map(workerStatisticsDeserializer::deserialize)
                     .toList();
         } catch (ExecutionException | InterruptedException e) {
-            logger.warn("Could not retrieve the worker statistics", e);
+            Thread.currentThread().interrupt();
+            logger.warn("Could not retrieve the worker statistics correctly", e);
             return null;
         }
     }

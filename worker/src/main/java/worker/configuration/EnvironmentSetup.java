@@ -2,9 +2,9 @@ package worker.configuration;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import commons.KeyPrefix;
 import commons.Util;
 import datastorage.KVClient;
-import commons.KeyPrefix;
 import messagequeue.consumer.ConsumerManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -63,6 +63,7 @@ public class EnvironmentSetup implements ApplicationRunner {
                     )
                     .get();
         } catch (InterruptedException | ExecutionException e) {
+            Thread.currentThread().interrupt();
             logger.error("Could not get workers partition assignment");
         }
     }
@@ -79,6 +80,7 @@ public class EnvironmentSetup implements ApplicationRunner {
                         List.class);
                 consumers.forEach(consumerManager::registerConsumer);
             } catch (InterruptedException | ExecutionException | JsonProcessingException e) {
+                Thread.currentThread().interrupt();
                 logger.error("Could not successfully start the consumers", e);
             }
         }

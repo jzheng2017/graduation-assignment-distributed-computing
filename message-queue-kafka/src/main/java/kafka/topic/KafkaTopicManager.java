@@ -75,6 +75,7 @@ public class KafkaTopicManager implements TopicManager {
                 logger.warn("The Kafka topic with the name {} already exists.", topicConfiguration.getName());
             }
         } catch (InterruptedException | ExecutionException e) {
+            Thread.currentThread().interrupt();
             throw new FailedTopicActionException(String.format("Creating Kafka topic with the name %s failed.", topicConfiguration.getName()), e);
         }
     }
@@ -86,6 +87,7 @@ public class KafkaTopicManager implements TopicManager {
             deleteTopicsResult.topicNameValues().get(topicName).get();
             logger.info("Kafka topic with the name {} deleted", topicName);
         } catch (InterruptedException | ExecutionException e) {
+            Thread.currentThread().interrupt();
             throw new FailedTopicActionException(String.format("Could not delete topic with the name %s", topicName), e);
         }
     }
@@ -96,6 +98,7 @@ public class KafkaTopicManager implements TopicManager {
             ListTopicsResult listTopicsResult = admin.listTopics();
             return listTopicsResult.listings().get().stream().map(topic -> topic.name()).toList();
         } catch (InterruptedException | ExecutionException e) {
+            Thread.currentThread().interrupt();
             throw new FailedTopicActionException("Getting all topics failed", e);
         }
     }

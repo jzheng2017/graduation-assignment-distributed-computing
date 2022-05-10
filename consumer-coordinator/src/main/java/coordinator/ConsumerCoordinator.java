@@ -3,14 +3,14 @@ package coordinator;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import commons.ConsumerProperties;
+import commons.KeyPrefix;
+import commons.LockName;
 import commons.Util;
 import commons.WorkerStatistics;
 import coordinator.partition.PartitionManager;
 import coordinator.worker.WorkerStatisticsDeserializer;
 import datastorage.KVClient;
 import datastorage.LockClient;
-import commons.KeyPrefix;
-import commons.LockName;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -74,11 +74,13 @@ public class ConsumerCoordinator {
                             }).get();
                         } catch (JsonProcessingException e) {
                             logger.warn("Consumer '{}' could not be added as something went wrong with serialization", consumerProperties.name());
-                        } catch (ExecutionException | InterruptedException e) {
+                        } catch (InterruptedException | ExecutionException e) {
+                            Thread.currentThread().interrupt();
                             logger.warn("Consumer '{}' could not be stored successfully");
                         }
                     }).get();
         } catch (InterruptedException | ExecutionException e) {
+            Thread.currentThread().interrupt();
             logger.warn("Could not add consumer configuration '{}'", consumerProperties.name(), e);
         }
     }
@@ -92,6 +94,7 @@ public class ConsumerCoordinator {
                     logger.info("Consumer configuration '{}' has been removed", consumerId);
                 }).get();
             } catch (InterruptedException | ExecutionException e) {
+                Thread.currentThread().interrupt();
                 logger.warn("Could not properly remove consumer configuration");
             }
         } else {
@@ -125,6 +128,7 @@ public class ConsumerCoordinator {
                                     try {
                                         kvClient.put(KeyPrefix.PARTITION_CONSUMER_ASSIGNMENT + "-" + partition, serializedConsumeAssignments).get();
                                     } catch (InterruptedException | ExecutionException e) {
+                                        Thread.currentThread().interrupt();
                                         logger.warn("Could not update partition consumer assignment of partition {}", partition);
                                     }
                                 } else {
@@ -135,6 +139,7 @@ public class ConsumerCoordinator {
                 kvClient.put(KeyPrefix.CONSUMER_STATUS + "-" + consumerId, ConsumerStatus.UNASSIGNED.toString()).get();
                 logger.info("Updated status of consumer '{}' to {}", consumerId, ConsumerStatus.UNASSIGNED);
             } catch (InterruptedException | ExecutionException e) {
+                Thread.currentThread().interrupt();
                 logger.warn("Could not remove assignments of consumer '{}'", consumerId, e);
             }
             return null;
@@ -146,6 +151,7 @@ public class ConsumerCoordinator {
         try {
             workerStatistics = new ArrayList<>(kvClient.getByPrefix(KeyPrefix.WORKER_STATISTICS).get().keyValues().values().stream().map(workerStatisticsDeserializer::deserialize).toList());
         } catch (InterruptedException | ExecutionException e) {
+            Thread.currentThread().interrupt();
             logger.warn("Could not successfully retrieve and map the worker statistics", e);
         }
 
@@ -170,6 +176,7 @@ public class ConsumerCoordinator {
             kvClient.put(key, consumerStatus.toString()).get();
             logger.info("Updated status of consumer '{}' to '{}'", consumerId, consumerStatus);
         } catch (InterruptedException | ExecutionException e) {
+            Thread.currentThread().interrupt();
             logger.error("Could not update status of consumer '{}'", consumerId);
         }
     }
@@ -187,6 +194,7 @@ public class ConsumerCoordinator {
                 default -> null;
             };
         } catch (ExecutionException | InterruptedException e) {
+            Thread.currentThread().interrupt();
             logger.warn("Could not get status of consumer '{}'", consumerId, e);
             return null;
         }

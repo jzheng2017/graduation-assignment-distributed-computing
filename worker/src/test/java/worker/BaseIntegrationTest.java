@@ -1,8 +1,8 @@
 package worker;
 
+import commons.KeyPrefix;
 import datastorage.KVClient;
 import datastorage.LockClient;
-import commons.KeyPrefix;
 import datastorage.dto.GetResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;

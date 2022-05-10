@@ -1,7 +1,7 @@
 package messagequeue.consumer.builder;
 
-import messagequeue.consumer.Consumer;
 import commons.ConsumerProperties;
+import messagequeue.consumer.Consumer;
 import messagequeue.messagebroker.subscription.SubscriptionManager;
 
 import java.util.Map;
@@ -23,7 +23,7 @@ public class ConsumerBuilder {
     public Consumer createConsumer(String consumerConfiguration) {
         ConsumerProperties consumerProperties = consumerConfigurationParser.parse(consumerConfiguration);
         Consumer consumer = consumerFactory.createConsumer(consumerProperties);
-        subscriptionManager.subscribe(consumerProperties.subscriptions(), Map.of("name", consumerProperties.name(), "consumer", consumer));
+        subscriptionManager.subscribe(consumerProperties.subscriptions(), Map.of("consumer", consumer));
         return consumer;
     }
 }

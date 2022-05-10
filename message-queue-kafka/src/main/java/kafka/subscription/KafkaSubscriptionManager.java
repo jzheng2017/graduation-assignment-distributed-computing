@@ -1,7 +1,6 @@
 package kafka.subscription;
 
 import kafka.consumer.KafkaConsumer;
-import messagequeue.consumer.TopicOffset;
 import messagequeue.messagebroker.subscription.Subscription;
 import messagequeue.messagebroker.subscription.SubscriptionManager;
 import org.apache.kafka.clients.consumer.Consumer;
@@ -12,7 +11,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.util.Collection;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -26,10 +24,11 @@ public class KafkaSubscriptionManager implements SubscriptionManager {
 
     @Override
     public void subscribe(Set<String> topicList, Map<String, Object> consumerContext) {
-        final Consumer<String, String> consumer = getConsumer(consumerContext);
+        final messagequeue.consumer.Consumer consumer = ((messagequeue.consumer.Consumer) consumerContext.get("consumer"));
+        final Consumer<String, String> kafkaConsumer = getConsumer(consumerContext);
         Set<String> subscriptions = getSubscriptions(consumerContext).stream().map(Subscription::topicName).collect(Collectors.toSet());
-        subscriptions.addAll(topicList); //if there are duplicate subscriptions, then it's fine as they get left out and only leaving one in. the user doesn't need to know that as it won't have any effect on the subscription process.
-        consumer.subscribe(subscriptions, new ConsumerRebalanceListener() {
+        subscriptions.addAll(topicList);
+        kafkaConsumer.subscribe(subscriptions, new ConsumerRebalanceListener() {
             @Override
             public void onPartitionsRevoked(Collection<TopicPartition> collection) {
                 //do nothing
@@ -37,34 +36,37 @@ public class KafkaSubscriptionManager implements SubscriptionManager {
 
             @Override
             public void onPartitionsAssigned(Collection<TopicPartition> collection) {
-                collection.forEach(topicPartition -> consumer.seek(
+                collection.forEach(topicPartition -> kafkaConsumer.seek(
                                 topicPartition,
-                                ((messagequeue.consumer.Consumer) consumerContext.get("consumer")).getTopicOffset(topicPartition.topic())
+                                consumer.getTopicOffset(topicPartition.topic())
                         )
                 );
             }
         });
-        logger.info("Updated subscription list of consumer {}", consumerContext.get("name"));
+        logger.info("Updated subscription list of consumer {}", consumer.getIdentifier());
         logger.info("New subscription list: {}", subscriptions);
     }
 
     @Override
     public void unsubscribe(Set<String> topicList, Map<String, Object> consumerContext) {
-        final Consumer<String, String> consumer = getConsumer(consumerContext);
+        final messagequeue.consumer.Consumer consumer = ((messagequeue.consumer.Consumer) consumerContext.get("consumer"));
+
+        final Consumer<String, String> kafkaConsumer = getConsumer(consumerContext);
 
         Set<String> subscriptions = getSubscriptions(consumerContext).stream().map(Subscription::topicName).collect(Collectors.toSet());
         subscriptions.removeAll(topicList);
-        consumer.subscribe(subscriptions); //the way this function works is that regardless if you want to subscribe or unsubscribe, you use this function, and it will update the subscriptions based on the list.
-        logger.info("Updated subscription list of consumer {}", consumerContext.get("name"));
+        kafkaConsumer.subscribe(subscriptions); //the way this function works is that regardless if you want to subscribe or unsubscribe, you use this function, and it will update the subscriptions based on the list.
+        logger.info("Updated subscription list of consumer {}", consumer.getIdentifier());
         logger.info("New subscription list: {}", subscriptions);
     }
 
     @Override
     public Set<Subscription> getSubscriptions(Map<String, Object> consumerContext) {
-        final Consumer<String, String> consumer = getConsumer(consumerContext);
+        final messagequeue.consumer.Consumer consumer = ((messagequeue.consumer.Consumer) consumerContext.get("consumer"));
+        final Consumer<String, String> kafkaConsumer = getConsumer(consumerContext);
 
-        logger.info("Retrieving subscription list of consumer {}", consumerContext.get("name"));
-        return consumer.subscription().stream().map(Subscription::new).collect(Collectors.toSet());
+        logger.info("Retrieving subscription list of consumer {}", consumer.getIdentifier());
+        return kafkaConsumer.subscription().stream().map(Subscription::new).collect(Collectors.toSet());
     }
 
     @Override

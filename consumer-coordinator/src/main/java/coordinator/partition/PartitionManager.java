@@ -1,12 +1,11 @@
 package coordinator.partition;
 
+import commons.KeyPrefix;
+import commons.LockName;
 import commons.Util;
 import datastorage.KVClient;
 import datastorage.LockClient;
-import commons.KeyPrefix;
-import commons.LockName;
 import datastorage.dto.GetResponse;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -73,6 +72,7 @@ public class PartitionManager {
                                                         try {
                                                             kvClient.put(KeyPrefix.PARTITION_ASSIGNMENT + "-" + partition, workerId).thenAcceptAsync(putResponse -> logger.info("Partition {} has been assigned to worker '{}'", partition, workerId)).get();
                                                         } catch (InterruptedException | ExecutionException e) {
+                                                            Thread.currentThread().interrupt();
                                                             logger.error("Could not assign partition '{}' to worker '{}'", partition, workerId);
                                                         }
                                                     }
@@ -81,6 +81,7 @@ public class PartitionManager {
                                 }
                         ).get();
                     } catch (InterruptedException | ExecutionException e) {
+                        Thread.currentThread().interrupt();
                         logger.warn("Could not successfully assign partition '{}' to worker '{}'", partition, workerId, e);
                     }
                     return null;
@@ -105,6 +106,7 @@ public class PartitionManager {
                         try {
                             kvClient.delete(partitionAssignmentKey).thenAcceptAsync(deleteResponse -> logger.info("Partition assignment for partition {} removed", partition)).get();
                         } catch (InterruptedException | ExecutionException e) {
+                            Thread.currentThread().interrupt();
                             logger.warn("Could not remove partition '{}'", partition, e);
                         }
                     } else {
@@ -151,6 +153,7 @@ public class PartitionManager {
                                     Map.Entry::getValue)
                     );
         } catch (InterruptedException | ExecutionException e) {
+            Thread.currentThread().interrupt();
             logger.warn("Could not retrieve partition assignments", e);
             return new HashMap<>();
         }
@@ -174,6 +177,7 @@ public class PartitionManager {
                             putResponse.prevValue().isEmpty() ? 0 : putResponse.prevValue())
                     ).get();
         } catch (InterruptedException | ExecutionException e) {
+            Thread.currentThread().interrupt();
             logger.warn("Could not successfully create/update partition count to '{}'", partitionCount);
         }
     }
@@ -188,6 +192,7 @@ public class PartitionManager {
             final String partitionCount = kvClient.get(KeyPrefix.PARTITION_COUNT).get().keyValues().get(KeyPrefix.PARTITION_COUNT);
             return Integer.parseInt(partitionCount);
         } catch (InterruptedException | ExecutionException e) {
+            Thread.currentThread().interrupt();
             logger.warn("Could not retrieve the number of partitions. Defaulting to partition count that was known on startup.", e);
             throw new IllegalStateException("Could not get the number of partitions.", e);
         }
@@ -214,6 +219,7 @@ public class PartitionManager {
             logger.info("Partition of worker '{}' could not be found. Either the worker does not exist or it has not been assigned a partition", workerId);
             return Optional.empty();
         } catch (InterruptedException | ExecutionException e) {
+            Thread.currentThread().interrupt();
             logger.warn("Could not get partition of worker '{}'", workerId, e);
             return Optional.empty();
         }
@@ -226,6 +232,7 @@ public class PartitionManager {
                     try {
                         return kvClient.deleteByPrefix(KeyPrefix.PARTITION_ASSIGNMENT).thenAcceptAsync(deleteResponse -> assignPartitionsToWorkers()).get();
                     } catch (InterruptedException | ExecutionException e) {
+                        Thread.currentThread().interrupt();
                         logger.warn("Something went wrong will resetting and reassigning the partition assignments..", e);
                         return null;
                     }
@@ -245,6 +252,7 @@ public class PartitionManager {
 
             return Optional.ofNullable(workerId);
         } catch (InterruptedException | ExecutionException e) {
+            Thread.currentThread().interrupt();
             logger.warn("Could not retrieve worker that is assigned to partition {}", partition, e);
             return Optional.empty();
         }
@@ -278,6 +286,7 @@ public class PartitionManager {
                     .map(key -> util.getSubstringAfterPrefix(KeyPrefix.WORKER_REGISTRATION + "-", key))
                     .toList();
         } catch (InterruptedException | ExecutionException e) {
+            Thread.currentThread().interrupt();
             logger.warn("Could not get the available workers", e);
             return new ArrayList<>();
         }

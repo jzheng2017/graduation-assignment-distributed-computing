@@ -1,8 +1,10 @@
 package messagequeue.consumer;
 
 import messagequeue.consumer.builder.ConsumerBuilder;
+import messagequeue.consumer.builder.ConsumerConfigurationParser;
 import messagequeue.consumer.builder.ConsumerConfigurationStore;
 import messagequeue.consumer.taskmanager.TaskManager;
+import messagequeue.messagebroker.subscription.SubscriptionManager;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -13,7 +15,6 @@ import org.slf4j.Logger;
 
 import java.util.List;
 
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -30,12 +31,16 @@ class ConsumerManagerImplTest {
     private Logger mockedLogger;
     @Mock
     private ConsumerConfigurationStore mockedConsumerConfigurationStore;
+    @Mock
+    private ConsumerConfigurationParser consumerConfigurationParser;
+    @Mock
+    private SubscriptionManager subscriptionManager;
     private String consumerIdentifier = "steve rogers";
 
     @BeforeEach
     void setup() {
         MockitoAnnotations.openMocks(this);
-        consumerManager = new ConsumerManagerImpl(mockedLogger, mockedTaskManager, mockedConsumerConfigurationStore, mockedConsumerBuilder);
+        consumerManager = new ConsumerManagerImpl(mockedLogger, mockedTaskManager, mockedConsumerConfigurationStore, mockedConsumerBuilder, consumerConfigurationParser, subscriptionManager);
         when(mockedConsumerBuilder.createConsumer("test")).thenReturn(mockedConsumer);
         when(mockedConsumer.getIdentifier()).thenReturn(consumerIdentifier);
         when(mockedConsumerConfigurationStore.getConsumerConfiguration(consumerIdentifier)).thenReturn("test");

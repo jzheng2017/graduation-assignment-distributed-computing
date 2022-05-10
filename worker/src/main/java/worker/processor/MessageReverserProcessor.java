@@ -18,7 +18,7 @@ public class MessageReverserProcessor implements MessageProcessor {
         try {
             Thread.sleep(3000);
         } catch (InterruptedException e) {
-            e.printStackTrace();
+            Thread.currentThread().interrupt();
         }
         messageBrokerProxy.sendMessage("reversed", new StringBuilder(message).reverse().toString());
     }

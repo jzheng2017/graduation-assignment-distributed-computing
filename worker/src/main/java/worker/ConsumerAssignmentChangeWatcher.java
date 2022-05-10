@@ -2,9 +2,9 @@ package worker;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import commons.KeyPrefix;
 import datastorage.WatchClient;
 import datastorage.WatchListener;
-import commons.KeyPrefix;
 import datastorage.dto.WatchEvent;
 import datastorage.dto.WatchResponse;
 import messagequeue.consumer.ConsumerManager;
@@ -30,11 +30,13 @@ public class ConsumerAssignmentChangeWatcher {
     private Worker worker;
     private String currentKey;
     private ConsumerManager consumerManager;
+    private ConsumerConfigurationWatcher consumerConfigurationWatcher;
     private boolean watcherRunning = false;
 
-    public ConsumerAssignmentChangeWatcher(WatchClient watchClient, Worker worker, ConsumerManager consumerManager) {
+    public ConsumerAssignmentChangeWatcher(WatchClient watchClient, Worker worker, ConsumerManager consumerManager, ConsumerConfigurationWatcher consumerConfigurationWatcher) {
         this.watchClient = watchClient;
         this.worker = worker;
+        this.consumerConfigurationWatcher = consumerConfigurationWatcher;
         this.currentKey = getCurrentKey();
         this.consumerManager = consumerManager;
         watchForConsumerAssignmentChange();
@@ -73,8 +75,14 @@ public class ConsumerAssignmentChangeWatcher {
             try {
                 List<String> consumerList = new ObjectMapper().readValue(lastEvent.currentValue(), List.class);
                 Map<String, List<String>> computedConsumerState = computeAddedAndRemovedConsumers(consumerList);
-                computedConsumerState.get("added").forEach(consumerManager::registerConsumer);
-                computedConsumerState.get("removed").forEach(consumerManager::unregisterConsumer);
+                computedConsumerState.get("added").forEach(consumerId -> {
+                    consumerManager.registerConsumer(consumerId);
+                    consumerConfigurationWatcher.startWatchingConsumerConfiguration(consumerId);
+                });
+                computedConsumerState.get("removed").forEach(consumerId -> {
+                    consumerManager.unregisterConsumer(consumerId);
+                    consumerConfigurationWatcher.stopWatchingConsumerConfiguration(consumerId);
+                });
             } catch (JsonProcessingException e) {
                 logger.warn("Error parsing current consumer assignment state", e);
             }

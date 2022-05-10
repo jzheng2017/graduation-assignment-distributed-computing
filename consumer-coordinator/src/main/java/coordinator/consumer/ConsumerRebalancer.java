@@ -1,9 +1,9 @@
 package coordinator.consumer;
 
-import coordinator.ConsumerCoordinator;
-import commons.Util;
 import commons.ConsumerTaskCount;
+import commons.Util;
 import commons.WorkerStatistics;
+import coordinator.ConsumerCoordinator;
 import coordinator.worker.WorkerStatisticsReader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

@@ -1,9 +1,9 @@
 package coordinator.partition;
 
+import commons.KeyPrefix;
 import coordinator.BaseIntegrationTest;
 import coordinator.TestUtil;
 import coordinator.worker.WorkerWatcher;
-import commons.KeyPrefix;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
