@@ -40,8 +40,6 @@ class KafkaConsumerTest {
     @Mock
     private KVClient kvClient;
     @Mock
-    private LockClient lockClient;
-    @Mock
     private Util util;
     private GetResponse getResponse;
     private PutResponse putResponse;
@@ -53,7 +51,7 @@ class KafkaConsumerTest {
         TopicPartition topicPartition = new TopicPartition("test", 0);
         consumerRecords = new ConsumerRecords<>(Map.of(topicPartition, List.of(new ConsumerRecord<>("test", 0, 0L, "key", "value"))));
         ConsumerRecords<String, String> emptyConsumerRecords = new ConsumerRecords<>(Map.of());
-        kafkaConsumer = new kafka.consumer.KafkaConsumer(mockedKafkaConsumer, "kafka", mockedTaskManager, mockedMessageProcessor, kvClient, lockClient, util);
+        kafkaConsumer = new kafka.consumer.KafkaConsumer(mockedKafkaConsumer, "kafka", mockedTaskManager, mockedMessageProcessor, kvClient, util);
         when(mockedKafkaConsumer.poll(any())).thenReturn(consumerRecords).thenReturn(emptyConsumerRecords);
         getResponse = new GetResponse(new HashMap<>());
         putResponse = new PutResponse("");

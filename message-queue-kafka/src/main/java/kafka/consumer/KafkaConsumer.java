@@ -31,7 +31,7 @@ public class KafkaConsumer extends BaseConsumer {
     protected Consumer<String, String> consumer;
 
     //constructor only for unit test purposes
-    protected KafkaConsumer(org.apache.kafka.clients.consumer.KafkaConsumer<String, String> consumer, String name, TaskManager taskManager, MessageProcessor messageProcessor, KVClient kvClient, LockClient lockClient, Util util) {
+    protected KafkaConsumer(org.apache.kafka.clients.consumer.KafkaConsumer<String, String> consumer, String name, TaskManager taskManager, MessageProcessor messageProcessor, KVClient kvClient, Util util) {
         super(name, true, taskManager, messageProcessor, kvClient, util);
         this.consumer = consumer;
     }
