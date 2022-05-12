@@ -53,14 +53,14 @@ class PartitionAssignmentWatcherIntegrationTest extends BaseIntegrationTest {
 
     @Test
     void testThatAssigningAPartitionToWorkerGetsHandledCorrectly() {
-        TestUtil.waitUntil(() -> worker.getAssignedPartition() == partition, "Partition was not updated", 1000, 100);
-        TestUtil.waitUntil(() -> consumerManager.getAllConsumers().contains(consumerId), "Consumer was not started", 1000, 100);
+        TestUtil.waitUntil(() -> worker.getAssignedPartition() == partition, "Partition was not updated", 2000, 100);
+        TestUtil.waitUntil(() -> consumerManager.getAllConsumers().contains(consumerId), "Consumer was not started", 2000, 100);
     }
 
     @Test
     void testThatRemovingAPartitionFromAWorkerGetsHandledCorrectly() throws ExecutionException, InterruptedException {
-        TestUtil.waitUntil(() -> consumerManager.getAllConsumers().size() > 0, "Worker is not in a correct state", 1000, 100);
+        TestUtil.waitUntil(() -> consumerManager.getAllConsumers().size() > 0, "Worker is not in a correct state", 2000, 100);
         kvClient.delete(KeyPrefix.PARTITION_ASSIGNMENT + "-" + partition).get();
-        TestUtil.waitUntil(() -> consumerManager.getAllConsumers().isEmpty(), "Consumers were not unregistered", 1000, 100);
+        TestUtil.waitUntil(() -> consumerManager.getAllConsumers().isEmpty(), "Consumers were not unregistered", 2000, 100);
     }
 }

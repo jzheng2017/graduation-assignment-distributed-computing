@@ -55,12 +55,12 @@ public class KafkaConsumer extends BaseConsumer {
         if (batchSize > 0) {
             logger.info("Consumer '{}' found {} new message(s)", name, batchSize);
             Map<String, List<String>> messagesPerTopic = new HashMap<>();
-            records.forEach(record -> {
-                if (!messagesPerTopic.containsKey(record.topic())) {
-                    messagesPerTopic.put(record.topic(), new ArrayList<>());
+            records.forEach(consumerRecord -> {
+                if (!messagesPerTopic.containsKey(consumerRecord.topic())) {
+                    messagesPerTopic.put(consumerRecord.topic(), new ArrayList<>());
                 }
 
-                messagesPerTopic.get(record.topic()).add(record.value());
+                messagesPerTopic.get(consumerRecord.topic()).add(consumerRecord.value());
             });
 
             return messagesPerTopic;

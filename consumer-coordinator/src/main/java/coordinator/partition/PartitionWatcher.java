@@ -1,7 +1,6 @@
 package coordinator.partition;
 
 import commons.KeyPrefix;
-import datastorage.KVClient;
 import datastorage.WatchClient;
 import datastorage.WatchListener;
 import datastorage.dto.WatchEvent;

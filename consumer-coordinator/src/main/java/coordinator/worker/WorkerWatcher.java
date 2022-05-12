@@ -3,7 +3,6 @@ package coordinator.worker;
 import commons.KeyPrefix;
 import commons.Util;
 import coordinator.partition.PartitionManager;
-import datastorage.KVClient;
 import datastorage.WatchClient;
 import datastorage.WatchListener;
 import datastorage.dto.WatchEvent;

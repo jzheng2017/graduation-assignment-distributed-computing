@@ -105,7 +105,7 @@ class KafkaConsumerTest {
         TestUtil.waitUntil(() -> kafkaConsumer.isRunning(), "Kafka consumer couldn't start", 1000, 100); //give kafka consumer time to start properly
         TestUtil.waitUntil(() -> {
             try {
-                verify(mockedKafkaConsumer, atLeastOnce()).commitSync(any(Map.class));
+                verify(mockedKafkaConsumer).commitSync(any(Map.class));
                 return true;
             } catch (Throwable ex) {
                 return false;

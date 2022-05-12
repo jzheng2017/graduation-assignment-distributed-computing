@@ -3,7 +3,6 @@ package worker.processor.builder;
 import commons.ConsumerProperties;
 import commons.Util;
 import datastorage.KVClient;
-import datastorage.LockClient;
 import kafka.configuration.KafkaProperties;
 import kafka.consumer.KafkaConsumer;
 import kafka.consumer.KafkaConsumerBuilderHelper;

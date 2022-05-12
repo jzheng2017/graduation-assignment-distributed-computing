@@ -53,16 +53,16 @@ class ConsumerAssignmentChangeWatcherIntegrationTest extends BaseIntegrationTest
     void testThatAddingAConsumerToThePartitionOfTheWorkerGetsStarted() throws JsonProcessingException, ExecutionException, InterruptedException {
         kvClient.put(KeyPrefix.CONSUMER_CONFIGURATION + "-" + consumerId, consumerConfiguration).get();
         kvClient.put(KeyPrefix.PARTITION_CONSUMER_ASSIGNMENT + "-" + partition, new ObjectMapper().writeValueAsString(List.of(consumerId))).get();
-        TestUtil.waitUntil(() -> consumerManager.getAllConsumers().contains(consumerId), "Consumer was not added", 1000, 100);
+        TestUtil.waitUntil(() -> consumerManager.getAllConsumers().contains(consumerId), "Consumer was not added", 2000, 100);
     }
 
     @Test
     void testThatRemovingAConsumerFromThePartitionOfTheWorkerGetsStopped() throws ExecutionException, JsonProcessingException, InterruptedException {
         kvClient.put(KeyPrefix.CONSUMER_CONFIGURATION + "-" + consumerId, consumerConfiguration).get();
         kvClient.put(KeyPrefix.PARTITION_CONSUMER_ASSIGNMENT + "-" + partition, new ObjectMapper().writeValueAsString(List.of(consumerId))).get();
-        TestUtil.waitUntil(() -> consumerManager.getAllConsumers().contains(consumerId), "Consumer was not added", 1000, 100);
+        TestUtil.waitUntil(() -> consumerManager.getAllConsumers().contains(consumerId), "Consumer was not added", 2000, 100);
 
         kvClient.put(KeyPrefix.PARTITION_CONSUMER_ASSIGNMENT + "-" + partition, new ObjectMapper().writeValueAsString(List.of())).get();
-        TestUtil.waitUntil(() -> consumerManager.getAllConsumers().isEmpty(), "Consumer was removed", 1000, 100);
+        TestUtil.waitUntil(() -> consumerManager.getAllConsumers().isEmpty(), "Consumer was removed", 2000, 100);
     }
 }

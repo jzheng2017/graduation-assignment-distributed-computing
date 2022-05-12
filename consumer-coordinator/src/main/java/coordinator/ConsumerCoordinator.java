@@ -7,7 +7,6 @@ import commons.KeyPrefix;
 import commons.LockName;
 import commons.Util;
 import commons.WorkerStatistics;
-import coordinator.partition.PartitionManager;
 import coordinator.worker.WorkerStatisticsDeserializer;
 import datastorage.KVClient;
 import datastorage.LockClient;
