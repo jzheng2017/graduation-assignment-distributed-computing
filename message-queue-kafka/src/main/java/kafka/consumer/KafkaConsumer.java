@@ -2,7 +2,6 @@ package kafka.consumer;
 
 import commons.Util;
 import datastorage.KVClient;
-import datastorage.LockClient;
 import messagequeue.consumer.BaseConsumer;
 import messagequeue.consumer.MessageProcessor;
 import messagequeue.consumer.TaskPackageResult;
