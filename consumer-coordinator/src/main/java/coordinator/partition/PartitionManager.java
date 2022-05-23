@@ -20,6 +20,8 @@ import java.util.stream.Collectors;
 
 /**
  * This class is responsible for managing partitions such as assigning partition to workers and computing best partition.
+ * A partition is used to divide the consumers over the cluster where each worker is responsible for a single partition.
+ * The worker is then responsible to make sure the consumers that are assigned to its partition is running and consuming messages.
  */
 @Service
 public class PartitionManager {

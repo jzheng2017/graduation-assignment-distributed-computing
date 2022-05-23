@@ -15,6 +15,11 @@ import org.springframework.stereotype.Service;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+/**
+ * This watcher is responsible for watching for changes to all consumer configurations of consumers that it is responsible for.
+ * That means all consumers that have been assigned to the partition the worker has been assigned to.
+ * If a consumer configuration has changed then it will pass the new configuration to the consumer manager so that it can "refresh" the consumer. For instance updating the topics the consumer is subscribed to.
+ */
 @Service
 @Profile(value = {"dev", "kubernetes"})
 public class ConsumerConfigurationWatcher {

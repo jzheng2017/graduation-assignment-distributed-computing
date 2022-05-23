@@ -24,8 +24,8 @@ public class RetryUtil {
                     retries++;
                     logger.warn("Retry failed! Number of retries: {}. Sleeping for {} ms..", retries, duration);
                     Thread.sleep(duration);
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
+                } catch (InterruptedException ignored) {
+                    //it's sleeping
                 }
             }
         }

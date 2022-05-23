@@ -20,7 +20,10 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * This watcher is responsible for listening to changes to all consumer assignments that is related to the partition that has been assigned to the {@link Worker}
+ * This watcher is responsible for listening to changes to all consumer assignments that is related to the partition that has been assigned to the {@link Worker}.
+ * If a consumer has been assigned to the partition then the worker will register and start the consumer.
+ * If a consumer has been unassigned from the partition then the worker will stop and unregister the consumer.
+ * If the worker has been assigned a new partition then it will stop and remove all consumer it is running and register and start the new consumers that have been assigned to the new partition.
  */
 @Service
 @Profile(value = {"dev", "kubernetes"})

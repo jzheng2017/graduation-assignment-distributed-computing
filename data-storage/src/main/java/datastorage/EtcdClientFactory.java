@@ -50,6 +50,7 @@ public class EtcdClientFactory {
     }
 
     private void checkForConnection(Client client) {
+        final long FIVE_MINUTES_IN_MS = 300000L;
         //just make a call to etcd to see if it responds
         logger.info("Checking for successful connect with etcd..");
         retryUtil.waitUntilSuccess(
@@ -62,7 +63,7 @@ public class EtcdClientFactory {
                     }
                     return null;
                 },
-                60000, //1 minute
+                FIVE_MINUTES_IN_MS,
                 5000L); //retry every 5 secs
     }
 }

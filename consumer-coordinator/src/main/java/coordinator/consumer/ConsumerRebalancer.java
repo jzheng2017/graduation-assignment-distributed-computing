@@ -13,6 +13,11 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 
+/**
+ * This class is responsible for maintaining a healthy workload balance between all workers. That is to say that one worker should not have a much higher workload than another worker.
+ * This goal is achieved by periodically checking the execution statistics of the workers. If a great difference in the amount of work has been detected then a rebalance process will be started.
+ * The rebalance process consists of moving one or more consumers from the worker that has a big work load to the worker that has a smaller work load. This results in a better spread out workload.
+ */
 @Service
 @Profile(value = {"dev", "kubernetes"})
 public class ConsumerRebalancer {

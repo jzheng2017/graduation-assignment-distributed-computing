@@ -21,7 +21,9 @@ import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 
 /**
- * This watcher is responsible for listening to a new partition assignment for this worker
+ * This watcher is responsible for listening to a new partition assignment for this worker.
+ * When it has been assigned a new partition it will subsequently retrieve all consumers that has been assigned to that partition. It will then start and run these consumers.
+ * When the partition assignment has been removed from the worker then it will subsequently stop and remove all consumers that the worker is running.
  */
 @Service
 @Profile(value = {"dev", "kubernetes"})
