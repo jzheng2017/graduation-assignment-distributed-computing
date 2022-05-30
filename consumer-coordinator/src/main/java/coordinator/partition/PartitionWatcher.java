@@ -14,7 +14,7 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 
 /**
- * This watcher is responsible for listening to partition count change. If the number of partitions has been changed then it has to be reset and reassigned evenly over the available workers.
+ * This watcher is responsible for listening to partition concurrentTaskCount change. If the number of partitions has been changed then it has to be reset and reassigned evenly over the available workers.
  */
 @Service
 @Profile(value = {"dev", "kubernetes"})

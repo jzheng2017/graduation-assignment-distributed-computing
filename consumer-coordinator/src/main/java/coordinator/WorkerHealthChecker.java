@@ -23,6 +23,7 @@ public class WorkerHealthChecker {
     private KVClient kvClient;
     private Util util;
     private PartitionManager partitionManager;
+
     public WorkerHealthChecker(KVClient kvClient, Util util, PartitionManager partitionManager) {
         this.kvClient = kvClient;
         this.util = util;
@@ -57,20 +58,17 @@ public class WorkerHealthChecker {
         if (partition.isPresent()) {
             partitionAssignmentKey = KeyPrefix.PARTITION_ASSIGNMENT + "-" + partition.get();
         }
-        if (kvClient.keyExists(registrationKey)) {
-            try {
-                kvClient.delete(registrationKey).thenAcceptAsync(deleteResponse -> logger.info("Worker '{}' has been unregistered", workerId)).get();
-                kvClient.delete(statisticsKey).thenAcceptAsync(deleteResponse -> logger.info("Consumer statistics of worker '{}' removed", workerId)).get();
-                if (partitionAssignmentKey != null) {
-                    kvClient.delete(partitionAssignmentKey).thenAcceptAsync(deleteResponse -> logger.info("Removed worker '{}' partition assignment", workerId)).get();
-                }
-                kvClient.delete(workerHeartbeatKey).thenAcceptAsync(deleteResponse -> logger.info("Removed worker '{}' heartbeat", workerId)).get();
-            } catch (InterruptedException | ExecutionException e) {
-                Thread.currentThread().interrupt();
-                logger.error("Could not unregister worker '{}'", workerId, e);
+
+        try {
+            kvClient.delete(registrationKey).thenAcceptAsync(deleteResponse -> logger.info("Worker '{}' has been unregistered", workerId)).get();
+            kvClient.delete(statisticsKey).thenAcceptAsync(deleteResponse -> logger.info("Consumer statistics of worker '{}' removed", workerId)).get();
+            if (partitionAssignmentKey != null) {
+                kvClient.delete(partitionAssignmentKey).thenAcceptAsync(deleteResponse -> logger.info("Removed worker '{}' partition assignment", workerId)).get();
             }
-        } else {
-            logger.warn("Can not unregister worker '{}' because it is not registered", workerId);
+            kvClient.delete(workerHeartbeatKey).thenAcceptAsync(deleteResponse -> logger.info("Removed worker '{}' heartbeat", workerId)).get();
+        } catch (InterruptedException | ExecutionException e) {
+            Thread.currentThread().interrupt();
+            logger.error("Could not unregister worker '{}'", workerId, e);
         }
     }
 }

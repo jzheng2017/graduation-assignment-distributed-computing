@@ -61,6 +61,7 @@ public interface ConsumerManager {
 
     Map<String, Integer> getTotalRunningTasksForAllConsumers();
 
+    Map<String, Integer> getRemainingTasksForAllConsumers();
     int getTotalNumberOfTasksInQueue();
 
     long getTotalNumberOfCompletedTasks();

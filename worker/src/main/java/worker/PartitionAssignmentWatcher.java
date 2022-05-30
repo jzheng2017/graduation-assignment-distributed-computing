@@ -71,6 +71,9 @@ public class PartitionAssignmentWatcher {
                     .filter(
                             event -> {
                                 int partition = Integer.parseInt(util.getSubstringAfterPrefix(KeyPrefix.PARTITION_ASSIGNMENT + "-", event.currentKey()));
+                                if (partition < 0) {
+                                    return false;
+                                }
                                 String workerId = event.currentValue();
                                 final boolean isPutEvent = event.eventType() == WatchEvent.EventType.PUT && partition != worker.getAssignedPartition() && workerId.equals(worker.getIdentifier());
                                 final boolean isDeleteEvent = event.eventType() == WatchEvent.EventType.DELETE && partition == worker.getAssignedPartition();
@@ -108,7 +111,7 @@ public class PartitionAssignmentWatcher {
 
             try {
                 if (kvClient.keyExists(KeyPrefix.PARTITION_CONSUMER_ASSIGNMENT + "-" + worker.getAssignedPartition())) {
-                    List<String> consumers = new ObjectMapper().readValue(
+                    List<String> consumers = util.toObject(
                             kvClient.get(key)
                                     .get()
                                     .keyValues()
@@ -120,7 +123,7 @@ public class PartitionAssignmentWatcher {
                     });
                     logger.info("Successfully registered all consumers of new partition");
                 }
-            } catch (JsonProcessingException | InterruptedException | ExecutionException e) {
+            } catch (InterruptedException | ExecutionException e) {
                 Thread.currentThread().interrupt();
                 logger.error("Could not successfully start the consumers", e);
             }

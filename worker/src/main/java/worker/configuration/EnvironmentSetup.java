@@ -72,14 +72,14 @@ public class EnvironmentSetup implements ApplicationRunner {
         if (worker.getAssignedPartition() >= 0) {
             try {
                 final String key = KeyPrefix.PARTITION_CONSUMER_ASSIGNMENT + "-" + worker.getAssignedPartition();
-                List<String> consumers = new ObjectMapper().readValue(
+                List<String> consumers = util.toObject(
                         kvClient.get(key)
                                 .get()
                                 .keyValues()
                                 .get(key),
                         List.class);
                 consumers.forEach(consumerManager::registerConsumer);
-            } catch (InterruptedException | ExecutionException | JsonProcessingException e) {
+            } catch (InterruptedException | ExecutionException e) {
                 Thread.currentThread().interrupt();
                 logger.error("Could not successfully start the consumers", e);
             }

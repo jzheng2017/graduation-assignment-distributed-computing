@@ -55,11 +55,20 @@ public class KafkaConsumer extends BaseConsumer {
             logger.info("Consumer '{}' found {} new message(s)", name, batchSize);
             Map<String, List<String>> messagesPerTopic = new HashMap<>();
             records.forEach(consumerRecord -> {
-                if (!messagesPerTopic.containsKey(consumerRecord.topic())) {
-                    messagesPerTopic.put(consumerRecord.topic(), new ArrayList<>());
+                final int topicNameEndIndex = consumerRecord.topic().indexOf("-");
+                String topicName;
+
+                if (topicNameEndIndex > 0) {
+                    topicName = consumerRecord.topic().substring(0, topicNameEndIndex);
+                } else {
+                    topicName = consumerRecord.topic();
                 }
 
-                messagesPerTopic.get(consumerRecord.topic()).add(consumerRecord.value());
+                if (!messagesPerTopic.containsKey(topicName)) {
+                    messagesPerTopic.put(topicName, new ArrayList<>());
+                }
+
+                messagesPerTopic.get(topicName).add(consumerRecord.value());
             });
 
             return messagesPerTopic;
@@ -85,7 +94,7 @@ public class KafkaConsumer extends BaseConsumer {
                             Collectors
                                     .toMap(
                                             entry -> new TopicPartition(entry.topic(), 0),
-                                            entry -> new OffsetAndMetadata(getTopicOffset(entry.topic() + entry.totalProcessed()))
+                                            entry -> new OffsetAndMetadata(getTopicOffset(entry.topic()))
                                     )
                     );
             consumer.commitSync(offsets);

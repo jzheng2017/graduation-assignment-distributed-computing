@@ -42,7 +42,7 @@ class PartitionWatcherIntegrationTest extends BaseIntegrationTest {
                 100
         );
 
-        //change partition count
+        //change partition concurrentTaskCount
         partitionManager.createPartitions(newPartitionCount);
 
         TestUtil.waitUntil(() -> newPartitionCount == partitionManager.getPartitionAssignments().size(), "", 1000, 100);

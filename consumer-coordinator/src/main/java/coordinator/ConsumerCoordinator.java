@@ -18,6 +18,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
@@ -38,12 +39,8 @@ public class ConsumerCoordinator {
 
     public void addConsumerConfiguration(String consumerConfiguration) {
         ConsumerProperties consumerProperties;
-        try {
-            consumerProperties = new ObjectMapper().readValue(consumerConfiguration, ConsumerProperties.class);
-            addConsumerConfiguration(consumerProperties);
-        } catch (JsonProcessingException e) {
-            throw new IllegalArgumentException("Could not successfully parse the consumer configuration", e);
-        }
+        consumerProperties = util.toObject(consumerConfiguration, ConsumerProperties.class);
+        addConsumerConfiguration(consumerProperties);
     }
 
     public void addConsumerConfiguration(ConsumerProperties consumerProperties) {
@@ -53,7 +50,7 @@ public class ConsumerCoordinator {
                     .thenAccept(getResponse -> {
                         try {
                             final String storedConsumerConfiguration = getResponse.keyValues().get(key);
-                            final String newConsumerConfiguration = new ObjectMapper().writeValueAsString(consumerProperties);
+                            final String newConsumerConfiguration = util.serialize(consumerProperties);
 
                             if (newConsumerConfiguration.equals(storedConsumerConfiguration)) {
                                 logger.warn("Consumer configuration '{}' was not added because the provided configuration is identical to what is stored", consumerProperties.name());
@@ -68,8 +65,6 @@ public class ConsumerCoordinator {
                                     logger.info("Consumer configuration '{}' was already present. The configuration has now been updated.", consumerProperties.name());
                                 }
                             }).get();
-                        } catch (JsonProcessingException e) {
-                            logger.warn("Consumer '{}' could not be added as something went wrong with serialization", consumerProperties.name());
                         } catch (InterruptedException | ExecutionException e) {
                             Thread.currentThread().interrupt();
                             logger.warn("Consumer '{}' could not be stored successfully", consumerProperties.name());
@@ -102,7 +97,7 @@ public class ConsumerCoordinator {
         lockClient.acquireLockAndExecute(LockName.PARTITION_CONSUMER_ASSIGNMENT_LOCK, () -> {
             try {
                 kvClient.getByPrefix(KeyPrefix.PARTITION_CONSUMER_ASSIGNMENT).thenAcceptAsync(getResponse -> {
-                    Map<String, String> partitionConsumerAssignments = getResponse
+                    getResponse
                             .keyValues()
                             .entrySet()
                             .stream()
@@ -111,26 +106,26 @@ public class ConsumerCoordinator {
                                         List<String> consumerAssignments = util.toObject(entry.getValue(), List.class);
                                         return consumerAssignments.contains(consumerId);
                                     })
-                            .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+                            .forEach(
+                                    entry -> {
+                                        String key = entry.getKey();
+                                        String value = entry.getValue();
+                                        final int partition = Integer.parseInt(util.getSubstringAfterPrefix(KeyPrefix.PARTITION_CONSUMER_ASSIGNMENT + "-", key));
+                                        final List<String> consumerAssignments = util.toObject(value, List.class);
+                                        consumerAssignments.remove(consumerId);
+                                        final String serializedConsumeAssignments = util.serialize(consumerAssignments);
 
-                    partitionConsumerAssignments.forEach(
-                            (key, value) -> {
-                                final int partition = Integer.parseInt(util.getSubstringAfterPrefix(KeyPrefix.PARTITION_CONSUMER_ASSIGNMENT + "-", key));
-                                final List<String> consumerAssignments = util.toObject(value, List.class);
-                                consumerAssignments.remove(consumerId);
-                                final String serializedConsumeAssignments = util.serialize(consumerAssignments);
-
-                                if (serializedConsumeAssignments != null) {
-                                    try {
-                                        kvClient.put(KeyPrefix.PARTITION_CONSUMER_ASSIGNMENT + "-" + partition, serializedConsumeAssignments).get();
-                                    } catch (InterruptedException | ExecutionException e) {
-                                        Thread.currentThread().interrupt();
-                                        logger.warn("Could not update partition consumer assignment of partition {}", partition);
-                                    }
-                                } else {
-                                    logger.warn("Could not remove consumer from consumer assignments due to failure in serialization");
-                                }
-                            });
+                                        if (serializedConsumeAssignments != null) {
+                                            try {
+                                                kvClient.put(KeyPrefix.PARTITION_CONSUMER_ASSIGNMENT + "-" + partition, serializedConsumeAssignments).get();
+                                            } catch (InterruptedException | ExecutionException e) {
+                                                Thread.currentThread().interrupt();
+                                                logger.warn("Could not update partition consumer assignment of partition {}", partition);
+                                            }
+                                        } else {
+                                            logger.warn("Could not remove consumer from consumer assignments due to failure in serialization");
+                                        }
+                                    });
                 }).get();
                 kvClient.put(KeyPrefix.CONSUMER_STATUS + "-" + consumerId, ConsumerStatus.UNASSIGNED.toString()).get();
                 logger.info("Updated status of consumer '{}' to {}", consumerId, ConsumerStatus.UNASSIGNED);
@@ -158,10 +153,11 @@ public class ConsumerCoordinator {
 
         workerStatistics.sort(
                 Comparator
-                        .comparing(util::getTotalConcurrentTasks)
-                        .thenComparing(WorkerStatistics::totalTasksInQueue)
+                        .comparing(WorkerStatistics::totalTasksInQueue)
                         .thenComparing(WorkerStatistics::totalTasksCompleted)
+                        .thenComparing(workerStatistic -> workerStatistic.activeConsumers().size())
         );
+
         final int partition = workerStatistics.get(0).partition();
         logger.info("Best partition computed for consumer '{}', namely partition: {}", consumerId, partition);
 

@@ -76,17 +76,24 @@ public class TaskManager {
                 .collect(Collectors.toMap(Map.Entry::getKey, entry -> entry.getValue().size()));
     }
 
+    public Map<String, Integer> getTotalNumberOfRemainingTasksForAllConsumers() {
+        return activeTaskPackagesPerConsumer
+                .entrySet()
+                .stream()
+                .collect(Collectors.toMap(Map.Entry::getKey, entry -> entry.getValue().stream().mapToInt(TaskPackage::getRemainingTaskCount).sum()));
+    }
+
     public int getTotalNumberOfTasksInQueue() {
         return (int) activeTaskPackagesPerConsumer
                 .values()
                 .stream()
-                .map(
+                .mapToInt(
                         taskPackages -> taskPackages
                                 .stream()
-                                .map(TaskPackage::getRemainingTaskCount)
-                                .count()
+                                .mapToInt(TaskPackage::getRemainingTaskCount)
+                                .sum()
                 )
-                .count();
+                .sum();
     }
 
     public int getTotalNumberOfTasksCurrentlyExecuting() {

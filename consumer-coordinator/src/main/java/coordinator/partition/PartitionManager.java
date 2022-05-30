@@ -158,7 +158,7 @@ public class PartitionManager {
     }
 
     /**
-     * Replace the current number of partitions by the new partition count
+     * Replace the current number of partitions by the new partition concurrentTaskCount
      *
      * @param partitionCount the number of partitions
      */
@@ -170,13 +170,13 @@ public class PartitionManager {
         try {
             kvClient.put(KeyPrefix.PARTITION_COUNT, Integer.toString(partitionCount))
                     .thenAcceptAsync(putResponse -> logger.info(
-                            "Updated partition count to {}, old partition count was: {}",
+                            "Updated partition concurrentTaskCount to {}, old partition concurrentTaskCount was: {}",
                             partitionCount,
                             putResponse.prevValue().isEmpty() ? 0 : putResponse.prevValue())
                     ).get();
         } catch (InterruptedException | ExecutionException e) {
             Thread.currentThread().interrupt();
-            logger.warn("Could not successfully create/update partition count to '{}'", partitionCount);
+            logger.warn("Could not successfully create/update partition concurrentTaskCount to '{}'", partitionCount);
         }
     }
 

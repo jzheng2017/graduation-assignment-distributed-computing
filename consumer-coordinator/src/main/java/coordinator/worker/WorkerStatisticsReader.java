@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.concurrent.ExecutionException;
+import java.util.stream.Collectors;
 
 @Service
 public class WorkerStatisticsReader {
@@ -43,7 +44,7 @@ public class WorkerStatisticsReader {
                     .values()
                     .stream()
                     .map(workerStatisticsDeserializer::deserialize)
-                    .toList();
+                    .collect(Collectors.toList());
         } catch (ExecutionException | InterruptedException e) {
             Thread.currentThread().interrupt();
             logger.warn("Could not retrieve the worker statistics correctly", e);

@@ -11,6 +11,7 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
+import java.util.Comparator;
 import java.util.List;
 
 /**
@@ -27,6 +28,7 @@ public class ConsumerRebalancer {
     private ConsumerCoordinator consumerCoordinator;
     private WorkerStatisticsReader workerStatisticsReader;
     private Util util;
+
     public ConsumerRebalancer(ConsumerCoordinator consumerCoordinator, WorkerStatisticsReader workerStatisticsReader, Util util) {
         this.consumerCoordinator = consumerCoordinator;
         this.workerStatisticsReader = workerStatisticsReader;
@@ -40,43 +42,38 @@ public class ConsumerRebalancer {
             return;
         }
 
-        WorkerStatistics busiestInstance = workerStatistics.get(0);
-        WorkerStatistics leastBusyInstance = workerStatistics.get(0);
-        int busiestInstanceConcurrentTaskCount = Integer.MIN_VALUE;
-        int leastBusyInstanceConcurrentTaskCount = Integer.MAX_VALUE;
 
-        for (WorkerStatistics workerStatistic : workerStatistics) {
-            int currentInstanceConcurrentTaskCount = util.getTotalConcurrentTasks(workerStatistic);
-            busiestInstanceConcurrentTaskCount = util.getTotalConcurrentTasks(busiestInstance);
-            leastBusyInstanceConcurrentTaskCount = util.getTotalConcurrentTasks(leastBusyInstance);
+        workerStatistics.sort(Comparator.comparing(WorkerStatistics::totalTasksInQueue));
+        WorkerStatistics leastBusyWorker = workerStatistics.get(0);
+        WorkerStatistics busiestWorker = workerStatistics.get(workerStatistics.size() - 1);
 
-            if (currentInstanceConcurrentTaskCount > busiestInstanceConcurrentTaskCount) {
-                busiestInstance = workerStatistic;
-            }
+        final int taskInQueueDifferenceBetweenBusiestAndLeastBusyWorker = busiestWorker.totalTasksInQueue() - leastBusyWorker.totalTasksInQueue();
 
-            if (currentInstanceConcurrentTaskCount < leastBusyInstanceConcurrentTaskCount) {
-                leastBusyInstance = workerStatistic;
-            }
-        }
+        if (taskInQueueDifferenceBetweenBusiestAndLeastBusyWorker >= MAX_DIFFERENCE_IN_CONSUMPTION_BEFORE_REBALANCE) {
 
-        final int consumptionDifferenceBetweenBusiestAndLeastBusyInstance = busiestInstanceConcurrentTaskCount - leastBusyInstanceConcurrentTaskCount;
-
-        if (consumptionDifferenceBetweenBusiestAndLeastBusyInstance >= MAX_DIFFERENCE_IN_CONSUMPTION_BEFORE_REBALANCE) {
-            logger.warn("A consumer rebalance will be performed due to consumption imbalance between busiest and least busy instance, namely a difference of {} tasks", consumptionDifferenceBetweenBusiestAndLeastBusyInstance);
-
-            if (busiestInstance.concurrentTasksPerConsumer().isEmpty()) {
+            if (busiestWorker.concurrentTasksPerConsumer().isEmpty()) {
                 return;
             }
 
-            ConsumerTaskCount busiestConsumer = busiestInstance.concurrentTasksPerConsumer().get(0);
-
-            for (ConsumerTaskCount consumer : busiestInstance.concurrentTasksPerConsumer()) {
-                if (consumer.count() > busiestConsumer.count()) {
-                    busiestConsumer = consumer;
-                }
+            ConsumerTaskCount busiestConsumer = getBusiestConsumerThatWillNotCauseAnotherRebalance(busiestWorker, leastBusyWorker);
+            if (busiestConsumer != null) {
+                logger.warn("A consumer rebalance will be performed due to consumption imbalance between busiest and least busy worker, namely a difference of {} tasks", taskInQueueDifferenceBetweenBusiestAndLeastBusyWorker);
+                consumerCoordinator.removeConsumerAssignment(busiestConsumer.consumerId());
             }
-
-            consumerCoordinator.removeConsumerAssignment(busiestConsumer.consumerId());
         }
+    }
+
+    private ConsumerTaskCount getBusiestConsumerThatWillNotCauseAnotherRebalance(WorkerStatistics busiestWorker, WorkerStatistics leastBusyWorker) {
+        ConsumerTaskCount busiestConsumer = busiestWorker.concurrentTasksPerConsumer().get(0);
+        boolean consumerFound = false;
+        for (ConsumerTaskCount consumer : busiestWorker.concurrentTasksPerConsumer()) {
+            final boolean reassignmentWillNotCauseAnotherRebalance = (busiestWorker.totalTasksInQueue() - busiestConsumer.remainingTasksInQueue()) - (leastBusyWorker.totalTasksInQueue() + busiestConsumer.remainingTasksInQueue()) < MAX_DIFFERENCE_IN_CONSUMPTION_BEFORE_REBALANCE;
+            if (consumer.remainingTasksInQueue() > busiestConsumer.remainingTasksInQueue() && reassignmentWillNotCauseAnotherRebalance) {
+                busiestConsumer = consumer;
+                consumerFound = true;
+            }
+        }
+
+        return consumerFound ? busiestConsumer : null;
     }
 }

@@ -28,6 +28,7 @@ import java.util.Map;
 @Service
 @Profile(value = {"dev", "kubernetes"})
 public class ConsumerAssignmentChangeWatcher {
+    private static final ObjectMapper mapper = new ObjectMapper();
     private Logger logger = LoggerFactory.getLogger(ConsumerAssignmentChangeWatcher.class);
     private WatchClient watchClient;
     private Worker worker;
@@ -76,7 +77,7 @@ public class ConsumerAssignmentChangeWatcher {
         public void onNext(WatchResponse watchResponse) {
             WatchEvent lastEvent = watchResponse.events().get(watchResponse.events().size() - 1); //we only care about the last state
             try {
-                List<String> consumerList = new ObjectMapper().readValue(lastEvent.currentValue(), List.class);
+                List<String> consumerList = mapper.readValue(lastEvent.currentValue(), List.class);
                 Map<String, List<String>> computedConsumerState = computeAddedAndRemovedConsumers(consumerList);
                 computedConsumerState.get("added").forEach(consumerId -> {
                     consumerManager.registerConsumer(consumerId);

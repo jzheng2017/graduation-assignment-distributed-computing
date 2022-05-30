@@ -12,11 +12,11 @@ import java.util.concurrent.ExecutionException;
  * A configuration store that allows one to retrieve consumer configurations
  */
 @Service
-public class ConsumerConfigurationStore {
-    private Logger logger = LoggerFactory.getLogger(ConsumerConfigurationStore.class);
+public class ConsumerConfigurationReader {
+    private Logger logger = LoggerFactory.getLogger(ConsumerConfigurationReader.class);
     private KVClient kvClient;
 
-    public ConsumerConfigurationStore(KVClient kvClient) {
+    public ConsumerConfigurationReader(KVClient kvClient) {
         this.kvClient = kvClient;
     }
 

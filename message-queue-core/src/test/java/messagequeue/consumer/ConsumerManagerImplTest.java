@@ -2,7 +2,7 @@ package messagequeue.consumer;
 
 import messagequeue.consumer.builder.ConsumerBuilder;
 import messagequeue.consumer.builder.ConsumerConfigurationParser;
-import messagequeue.consumer.builder.ConsumerConfigurationStore;
+import messagequeue.consumer.builder.ConsumerConfigurationReader;
 import messagequeue.consumer.taskmanager.TaskManager;
 import messagequeue.messagebroker.subscription.SubscriptionManager;
 import org.junit.jupiter.api.Assertions;
@@ -30,7 +30,7 @@ class ConsumerManagerImplTest {
     @Mock
     private Logger mockedLogger;
     @Mock
-    private ConsumerConfigurationStore mockedConsumerConfigurationStore;
+    private ConsumerConfigurationReader mockedConsumerConfigurationReader;
     @Mock
     private ConsumerConfigurationParser consumerConfigurationParser;
     @Mock
@@ -40,10 +40,10 @@ class ConsumerManagerImplTest {
     @BeforeEach
     void setup() {
         MockitoAnnotations.openMocks(this);
-        consumerManager = new ConsumerManagerImpl(mockedLogger, mockedTaskManager, mockedConsumerConfigurationStore, mockedConsumerBuilder, consumerConfigurationParser, subscriptionManager);
+        consumerManager = new ConsumerManagerImpl(mockedLogger, mockedTaskManager, mockedConsumerConfigurationReader, mockedConsumerBuilder, consumerConfigurationParser, subscriptionManager);
         when(mockedConsumerBuilder.createConsumer("test")).thenReturn(mockedConsumer);
         when(mockedConsumer.getIdentifier()).thenReturn(consumerIdentifier);
-        when(mockedConsumerConfigurationStore.getConsumerConfiguration(consumerIdentifier)).thenReturn("test");
+        when(mockedConsumerConfigurationReader.getConsumerConfiguration(consumerIdentifier)).thenReturn("test");
     }
 
     @Test

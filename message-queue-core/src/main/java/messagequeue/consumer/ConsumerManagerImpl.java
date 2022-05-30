@@ -3,7 +3,7 @@ package messagequeue.consumer;
 import commons.ConsumerProperties;
 import messagequeue.consumer.builder.ConsumerBuilder;
 import messagequeue.consumer.builder.ConsumerConfigurationParser;
-import messagequeue.consumer.builder.ConsumerConfigurationStore;
+import messagequeue.consumer.builder.ConsumerConfigurationReader;
 import messagequeue.consumer.taskmanager.TaskManager;
 import messagequeue.messagebroker.subscription.SubscriptionManager;
 import org.slf4j.Logger;
@@ -24,28 +24,28 @@ public class ConsumerManagerImpl implements ConsumerManager {
     private final Map<String, Consumer> consumers = new ConcurrentHashMap<>();
     private final Set<String> consumersScheduledForRemoval = Collections.newSetFromMap(new ConcurrentHashMap<>());
     private final TaskManager taskManager;
-    private ConsumerConfigurationStore consumerConfigurationStore;
+    private ConsumerConfigurationReader consumerConfigurationReader;
     private ConsumerBuilder consumerBuilder;
     private ConsumerConfigurationParser consumerConfigurationParser;
     private SubscriptionManager subscriptionManager;
 
     //for unit test purposes only
-    protected ConsumerManagerImpl(Logger logger, TaskManager taskManager, ConsumerConfigurationStore consumerConfigurationStore, ConsumerBuilder consumerBuilder, ConsumerConfigurationParser consumerConfigurationParser, SubscriptionManager subscriptionManager) {
-        this(taskManager, consumerConfigurationStore, consumerBuilder, consumerConfigurationParser, subscriptionManager);
+    protected ConsumerManagerImpl(Logger logger, TaskManager taskManager, ConsumerConfigurationReader consumerConfigurationReader, ConsumerBuilder consumerBuilder, ConsumerConfigurationParser consumerConfigurationParser, SubscriptionManager subscriptionManager) {
+        this(taskManager, consumerConfigurationReader, consumerBuilder, consumerConfigurationParser, subscriptionManager);
         this.logger = logger;
     }
 
     @Autowired
-    public ConsumerManagerImpl(TaskManager taskManager, ConsumerConfigurationStore consumerConfigurationStore, ConsumerBuilder consumerBuilder, ConsumerConfigurationParser consumerConfigurationParser, SubscriptionManager subscriptionManager) {
+    public ConsumerManagerImpl(TaskManager taskManager, ConsumerConfigurationReader consumerConfigurationReader, ConsumerBuilder consumerBuilder, ConsumerConfigurationParser consumerConfigurationParser, SubscriptionManager subscriptionManager) {
         this.taskManager = taskManager;
-        this.consumerConfigurationStore = consumerConfigurationStore;
+        this.consumerConfigurationReader = consumerConfigurationReader;
         this.consumerBuilder = consumerBuilder;
         this.consumerConfigurationParser = consumerConfigurationParser;
         this.subscriptionManager = subscriptionManager;
     }
 
     public void registerConsumer(String consumerId) {
-        String consumerConfiguration = consumerConfigurationStore.getConsumerConfiguration(consumerId);
+        String consumerConfiguration = consumerConfigurationReader.getConsumerConfiguration(consumerId);
         Consumer consumer = consumerBuilder.createConsumer(consumerConfiguration);
         registerConsumer(consumer);
     }
@@ -139,7 +139,7 @@ public class ConsumerManagerImpl implements ConsumerManager {
         }
 
         if (consumer.isRunning()) {
-            final String consumerConfiguration = consumerConfigurationStore.getConsumerConfiguration(consumerId);
+            final String consumerConfiguration = consumerConfigurationReader.getConsumerConfiguration(consumerId);
             ConsumerProperties consumerProperties = consumerConfigurationParser.parse(consumerConfiguration);
             subscriptionManager.subscribe(consumerProperties.subscriptions(), Map.of("consumer", consumer));
             logger.info("Consumer '{}' updated", consumerId);
@@ -193,6 +193,11 @@ public class ConsumerManagerImpl implements ConsumerManager {
     @Override
     public Map<String, Integer> getTotalRunningTasksForAllConsumers() {
         return taskManager.getTotalNumberOfConcurrentTasksForAllConsumers();
+    }
+
+    @Override
+    public Map<String, Integer> getRemainingTasksForAllConsumers() {
+        return taskManager.getTotalNumberOfRemainingTasksForAllConsumers();
     }
 
     @Override

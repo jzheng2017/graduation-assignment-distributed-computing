@@ -9,7 +9,7 @@ import org.springframework.stereotype.Service;
 @Service
 public class Util {
     private Logger logger = LoggerFactory.getLogger(Util.class);
-
+    private static final ObjectMapper mapper = new ObjectMapper();
     public String getSubstringAfterPrefix(String prefix, String original) {
         int cutOff = original.indexOf(prefix) + prefix.length();
         return original.substring(cutOff);
@@ -17,7 +17,7 @@ public class Util {
 
     public <T> T toObject(String serialized, Class<T> classToMap) {
         try {
-            return new ObjectMapper().readValue(serialized, classToMap);
+            return mapper.readValue(serialized, classToMap);
         } catch (JsonProcessingException e) {
             logger.warn("Could not successfully deserialize", e);
             return null;
@@ -26,7 +26,7 @@ public class Util {
 
     public String serialize(Object deserialized) {
         try {
-            return new ObjectMapper().writeValueAsString(deserialized);
+            return mapper.writeValueAsString(deserialized);
         } catch (JsonProcessingException e) {
             logger.warn("Could not successfully serialize", e);
             return null;
@@ -38,7 +38,7 @@ public class Util {
                 .concurrentTasksPerConsumer()
                 .stream()
                 .filter(consumer -> !consumer.internal())
-                .mapToInt(ConsumerTaskCount::count)
+                .mapToInt(ConsumerTaskCount::concurrentTaskCount)
                 .sum();
     }
 }

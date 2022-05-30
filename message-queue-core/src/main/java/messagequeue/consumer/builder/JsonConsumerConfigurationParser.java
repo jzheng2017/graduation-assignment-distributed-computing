@@ -9,11 +9,12 @@ import org.springframework.stereotype.Service;
 
 @Service
 public class JsonConsumerConfigurationParser implements ConsumerConfigurationParser {
+    private static final ObjectMapper mapper = new ObjectMapper();
     private Logger logger = LoggerFactory.getLogger(JsonConsumerConfigurationParser.class);
     @Override
     public ConsumerProperties parse(String configuration) {
         try {
-            return new ObjectMapper().readValue(configuration, ConsumerProperties.class);
+            return mapper.readValue(configuration, ConsumerProperties.class);
         } catch (JsonProcessingException e) {
             logger.warn("Could not successfully parse the consumer configuration", e);
             return null;

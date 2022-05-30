@@ -1,7 +1,5 @@
 package coordinator.consumer;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import commons.KeyPrefix;
 import commons.LockName;
 import commons.Util;
@@ -20,7 +18,9 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
 
 /**
@@ -36,6 +36,8 @@ public class ConsumerDistributor {
     private LockClient lockClient;
     private KVClient kvClient;
     private boolean watcherRunning = false;
+    private Set<String> consumersWithFailedAssignments = new HashSet<>();
+
     public ConsumerDistributor(WatchClient watchClient, ConsumerCoordinator consumerCoordinator, Util util, LockClient lockClient, KVClient kvClient) {
         this.watchClient = watchClient;
         this.consumerCoordinator = consumerCoordinator;
@@ -57,26 +59,71 @@ public class ConsumerDistributor {
         }
     }
 
+    @Scheduled(fixedDelay = 1000L)
+    private void retryAssigningConsumersToPartition() {
+        List<String> successfulConsumers = new ArrayList<>();
+
+        consumersWithFailedAssignments.forEach(consumerId -> {
+            int partition = consumerCoordinator.computeBestPartitionForConsumer(consumerId);
+            if (partition >= 0) { //if it failed again then leave it in the list to try again next iteration
+                assignConsumerToPartition(partition, consumerId);
+                successfulConsumers.add(consumerId);
+            }
+        });
+
+        successfulConsumers.forEach(consumersWithFailedAssignments::remove);
+    }
+
+    private void assignConsumerToPartition(final int partition, final String consumerId) {
+        lockClient.acquireLockAndExecute(
+                LockName.PARTITION_CONSUMER_ASSIGNMENT_LOCK,
+                () -> {
+                    final String partitionConsumerAssignmentKey = KeyPrefix.PARTITION_CONSUMER_ASSIGNMENT + "-" + partition;
+
+                    try {
+                        List<String> consumers = new ArrayList<>();
+
+                        if (kvClient.keyExists(partitionConsumerAssignmentKey)) {
+                            consumers = util.toObject(kvClient.get(partitionConsumerAssignmentKey).get().keyValues().get(partitionConsumerAssignmentKey), List.class);
+                        }
+
+                        if (!consumers.contains(consumerId)) {
+                            consumers.add(consumerId);
+                            kvClient.put(partitionConsumerAssignmentKey, util.serialize(consumers))
+                                    .thenAcceptAsync(ignore -> consumerCoordinator.updateConsumerStatus(consumerId, ConsumerStatus.ASSIGNED)).get();
+                            logger.info("Assigned consumer '{}' to partition '{}'", consumerId, partition);
+                        } else {
+                            logger.warn("Consumer '{}' has already been assigned to partition '{}'", consumerId, partition);
+                        }
+                    } catch (InterruptedException | ExecutionException e) {
+                        Thread.currentThread().interrupt();
+                        logger.warn("Could not successfully assign consumer '{}' to partition '{}'", consumerId, partition, e);
+                    }
+
+                    return null;
+                }
+        );
+    }
+
     private class ConsumerStatusWatchListener implements WatchListener {
 
         @Override
         public void onNext(WatchResponse watchResponse) {
-            List<WatchEvent> events = watchResponse
+           watchResponse
                     .events()
                     .stream()
                     .filter(
                             event -> event.eventType() == WatchEvent.EventType.PUT &&
                                     event.currentValue().equalsIgnoreCase(ConsumerStatus.UNASSIGNED.toString())
-                    )
-                    .toList();
-            for (WatchEvent event : events) {
-                final String consumerId = util.getSubstringAfterPrefix(KeyPrefix.CONSUMER_STATUS + "-", event.currentKey());
-                int partition = consumerCoordinator.computeBestPartitionForConsumer(consumerId);
-                if (partition < 0) {
-                    continue;
-                }
-                assignConsumerToPartition(partition, consumerId);
-            }
+                    ).forEach(event -> {
+                        final String consumerId = util.getSubstringAfterPrefix(KeyPrefix.CONSUMER_STATUS + "-", event.currentKey());
+                        int partition = consumerCoordinator.computeBestPartitionForConsumer(consumerId);
+                        if (partition >= 0) {
+                            assignConsumerToPartition(partition, consumerId);
+                        } else {
+                            consumersWithFailedAssignments.add(consumerId);
+                        }
+                    });
         }
 
         @Override
@@ -89,38 +136,6 @@ public class ConsumerDistributor {
             watchClient.unwatch(KeyPrefix.CONSUMER_STATUS);
             logger.info("Stopped watching resource/key '{}'", KeyPrefix.CONSUMER_STATUS);
             watcherRunning = false;
-        }
-
-
-        private void assignConsumerToPartition(final int partition, final String consumerId) {
-            lockClient.acquireLockAndExecute(
-                    LockName.PARTITION_CONSUMER_ASSIGNMENT_LOCK,
-                    () -> {
-                        final String partitionConsumerAssignmentKey = KeyPrefix.PARTITION_CONSUMER_ASSIGNMENT + "-" + partition;
-
-                        try {
-                            List<String> consumers = new ArrayList<>();
-
-                            if (kvClient.keyExists(partitionConsumerAssignmentKey)) {
-                                consumers = new ObjectMapper().readValue(kvClient.get(partitionConsumerAssignmentKey).get().keyValues().get(partitionConsumerAssignmentKey), List.class);
-                            }
-
-                            if (!consumers.contains(consumerId)) {
-                                consumers.add(consumerId);
-                                kvClient.put(partitionConsumerAssignmentKey, new ObjectMapper().writeValueAsString(consumers))
-                                        .thenAcceptAsync(ignore -> consumerCoordinator.updateConsumerStatus(consumerId, ConsumerStatus.ASSIGNED)).get();
-                                logger.info("Assigned consumer '{}' to partition '{}'", consumerId, partition);
-                            } else {
-                                logger.warn("Consumer '{}' has already been assigned to partition '{}'", consumerId, partition);
-                            }
-                        } catch (InterruptedException | ExecutionException | JsonProcessingException e) {
-                            Thread.currentThread().interrupt();
-                            logger.warn("Could not successfully assign consumer '{}' to partition '{}'", consumerId, partition, e);
-                        }
-
-                        return null;
-                    }
-            );
         }
     }
 }

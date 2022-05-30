@@ -23,6 +23,7 @@ public class WorkerStatisticsPublisher {
     private ConsumerManager consumerManager;
     private KVClient kvClient;
     private Worker worker;
+    private static final ObjectMapper mapper = new ObjectMapper();
 
     public WorkerStatisticsPublisher(KVClient kvClient, ConsumerManager consumerManager, Worker worker) {
         this.kvClient = kvClient;
@@ -33,6 +34,7 @@ public class WorkerStatisticsPublisher {
     @Scheduled(fixedRate = 5000L)
     public void publishStatistic() throws JsonProcessingException, ExecutionException, InterruptedException {
         Map<String, Integer> concurrentTasksPerConsumer = consumerManager.getTotalRunningTasksForAllConsumers();
+        Map<String, Integer> remainingTasksPerConsumer = consumerManager.getRemainingTasksForAllConsumers();
         long totalTasksCompleted = consumerManager.getTotalNumberOfCompletedTasks();
         int totalTasksInQueue = consumerManager.getTotalNumberOfTasksInQueue();
         List<String> activeRunningConsumers = consumerManager.getAllConsumers();
@@ -42,7 +44,7 @@ public class WorkerStatisticsPublisher {
                 .map(entry -> {
                     String consumerId = entry.getKey();
                     int taskCount = entry.getValue();
-                    return new ConsumerTaskCount(consumerId, taskCount, consumerManager.isConsumerInternal(consumerId));
+                    return new ConsumerTaskCount(consumerId, taskCount, remainingTasksPerConsumer.get(consumerId),consumerManager.isConsumerInternal(consumerId));
                 })
                 .toList();
 
@@ -55,7 +57,7 @@ public class WorkerStatisticsPublisher {
                 activeRunningConsumers,
                 Instant.now().getEpochSecond());
 
-        String json = new ObjectMapper().writeValueAsString(workerStatistics);
+        String json = mapper.writeValueAsString(workerStatistics);
         kvClient.put(KeyPrefix.WORKER_STATISTICS + "-" + workerStatistics.workerId(), json).get();
     }
 }
