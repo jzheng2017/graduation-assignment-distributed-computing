@@ -170,13 +170,13 @@ public class PartitionManager {
         try {
             kvClient.put(KeyPrefix.PARTITION_COUNT, Integer.toString(partitionCount))
                     .thenAcceptAsync(putResponse -> logger.info(
-                            "Updated partition concurrentTaskCount to {}, old partition concurrentTaskCount was: {}",
+                            "Updated partition to {}, old partition was: {}",
                             partitionCount,
                             putResponse.prevValue().isEmpty() ? 0 : putResponse.prevValue())
                     ).get();
         } catch (InterruptedException | ExecutionException e) {
             Thread.currentThread().interrupt();
-            logger.warn("Could not successfully create/update partition concurrentTaskCount to '{}'", partitionCount);
+            logger.warn("Could not successfully create/update partition to '{}'", partitionCount);
         }
     }
 

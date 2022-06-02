@@ -15,6 +15,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import worker.processor.MessagePrinterProcessor;
 import worker.processor.MessageReverserProcessor;
+import worker.processor.MessageShufflerProcessor;
 import worker.processor.MessageUppercaseProcessor;
 
 /**
@@ -54,6 +55,7 @@ public class DummyKafkaConsumerFactory implements ConsumerFactory {
             case "uppercase" -> new KafkaConsumer(consumerProperties.name(), false, taskManager, consumer, new MessageUppercaseProcessor(kafkaMessageBrokerProxy), kvClient, util);
             case "reverser" -> new KafkaConsumer(consumerProperties.name(), false, taskManager, consumer, new MessageReverserProcessor(kafkaMessageBrokerProxy), kvClient, util);
             case "printer" -> new KafkaConsumer(consumerProperties.name(), false, taskManager, consumer, new MessagePrinterProcessor(), kvClient, util);
+            case "shuffler" -> new KafkaConsumer(consumerProperties.name(), false, taskManager, consumer, new MessageShufflerProcessor(), kvClient, util);
             default -> null;
         };
     }
