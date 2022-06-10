@@ -3,23 +3,27 @@ package messagequeue.consumer.taskmanager;
 import messagequeue.configuration.TaskManagerProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.context.annotation.ComponentScan;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.concurrent.Executors;
+import java.util.Map;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.stream.Collectors;
 
 /**
  * A task manager that schedules tasks which have to be executed
  */
-@ComponentScan(basePackages = {"messagequeue.consumer.taskmanager"})
 @Service
 public class TaskManager {
     private Logger logger = LoggerFactory.getLogger(TaskManager.class);
     private ThreadPoolExecutor threadPoolExecutor;
+    private final Map<String, List<TaskPackage>> activeTaskPackagesPerConsumer = new ConcurrentHashMap<>();
+    private AtomicLong totalTasksProcessed = new AtomicLong();
 
     public TaskManager(TaskManagerProperties taskManagerProperties) {
         final int corePoolSize = taskManagerProperties.getThreadPoolSize();
@@ -36,16 +40,60 @@ public class TaskManager {
         logger.info("ThreadPoolExecutor created with core pool size {}, max pool size {} and {} as queue implementation", corePoolSize, maxPoolSize, threadPoolExecutor.getQueue().getClass().getName());
     }
 
-    public void executeTasks(List<Runnable> tasks) throws InterruptedException {
+    public void executeTasks(String consumerId, List<TaskPackage> taskPackages) throws InterruptedException {
+        activeTaskPackagesPerConsumer.put(consumerId, taskPackages);
+
         threadPoolExecutor.invokeAll(
-                tasks.stream()
-                        .map(Executors::callable)
+                taskPackages.stream()
+                        .map(taskPackage -> (Callable<Void>) () -> {
+                            taskPackage.run();
+                            totalTasksProcessed.addAndGet(taskPackage.getTotalProcessed());
+                            return null;
+                        })
                         .toList()
         );
+
+        activeTaskPackagesPerConsumer.remove(consumerId, taskPackages);
+    }
+
+    public void cancelConsumerTasks(String consumerId) {
+        if (activeTaskPackagesPerConsumer.containsKey(consumerId)) {
+            activeTaskPackagesPerConsumer.get(consumerId).forEach(TaskPackage::cancel);
+            activeTaskPackagesPerConsumer.remove(consumerId);
+        } else {
+            logger.warn("Can not cancel tasks for consumer '{}' as there are no active tasks in queue", consumerId);
+        }
+    }
+
+    public int getTotalNumberOfConcurrentTasksForConsumer(String consumerId) {
+        return activeTaskPackagesPerConsumer.get(consumerId).size();
+    }
+
+    public Map<String, Integer> getTotalNumberOfConcurrentTasksForAllConsumers() {
+        return activeTaskPackagesPerConsumer
+                .entrySet()
+                .stream()
+                .collect(Collectors.toMap(Map.Entry::getKey, entry -> entry.getValue().size()));
+    }
+
+    public Map<String, Integer> getTotalNumberOfRemainingTasksForAllConsumers() {
+        return activeTaskPackagesPerConsumer
+                .entrySet()
+                .stream()
+                .collect(Collectors.toMap(Map.Entry::getKey, entry -> entry.getValue().stream().mapToInt(TaskPackage::getRemainingTaskCount).sum()));
     }
 
     public int getTotalNumberOfTasksInQueue() {
-        return threadPoolExecutor.getQueue().size();
+        return activeTaskPackagesPerConsumer
+                .values()
+                .stream()
+                .mapToInt(
+                        taskPackages -> taskPackages
+                                .stream()
+                                .mapToInt(TaskPackage::getRemainingTaskCount)
+                                .sum()
+                )
+                .sum();
     }
 
     public int getTotalNumberOfTasksCurrentlyExecuting() {
@@ -53,10 +101,6 @@ public class TaskManager {
     }
 
     public long getTotalNumberOfCompletedTasks() {
-        return threadPoolExecutor.getCompletedTaskCount();
-    }
-
-    public long getTotalNumberOfTasksScheduled() {
-        return threadPoolExecutor.getTaskCount();
+        return totalTasksProcessed.get();
     }
 }

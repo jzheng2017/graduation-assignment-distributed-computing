@@ -1,25 +1,23 @@
 package messagequeue.consumer.builder;
 
-import messagequeue.consumer.ConsumerProperties;
-import org.springframework.boot.json.JsonParser;
-import org.springframework.boot.json.JsonParserFactory;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import commons.ConsumerProperties;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
-
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
 
 @Service
 public class JsonConsumerConfigurationParser implements ConsumerConfigurationParser {
-
+    private static final ObjectMapper mapper = new ObjectMapper();
+    private Logger logger = LoggerFactory.getLogger(JsonConsumerConfigurationParser.class);
     @Override
     public ConsumerProperties parse(String configuration) {
-        JsonParser jsonParser = JsonParserFactory.getJsonParser();
-        Map<String, Object> propAndValues = jsonParser.parseMap(configuration);
-        return new ConsumerProperties(
-                (String) propAndValues.get("name"),
-                (String) propAndValues.get("groupId"),
-                new HashSet<>((List<String>) propAndValues.get("subscriptions"))
-        );
+        try {
+            return mapper.readValue(configuration, ConsumerProperties.class);
+        } catch (JsonProcessingException e) {
+            logger.warn("Could not successfully parse the consumer configuration", e);
+            return null;
+        }
     }
 }

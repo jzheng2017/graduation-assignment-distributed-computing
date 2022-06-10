@@ -4,9 +4,9 @@ import messagequeue.messagebroker.topic.TopicConfiguration;
 
 public class KafkaTopicConfiguration extends TopicConfiguration {
     private final int partitions;
-    private final int replicationFactor;
+    private final short replicationFactor;
 
-    public KafkaTopicConfiguration(String name, int partitions, int replicationFactor) {
+    public KafkaTopicConfiguration(String name, int partitions, short replicationFactor) {
         super(name);
         this.partitions = partitions;
         this.replicationFactor = replicationFactor;
@@ -16,7 +16,7 @@ public class KafkaTopicConfiguration extends TopicConfiguration {
         return partitions;
     }
 
-    public int getReplicationFactor() {
+    public short getReplicationFactor() {
         return replicationFactor;
     }
 }
