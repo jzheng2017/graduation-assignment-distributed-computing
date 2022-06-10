@@ -84,7 +84,7 @@ public class TaskManager {
     }
 
     public int getTotalNumberOfTasksInQueue() {
-        return (int) activeTaskPackagesPerConsumer
+        return activeTaskPackagesPerConsumer
                 .values()
                 .stream()
                 .mapToInt(
