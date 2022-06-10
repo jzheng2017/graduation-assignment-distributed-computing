@@ -1,10 +1,14 @@
 package messagequeue.consumer;
 
+import commons.ConsumerProperties;
 import messagequeue.consumer.builder.ConsumerBuilder;
+import messagequeue.consumer.builder.ConsumerConfigurationParser;
+import messagequeue.consumer.builder.ConsumerConfigurationReader;
 import messagequeue.consumer.taskmanager.TaskManager;
-import messagequeue.messagebroker.Consumer;
+import messagequeue.messagebroker.subscription.SubscriptionManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.Collections;
@@ -15,37 +19,44 @@ import java.util.concurrent.ConcurrentHashMap;
 
 @Service
 public class ConsumerManagerImpl implements ConsumerManager {
-    private static final int WAIT_FOR_REMOVAL_INTERVAL_IN_MS = 50;
+    private static final int WAIT_FOR_REMOVAL_INTERVAL_IN_MS = 1000;
     private Logger logger = LoggerFactory.getLogger(ConsumerManagerImpl.class);
     private final Map<String, Consumer> consumers = new ConcurrentHashMap<>();
     private final Set<String> consumersScheduledForRemoval = Collections.newSetFromMap(new ConcurrentHashMap<>());
-    private ConsumerBuilder consumerBuilder;
     private final TaskManager taskManager;
+    private ConsumerConfigurationReader consumerConfigurationReader;
+    private ConsumerBuilder consumerBuilder;
+    private ConsumerConfigurationParser consumerConfigurationParser;
+    private SubscriptionManager subscriptionManager;
 
-    protected ConsumerManagerImpl(Logger logger, ConsumerBuilder consumerBuilder, TaskManager taskManager) {
-        this(consumerBuilder, taskManager);
+    //for unit test purposes only
+    protected ConsumerManagerImpl(Logger logger, TaskManager taskManager, ConsumerConfigurationReader consumerConfigurationReader, ConsumerBuilder consumerBuilder, ConsumerConfigurationParser consumerConfigurationParser, SubscriptionManager subscriptionManager) {
+        this(taskManager, consumerConfigurationReader, consumerBuilder, consumerConfigurationParser, subscriptionManager);
         this.logger = logger;
     }
 
-    public ConsumerManagerImpl(ConsumerBuilder consumerBuilder, TaskManager taskManager) {
-        this.consumerBuilder = consumerBuilder;
+    @Autowired
+    public ConsumerManagerImpl(TaskManager taskManager, ConsumerConfigurationReader consumerConfigurationReader, ConsumerBuilder consumerBuilder, ConsumerConfigurationParser consumerConfigurationParser, SubscriptionManager subscriptionManager) {
         this.taskManager = taskManager;
+        this.consumerConfigurationReader = consumerConfigurationReader;
+        this.consumerBuilder = consumerBuilder;
+        this.consumerConfigurationParser = consumerConfigurationParser;
+        this.subscriptionManager = subscriptionManager;
     }
 
-    @Override
-    public void registerConsumer(String consumerConfiguration) {
-        final Consumer consumer = consumerBuilder.createConsumer(consumerConfiguration);
-
+    public void registerConsumer(String consumerId) {
+        String consumerConfiguration = consumerConfigurationReader.getConsumerConfiguration(consumerId);
+        Consumer consumer = consumerBuilder.createConsumer(consumerConfiguration);
         registerConsumer(consumer);
     }
 
-    public void registerConsumer(Consumer consumer) { //TODO: allowed for now because ConsumerBuilder is not build yet. Eventually it should only be the case that you pass in a configuration and a consumer gets constructed from that
+    private void registerConsumer(Consumer consumer) {
         final String consumerId = consumer.getIdentifier();
         logger.info("Trying to register consumer '{}'", consumerId);
         if (!consumers.containsKey(consumerId)) {
             consumers.put(consumerId, consumer);
-            logger.info("Successfully registered consumer '{}'", consumerId);
             startConsumer(consumerId);
+            logger.info("Successfully registered consumer '{}'", consumerId);
         } else {
             logger.warn("Consumer '{}' has already been registered.", consumerId);
         }
@@ -85,6 +96,7 @@ public class ConsumerManagerImpl implements ConsumerManager {
                         Thread.sleep(WAIT_FOR_REMOVAL_INTERVAL_IN_MS);
                     } catch (InterruptedException e) {
                         logger.warn("Sleeping thread interrupted", e);
+                        Thread.currentThread().interrupt();
                     }
                 }
 
@@ -119,6 +131,24 @@ public class ConsumerManagerImpl implements ConsumerManager {
     }
 
     @Override
+    public void refreshConsumer(String consumerId) {
+        Consumer consumer = consumers.get(consumerId);
+        if (consumer == null) {
+            logger.warn("Consumer '{}' can not be updated because it can not be found", consumerId);
+            return;
+        }
+
+        if (consumer.isRunning()) {
+            final String consumerConfiguration = consumerConfigurationReader.getConsumerConfiguration(consumerId);
+            ConsumerProperties consumerProperties = consumerConfigurationParser.parse(consumerConfiguration);
+            subscriptionManager.subscribe(consumerProperties.subscriptions(), Map.of("consumer", consumer));
+            logger.info("Consumer '{}' updated", consumerId);
+        } else {
+            logger.warn("Consumer '{}' can not be updated because it is not running anymore", consumerId);
+        }
+    }
+
+    @Override
     public void shutdown() {
         logger.info("Shutting down ConsumerManager");
         unregisterAllConsumers();
@@ -126,8 +156,18 @@ public class ConsumerManagerImpl implements ConsumerManager {
     }
 
     @Override
-    public List<Consumer> getAllConsumers() {
-        return consumers.values().stream().toList();
+    public List<String> getAllConsumers() {
+        return consumers.keySet().stream().toList();
+    }
+
+    @Override
+    public boolean isConsumerInternal(String consumerIdentifier) {
+        synchronized (consumers) {
+            if (consumers.containsKey(consumerIdentifier)) {
+                return consumers.get(consumerIdentifier).isInternal();
+            }
+        }
+        throw new IllegalArgumentException(String.format("Consumer %s is not registered", consumerIdentifier));
     }
 
     @Override
@@ -151,8 +191,13 @@ public class ConsumerManagerImpl implements ConsumerManager {
     }
 
     @Override
-    public long getTotalNumberOfTasksScheduled() {
-        return taskManager.getTotalNumberOfTasksScheduled();
+    public Map<String, Integer> getTotalRunningTasksForAllConsumers() {
+        return taskManager.getTotalNumberOfConcurrentTasksForAllConsumers();
+    }
+
+    @Override
+    public Map<String, Integer> getRemainingTasksForAllConsumers() {
+        return taskManager.getTotalNumberOfRemainingTasksForAllConsumers();
     }
 
     @Override

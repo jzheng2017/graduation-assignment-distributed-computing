@@ -1,12 +1,12 @@
 version: "3"
 networks:
-  kafka-network:
+  app-network:
     driver: bridge
 services:
   zookeeper:
     image: 'bitnami/zookeeper:latest'
     networks:
-      - kafka-network
+      - app-network
     ports:
       - '2181:2181'
     environment:
@@ -14,7 +14,7 @@ services:
   kafka:
     image: 'bitnami/kafka:latest'
     networks:
-      - kafka-network
+      - app-network
     ports:
       - '9092:9092'
       - '9093:9093'
@@ -28,15 +28,25 @@ services:
       - KAFKA_CFG_INTER_BROKER_LISTENER_NAME=CLIENT
     depends_on:
       - zookeeper
-  project:
-    image: 'message-queue-kafka-project:latest'
-    networks:
-      - kafka-network
+  etcd:
+    image: 'bitnami/etcd:latest'
+    environment:
+      - ALLOW_NONE_AUTHENTICATION=yes
+      - ETCD_ADVERTISE_CLIENT_URLS=http://localhost:2379
     ports:
-      - '8081:8081'
-  consumer-coordinator:
-    image: 'consumer-coordinator:latest'
+      - 2379:2379
+      - 2380:2380
     networks:
-      - kafka-network
-    ports:
-      - '8082:8082'
+      - app-network
+#  worker:
+#    image: 'worker:latest'
+#    networks:
+#      - app-network
+#    ports:
+#      - '8081:8081'
+#  consumer-coordinator:
+#    image: 'consumer-coordinator:latest'
+#    networks:
+#      - app-network
+#    ports:
+#      - '8082:8082'

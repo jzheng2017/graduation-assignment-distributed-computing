@@ -1,19 +1,17 @@
 package messagequeue.consumer;
 
-import messagequeue.messagebroker.Consumer;
-
 import java.util.List;
+import java.util.Map;
 
 /**
  * The {@link ConsumerManager} is responsible for keeping track of the consumers and all other consumer-related tasks such as (un)registering consumer(s) and providing consumer information
  */
 public interface ConsumerManager {
     /**
-     * Construct and then register the consumer based on the passed in consumer configuration
+     * Construct and then register the consumer
      *
-     * @param consumerConfiguration a consumer configuration
      */
-    void registerConsumer(String consumerConfiguration);
+    void registerConsumer(String consumerId);
 
     void startConsumer(String consumerId);
 
@@ -27,11 +25,24 @@ public interface ConsumerManager {
     void stopConsumer(String consumerId);
 
     /**
+     * Refresh the consumer by reading the consumer configuration again and update if anything has changed.
+     * @param consumerId id of the consumer
+     */
+    void refreshConsumer(String consumerId);
+
+    /**
      * Shut down the ConsumerManager where all registered consumers will be stopped
      */
     void shutdown();
 
-    List<Consumer> getAllConsumers();
+    List<String> getAllConsumers();
+
+    /**
+     * Determines whether a consumer is used internally
+     * @param consumerIdentifier the identifier of the consumer
+     * @return true if used internally, false otherwise
+     */
+    boolean isConsumerInternal(String consumerIdentifier);
 
     /**
      * Get the total number of running tasks of all consumers
@@ -48,11 +59,12 @@ public interface ConsumerManager {
      */
     int getTotalRunningTasksForConsumer(String consumerId);
 
+    Map<String, Integer> getTotalRunningTasksForAllConsumers();
+
+    Map<String, Integer> getRemainingTasksForAllConsumers();
     int getTotalNumberOfTasksInQueue();
 
     long getTotalNumberOfCompletedTasks();
-
-    long getTotalNumberOfTasksScheduled();
 
     void unregisterAllConsumers();
 }

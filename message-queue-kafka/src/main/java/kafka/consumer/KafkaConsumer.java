@@ -1,51 +1,80 @@
 package kafka.consumer;
 
+import commons.Util;
+import datastorage.KVClient;
 import messagequeue.consumer.BaseConsumer;
 import messagequeue.consumer.MessageProcessor;
-import messagequeue.consumer.taskmanager.Task;
+import messagequeue.consumer.TaskPackageResult;
+import messagequeue.consumer.TopicOffset;
 import messagequeue.consumer.taskmanager.TaskManager;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
+import org.apache.kafka.clients.consumer.OffsetAndMetadata;
+import org.apache.kafka.common.TopicPartition;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
- * A Kafka implementation of the {@link messagequeue.messagebroker.Consumer} interface
+ * A Kafka implementation of the {@link messagequeue.consumer.Consumer} interface
  */
 public class KafkaConsumer extends BaseConsumer {
     private Logger logger = LoggerFactory.getLogger(KafkaConsumer.class);
+    protected Consumer<String, String> consumer;
 
     //constructor only for unit test purposes
-    protected KafkaConsumer(org.apache.kafka.clients.consumer.KafkaConsumer<String, String> consumer, String name, TaskManager taskManager, MessageProcessor messageProcessor) {
-        super(name, taskManager, messageProcessor);
+    protected KafkaConsumer(org.apache.kafka.clients.consumer.KafkaConsumer<String, String> consumer, String name, TaskManager taskManager, MessageProcessor messageProcessor, KVClient kvClient, Util util) {
+        super(name, true, taskManager, messageProcessor, kvClient, util);
         this.consumer = consumer;
     }
 
-    protected Consumer<String, String> consumer;
+    @Autowired
+    public KafkaConsumer(String name, boolean isInternal, TaskManager taskManager, Consumer<String, String> consumer, MessageProcessor messageProcessor, KVClient kvClient, Util util) {
+        super(name, isInternal, taskManager, messageProcessor, kvClient, util);
+        this.consumer = consumer;
+    }
 
-    public KafkaConsumer(String name, TaskManager taskManager, Consumer<String, String> consumer, MessageProcessor messageProcessor) {
-        super(name, taskManager, messageProcessor);
+    public KafkaConsumer(String name, boolean isInternal, TaskManager taskManager, Consumer<String, String> consumer, MessageProcessor messageProcessor, KVClient kvClient, Util util, List<TopicOffset> topicOffsets) {
+        super(name, isInternal, taskManager, messageProcessor, kvClient, util, topicOffsets);
         this.consumer = consumer;
     }
 
     @Override
-    public List<String> poll() {
+    public Map<String, List<String>> poll() {
         ConsumerRecords<String, String> records = consumer.poll(Duration.ofMillis(100));
         final int batchSize = records.count();
 
         if (batchSize > 0) {
             logger.info("Consumer '{}' found {} new message(s)", name, batchSize);
-            List<String> messages = new ArrayList<>();
-            records.forEach(record -> messages.add(record.value()));
+            Map<String, List<String>> messagesPerTopic = new HashMap<>();
+            records.forEach(consumerRecord -> {
+                final int topicNameEndIndex = consumerRecord.topic().indexOf("-");
+                String topicName;
 
-            return messages;
+                if (topicNameEndIndex > 0) {
+                    topicName = consumerRecord.topic().substring(0, topicNameEndIndex);
+                } else {
+                    topicName = consumerRecord.topic();
+                }
+
+                if (!messagesPerTopic.containsKey(topicName)) {
+                    messagesPerTopic.put(topicName, new ArrayList<>());
+                }
+
+                messagesPerTopic.get(topicName).add(consumerRecord.value());
+            });
+
+            return messagesPerTopic;
         }
 
-        return new ArrayList<>();
+        return new HashMap<>();
     }
 
     @Override
@@ -54,9 +83,23 @@ public class KafkaConsumer extends BaseConsumer {
     }
 
     @Override
-    public void acknowledge() {
-        consumer.commitAsync();
-        logger.info("Message offset committed by consumer '{}'", name);
+    public void acknowledge(List<TaskPackageResult> taskPackageResults) {
+        boolean allTaskPackagesSuccessfullyCompleted = taskPackageResults.stream().allMatch(TaskPackageResult::successful);
+        if (allTaskPackagesSuccessfullyCompleted) {
+            consumer.commitSync();
+        } else {
+            Map<TopicPartition, OffsetAndMetadata> offsets = taskPackageResults
+                    .stream()
+                    .collect(
+                            Collectors
+                                    .toMap(
+                                            entry -> new TopicPartition(entry.topic(), 0),
+                                            entry -> new OffsetAndMetadata(getTopicOffset(entry.topic()))
+                                    )
+                    );
+            consumer.commitSync(offsets);
+        }
+        logger.info("All task packages by consumer '{}' has finished. The topic offsets have been committed to Kafka.", name);
     }
 
     public Consumer<String, String> getConsumer() {

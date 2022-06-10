@@ -3,6 +3,9 @@ package messagequeue.messagebroker.subscription;
 import java.util.Map;
 import java.util.Set;
 
+/**
+ * An interface allows one to manage topic subscriptions
+ */
 public interface SubscriptionManager {
 
     /**

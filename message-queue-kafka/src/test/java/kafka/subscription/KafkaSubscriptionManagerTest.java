@@ -15,6 +15,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -53,7 +55,7 @@ class KafkaSubscriptionManagerTest {
         expectedSubscriptions.addAll(topics);
         expectedSubscriptions.addAll(subscriptions);
 
-        verify(mockedConsumer).subscribe(expectedSubscriptions);
+        verify(mockedConsumer).subscribe(eq(expectedSubscriptions), any());
     }
 
     @Test

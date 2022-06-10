@@ -2,8 +2,9 @@ package messagequeue.consumer;
 
 import messagequeue.consumer.taskmanager.TaskManager;
 
-import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class FakeBaseConsumer extends BaseConsumer{
@@ -12,13 +13,13 @@ public class FakeBaseConsumer extends BaseConsumer{
     }
 
     @Override
-    public void acknowledge() {
+    public void acknowledge(List<TaskPackageResult> taskPackageResults) {
 
     }
 
     @Override
-    public List<String> poll() {
-        return new ArrayList<>();
+    public Map<String, List<String>> poll() {
+        return new HashMap<>();
     }
 
     @Override

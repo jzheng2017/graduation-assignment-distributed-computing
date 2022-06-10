@@ -16,7 +16,7 @@
         <maven.compiler.source>17</maven.compiler.source>
         <maven.compiler.target>17</maven.compiler.target>
         <aggregate.report.dir>target/site/jacoco-aggregate/jacoco.xml</aggregate.report.dir>
-        <sonar.coverage.jacoco.xmlReportPaths>${basedir}/${aggregate.report.dir}</sonar.coverage.jacoco.xmlReportPaths>
+        <sonar.coverage.jacoco.xmlReportPaths>${basedir}/jacoco-reports/${aggregate.report.dir}</sonar.coverage.jacoco.xmlReportPaths>
     </properties>
 
     <dependencies>
@@ -28,12 +28,12 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
-            <version>2.6.5</version>
+            <version>2.6.7</version>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
-            <version>2.6.5</version>
+            <version>2.6.7</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
@@ -61,9 +61,11 @@
     <modules>
         <module>message-queue-core</module>
         <module>message-queue-kafka</module>
-        <module>message-queue-kafka-project</module>
+        <module>worker</module>
         <module>consumer-coordinator</module>
         <module>application-configurations</module>
         <module>jacoco-reports</module>
+        <module>data-storage</module>
+        <module>commons</module>
     </modules>
 </project>

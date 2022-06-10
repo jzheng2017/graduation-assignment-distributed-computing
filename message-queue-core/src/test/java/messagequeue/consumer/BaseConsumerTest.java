@@ -7,7 +7,6 @@ import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.springframework.boot.test.context.SpringBootTest;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -45,7 +44,6 @@ class BaseConsumerTest {
         baseConsumer.start();
         Assertions.assertTrue(isRunning.get());
         baseConsumer.stop();
-        Thread.sleep(5); //give the consumer time to stop
-        Assertions.assertFalse(isRunning.get());
+        TestUtil.waitUntil(() -> !baseConsumer.isRunning(), "Consumer flag was not set to false when stopped", 1000, 100);
     }
 }
